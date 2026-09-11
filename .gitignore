@@ -1,0 +1,28 @@
+# 本地运行环境与数据
+.venv/
+.data/
+.env
+
+# Python 缓存与构建产物
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+
+# 编辑器与系统文件
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# 临时的评审渲染产物
+.review_render/
+
+# GitHub 仓库的只读检出，不作为本仓库内容提交
+.repo-review/

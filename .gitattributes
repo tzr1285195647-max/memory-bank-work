@@ -1,0 +1,8 @@
+# 统一使用 LF，避免 Windows/Linux 之间产生整文件噪声差异
+* text=auto eol=lf
+
+# 二进制文件不做行尾转换
+*.jpg binary
+*.png binary
+*.docx binary
+*.sqlite3 binary

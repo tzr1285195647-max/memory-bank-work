@@ -1,0 +1,10 @@
+.venv
+.data
+.review_render
+.pytest_cache
+__pycache__
+*.pyc
+*.docx
+*.jpg
+.git
+

@@ -1,0 +1,4 @@
+This directory contains the versioned product-database schema.
+
+Set MEMORY_BANK_DATABASE_URL for PostgreSQL or another deployment database, then
+run `alembic upgrade head`. The URL in alembic.ini is a local SQLite fallback.
