@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+<rect width="390" height="844" fill="#F6F2E9"/>
+<rect x="0.0" y="0.0" width="390.0" height="92.0" rx="0" fill="#C98362"/>
+<rect x="24.0" y="240.0" width="342.0" height="118.0" rx="20" fill="#FFFFFF"/>
+<rect x="24.0" y="380.0" width="342.0" height="118.0" rx="20" fill="#FFFFFF"/>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="24" font-weight="700" fill="#FFFFFF" xml:space="preserve"><tspan x="24.0" y="48.3">记忆银行</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="25" fill="#FFFFFF" xml:space="preserve"><tspan x="345.0" y="47.1">⋯</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="30" font-weight="700" fill="#26312B" xml:space="preserve"><tspan x="24.0" y="152.0">欢迎来到记忆银行</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="16" fill="#747A73" xml:space="preserve"><tspan x="24.0" y="181.9">你想以什么身份使用？</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="23" font-weight="700" fill="#4E6657" xml:space="preserve"><tspan x="48.0" y="286.9">长辈</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="14" fill="#747A73" xml:space="preserve"><tspan x="48.0" y="316.1">讲述自己的故事，留下原声记忆</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="25" font-weight="700" fill="#C98362" xml:space="preserve"><tspan x="320.0" y="300.1">→</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="23" font-weight="700" fill="#4E6657" xml:space="preserve"><tspan x="48.0" y="426.9">家人</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="14" fill="#747A73" xml:space="preserve"><tspan x="48.0" y="456.1">陪伴讲述，整理并分享家庭故事</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="25" font-weight="700" fill="#C98362" xml:space="preserve"><tspan x="320.0" y="440.1">→</tspan></text>
+<text font-family="Noto Serif SC, Source Han Serif SC, SimSun, serif" font-size="16" font-weight="700" fill="#4E6657" xml:space="preserve"><tspan x="112.0" y="605.9">已有账户？ 登录</tspan></text>
+</svg>

@@ -1,0 +1,252 @@
+[
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "01｜欢迎页",
+  "phase": "CREATED",
+  "x": 20,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 12,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "02｜身份选择",
+  "phase": "CREATED",
+  "x": 440,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 14,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "03｜登录",
+  "phase": "CREATED",
+  "x": 860,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 15,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "04｜长辈首页",
+  "phase": "CREATED",
+  "x": 1280,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 25,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "05｜主题选择",
+  "phase": "CREATED",
+  "x": 20,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 25,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "06｜录音讲述",
+  "phase": "CREATED",
+  "x": 440,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 13,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "07｜故事预览",
+  "phase": "CREATED",
+  "x": 860,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 12,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "08｜家庭看板",
+  "phase": "CREATED",
+  "x": 1475,
+  "y": -213,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 25,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "09｜故事书",
+  "phase": "CREATED",
+  "x": 1700,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 31,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ },
+ {
+  "depth": 2,
+  "parent": "Page 1",
+  "type": "FRAME",
+  "name": "10｜个人中心",
+  "phase": "CREATED",
+  "x": 2120,
+  "y": 89,
+  "w": 390,
+  "h": 844,
+  "visible": true,
+  "opacity": 1,
+  "fill": [
+   "#f6f2e9"
+  ],
+  "stroke": [],
+  "cornerRadius": 24,
+  "fontName": null,
+  "text": null,
+  "childrenCount": 35,
+  "ancestors": [
+   "Document",
+   "Page 1"
+  ]
+ }
+]

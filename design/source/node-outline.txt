@@ -1,0 +1,384 @@
+DOCUMENT "Document"
+  CANVAS "Page 1"
+    FRAME "01｜欢迎页" [390x844 @20,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @20,89] fill=#4e6657
+      TEXT "记忆银行" [220x31 @44,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "⋯" [28x32 @365,111] fill=#ffffff 25px Lora Regular
+          │ ⋯
+      TEXT "把家里的故事，慢慢留下来" [342x76 @44,211] fill=#26312b 30px Lora Bold
+          │ 把家里的故事，慢慢留下来
+      TEXT "每一次讲述，都是给家人留的一盏灯。" [342x20 @44,255] fill=#747a73 16px Lora Regular
+          │ 每一次讲述，都是给家人留的一盏灯。
+      ROUNDED_RECTANGLE "Rectangle" [342x220 @44,339] fill=#e0e8d8
+      TEXT "“" [80x92 @74,363] fill=#c98362 72px Lora Bold
+          │ “
+      TEXT "那些被时间 温柔保存的声音" [270x76 @74,443] fill=#4e6657 30px Lora Bold
+          │ 那些被时间
+          │ 温柔保存的声音
+      TEXT "记忆银行" [260x33 @44,619] fill=#4e6657 26px Lora Bold
+          │ 记忆银行
+      TEXT "让长辈轻松讲，让家人一起听。" [320x20 @44,661] fill=#747a73 16px Lora Regular
+          │ 让长辈轻松讲，让家人一起听。
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @44,739] fill=#4e6657
+      TEXT "我是长辈，开始讲述" [260x22 @82,753] fill=#ffffff 17px Lora Bold
+          │ 我是长辈，开始讲述
+    FRAME "02｜身份选择" [390x844 @440,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @440,89] fill=#c98362
+      TEXT "记忆银行" [220x31 @464,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "⋯" [28x32 @785,111] fill=#ffffff 25px Lora Regular
+          │ ⋯
+      TEXT "欢迎来到记忆银行" [342x38 @464,211] fill=#26312b 30px Lora Bold
+          │ 欢迎来到记忆银行
+      TEXT "你想以什么身份使用？" [342x20 @464,255] fill=#747a73 16px Lora Regular
+          │ 你想以什么身份使用？
+      ROUNDED_RECTANGLE "Rectangle" [342x118 @464,329] fill=#ffffff
+      TEXT "长辈" [120x29 @488,353] fill=#4e6657 23px Lora Bold
+          │ 长辈
+      TEXT "讲述自己的故事，留下原声记忆" [250x18 @488,391] fill=#747a73 14px Lora Regular
+          │ 讲述自己的故事，留下原声记忆
+      TEXT "→" [25x32 @760,364] fill=#c98362 25px Lora Bold
+          │ →
+      ROUNDED_RECTANGLE "Rectangle" [342x118 @464,469] fill=#ffffff
+      TEXT "家人" [120x29 @488,493] fill=#4e6657 23px Lora Bold
+          │ 家人
+      TEXT "陪伴讲述，整理并分享家庭故事" [260x18 @488,531] fill=#747a73 14px Lora Regular
+          │ 陪伴讲述，整理并分享家庭故事
+      TEXT "→" [25x32 @760,504] fill=#c98362 25px Lora Bold
+          │ →
+      TEXT "已有账户？ 登录" [190x20 @552,679] fill=#4e6657 16px Lora Bold
+          │ 已有账户？ 登录
+    FRAME "03｜登录" [390x844 @860,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @860,89] fill=#4e6657
+      TEXT "记忆银行" [220x31 @884,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "⋯" [28x32 @1205,111] fill=#ffffff 25px Lora Regular
+          │ ⋯
+      TEXT "登录记忆银行" [342x38 @884,211] fill=#26312b 30px Lora Bold
+          │ 登录记忆银行
+      TEXT "登录后，继续保存珍贵的声音" [342x20 @884,255] fill=#747a73 16px Lora Regular
+          │ 登录后，继续保存珍贵的声音
+      TEXT "手机号" [90x18 @888,329] fill=#747a73 14px Lora Bold
+          │ 手机号
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @884,355] fill=#ffffff
+      TEXT "请输入手机号" [280x20 @902,371] fill=#747a73 16px Lora Regular
+          │ 请输入手机号
+      TEXT "密码" [90x18 @888,429] fill=#747a73 14px Lora Bold
+          │ 密码
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @884,455] fill=#ffffff
+      TEXT "请输入密码" [280x20 @902,471] fill=#747a73 16px Lora Regular
+          │ 请输入密码
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @884,545] fill=#4e6657
+      TEXT "登录" [70x22 @1028,559] fill=#ffffff 17px Lora Bold
+          │ 登录
+      TEXT "验证码登录" [120x19 @1002,629] fill=#4e6657 15px Lora Bold
+          │ 验证码登录
+      TEXT "还没有账户？ 注册" [160x19 @978,689] fill=#747a73 15px Lora Regular
+          │ 还没有账户？ 注册
+    FRAME "04｜长辈首页" [390x844 @1280,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @1280,89] fill=#819276
+      TEXT "记忆银行" [220x31 @1304,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "⋯" [28x32 @1625,111] fill=#ffffff 25px Lora Regular
+          │ ⋯
+      TEXT "今天，想讲点什么？" [342x38 @1304,211] fill=#26312b 30px Lora Bold
+          │ 今天，想讲点什么？
+      TEXT "一次只讲一个小故事，不用从出生讲起。" [342x20 @1304,255] fill=#747a73 16px Lora Regular
+          │ 一次只讲一个小故事，不用从出生讲起。
+      ROUNDED_RECTANGLE "Rectangle" [342x148 @1304,325] fill=#f6daca
+      TEXT "今日叙事" [150x19 @1328,349] fill=#c98362 15px Lora Bold
+          │ 今日叙事
+      TEXT "我的家乡" [220x36 @1328,381] fill=#26312b 28px Lora Bold
+          │ 我的家乡
+      TEXT "老街、河流、赶集与邻里" [250x18 @1328,423] fill=#747a73 14px Lora Regular
+          │ 老街、河流、赶集与邻里
+      ROUNDED_RECTANGLE "Rectangle" [342x82 @1304,507] fill=#4e6657
+      TEXT "按下讲述" [120x23 @1424,533] fill=#ffffff 18px Lora Bold
+          │ 按下讲述
+      TEXT "最近的故事" [180x26 @1304,637] fill=#26312b 20px Lora Bold
+          │ 最近的故事
+      ROUNDED_RECTANGLE "Rectangle" [342x104 @1304,673] fill=#ffffff
+      TEXT "外婆的桂花树" [220x23 @1324,693] fill=#26312b 18px Lora Bold
+          │ 外婆的桂花树
+      TEXT "上周 · 03:42" [160x17 @1324,727] fill=#747a73 13px Lora Regular
+          │ 上周 · 03:42
+      TEXT "▶" [24x22 @1600,707] fill=#c98362 22px Lora Bold
+          │ ▶
+      ROUNDED_RECTANGLE "Rectangle" [390x76 @1280,857] fill=#ffffff
+      TEXT "⌂" [30x26 @1322,870] fill=#4e6657 20px Lora Bold
+          │ ⌂
+      TEXT "首页" [42x14 @1317,901] fill=#4e6657 11px Lora Regular
+          │ 首页
+      TEXT "◉" [30x26 @1420,870] fill=#747a73 20px Lora Bold
+          │ ◉
+      TEXT "讲述" [42x14 @1415,901] fill=#747a73 11px Lora Regular
+          │ 讲述
+      TEXT "▤" [30x26 @1518,870] fill=#747a73 20px Lora Bold
+          │ ▤
+      TEXT "故事" [42x14 @1513,901] fill=#747a73 11px Lora Regular
+          │ 故事
+      TEXT "◎" [30x26 @1616,870] fill=#747a73 20px Lora Bold
+          │ ◎
+      TEXT "我的" [42x14 @1611,901] fill=#747a73 11px Lora Regular
+          │ 我的
+    FRAME "05｜主题选择" [390x844 @20,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @20,89] fill=#819276
+      TEXT "记忆银行" [220x31 @44,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "‹" [30x38 @44,191] fill=#4e6657 30px Lora Bold
+          │ ‹
+      TEXT "今天，想讲哪一段？" [290x32 @78,199] fill=#26312b 25px Lora Bold
+          │ 今天，想讲哪一段？
+      TEXT "选一个最容易想起的入口。" [342x19 @44,253] fill=#747a73 15px Lora Regular
+          │ 选一个最容易想起的入口。
+      ROUNDED_RECTANGLE "Rectangle" [342x82 @44,319] fill=#ffffff
+      TEXT "乡" [34x28 @64,341] fill=#c98362 22px Lora Bold
+          │ 乡
+      TEXT "我的家乡" [220x23 @112,335] fill=#26312b 18px Lora Bold
+          │ 我的家乡
+      TEXT "老街、河流、赶集与邻里" [240x15 @112,365] fill=#747a73 12px Lora Regular
+          │ 老街、河流、赶集与邻里
+      TEXT "→" [20x26 @350,347] fill=#4e6657 20px Lora Bold
+          │ →
+      ROUNDED_RECTANGLE "Rectangle" [342x82 @44,424] fill=#ffffff
+      TEXT "校" [34x28 @64,446] fill=#c98362 22px Lora Bold
+          │ 校
+      TEXT "上学的日子" [220x23 @112,440] fill=#26312b 18px Lora Bold
+          │ 上学的日子
+      TEXT "老师、同学与第一次离家" [240x15 @112,470] fill=#747a73 12px Lora Regular
+          │ 老师、同学与第一次离家
+      TEXT "→" [20x26 @350,452] fill=#4e6657 20px Lora Bold
+          │ →
+      ROUNDED_RECTANGLE "Rectangle" [342x82 @44,529] fill=#ffffff
+      TEXT "业" [34x28 @64,551] fill=#c98362 22px Lora Bold
+          │ 业
+      TEXT "工作与手艺" [220x23 @112,545] fill=#26312b 18px Lora Bold
+          │ 工作与手艺
+      TEXT "第一份工作和难忘的师傅" [240x15 @112,575] fill=#747a73 12px Lora Regular
+          │ 第一份工作和难忘的师傅
+      TEXT "→" [20x26 @350,557] fill=#4e6657 20px Lora Bold
+          │ →
+      ROUNDED_RECTANGLE "Rectangle" [342x82 @44,634] fill=#ffffff
+      TEXT "家" [34x28 @64,656] fill=#c98362 22px Lora Bold
+          │ 家
+      TEXT "爱情与家庭" [220x23 @112,650] fill=#26312b 18px Lora Bold
+          │ 爱情与家庭
+      TEXT "相识、婚礼和成为父母" [240x15 @112,680] fill=#747a73 12px Lora Regular
+          │ 相识、婚礼和成为父母
+      TEXT "→" [20x26 @350,662] fill=#4e6657 20px Lora Bold
+          │ →
+    FRAME "06｜录音讲述" [390x844 @440,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @440,89] fill=#c98362
+      TEXT "记忆银行" [220x31 @464,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "‹" [30x38 @464,191] fill=#4e6657 30px Lora Bold
+          │ ‹
+      TEXT "慢慢讲，我在听" [290x32 @498,199] fill=#26312b 25px Lora Bold
+          │ 慢慢讲，我在听
+      TEXT "不用准备稿，想到哪里说到哪里。" [342x19 @464,253] fill=#747a73 15px Lora Regular
+          │ 不用准备稿，想到哪里说到哪里。
+      ROUNDED_RECTANGLE "Rectangle" [342x250 @464,317] fill=#e0e8d8
+      TEXT "01:24" [120x44 @575,375] fill=#4e6657 34px Lora Bold
+          │ 01:24
+      TEXT "● 正在录音" [130x19 @575,437] fill=#c98362 15px Lora Bold
+          │ ●  正在录音
+      ROUNDED_RECTANGLE "Rectangle" [106x106 @582,503] fill=#4e6657
+      TEXT "Ⅱ" [35x38 @621,532] fill=#ffffff 30px Lora Bold
+          │ Ⅱ
+      TEXT "独自讲述 双人访谈" [210x18 @532,649] fill=#747a73 14px Lora Regular
+          │ 独自讲述     双人访谈
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @464,709] fill=#4e6657
+      TEXT "暂停一下" [100x22 @594,723] fill=#ffffff 17px Lora Bold
+          │ 暂停一下
+    FRAME "07｜故事预览" [390x844 @860,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @860,89] fill=#4e6657
+      TEXT "记忆银行" [220x31 @884,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "‹" [30x38 @884,191] fill=#4e6657 30px Lora Bold
+          │ ‹
+      TEXT "故事预览" [290x32 @918,199] fill=#26312b 25px Lora Bold
+          │ 故事预览
+      TEXT "确认后，这段故事会保存到你的故事书。" [342x19 @884,253] fill=#747a73 15px Lora Regular
+          │ 确认后，这段故事会保存到你的故事书。
+      ROUNDED_RECTANGLE "Rectangle" [342x310 @884,309] fill=#ffffff
+      TEXT "外婆的桂花树" [270x32 @908,339] fill=#26312b 25px Lora Bold
+          │ 外婆的桂花树
+      TEXT "那年秋天，院子里的桂花开得很早。 我和妹妹每天放学，都要绕路去看一眼。 风一吹，整条巷子都是甜的。" [274x88 @908,393] fill=#747a73 17px Lora Regular
+          │ 那年秋天，院子里的桂花开得很早。
+          │ 我和妹妹每天放学，都要绕路去看一眼。
+          │ 风一吹，整条巷子都是甜的。
+      TEXT "原声 03:42 自然整理" [250x17 @908,561] fill=#c98362 13px Lora Bold
+          │ 原声 03:42     自然整理
+      TEXT "这段文字来自你的讲述， 你可以继续修改或确认。" [320x38 @884,661] fill=#747a73 15px Lora Regular
+          │ 这段文字来自你的讲述，
+          │ 你可以继续修改或确认。
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @884,749] fill=#4e6657
+      TEXT "确认故事" [100x22 @1018,763] fill=#ffffff 17px Lora Bold
+          │ 确认故事
+    FRAME "08｜家庭看板" [390x844 @1475,-213] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @1475,-213] fill=#819276
+      TEXT "记忆银行" [220x31 @1499,-189] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "‹" [30x38 @1499,-111] fill=#4e6657 30px Lora Bold
+          │ ‹
+      TEXT "家庭看板" [290x32 @1533,-103] fill=#26312b 25px Lora Bold
+          │ 家庭看板
+      TEXT "和家人一起，把记忆整理成家族故事。" [342x19 @1499,-49] fill=#747a73 15px Lora Regular
+          │ 和家人一起，把记忆整理成家族故事。
+      ROUNDED_RECTANGLE "Rectangle" [342x112 @1499,13] fill=#ffffff
+      TEXT "家庭成员" [120x19 @1523,35] fill=#747a73 15px Lora Regular
+          │ 家庭成员
+      TEXT "4 位" [100x35 @1523,61] fill=#4e6657 27px Lora Bold
+          │ 4 位
+      TEXT "已邀请 3 人" [110x18 @1705,67] fill=#c98362 14px Lora Bold
+          │ 已邀请 3 人
+      TEXT "整理进度" [140x26 @1499,173] fill=#26312b 20px Lora Bold
+          │ 整理进度
+      ROUNDED_RECTANGLE "Rectangle" [342x12 @1499,215] fill=#e9e0cf
+      ROUNDED_RECTANGLE "Rectangle" [226x12 @1499,215] fill=#819276
+      TEXT "8 / 12 个故事" [180x18 @1499,245] fill=#747a73 14px Lora Regular
+          │ 8 / 12 个故事
+      ROUNDED_RECTANGLE "Rectangle" [342x94 @1499,307] fill=#ffffff
+      TEXT "林阿姨的故事" [220x23 @1519,327] fill=#26312b 18px Lora Bold
+          │ 林阿姨的故事
+      TEXT "待家人确认 · 昨天" [200x17 @1519,361] fill=#747a73 13px Lora Regular
+          │ 待家人确认 · 昨天
+      ROUNDED_RECTANGLE "Rectangle" [390x76 @1475,555] fill=#ffffff
+      TEXT "⌂" [30x26 @1517,568] fill=#747a73 20px Lora Bold
+          │ ⌂
+      TEXT "首页" [42x14 @1512,599] fill=#747a73 11px Lora Regular
+          │ 首页
+      TEXT "◉" [30x26 @1615,568] fill=#747a73 20px Lora Bold
+          │ ◉
+      TEXT "讲述" [42x14 @1610,599] fill=#747a73 11px Lora Regular
+          │ 讲述
+      TEXT "▤" [30x26 @1713,568] fill=#4e6657 20px Lora Bold
+          │ ▤
+      TEXT "故事" [42x14 @1708,599] fill=#4e6657 11px Lora Regular
+          │ 故事
+      TEXT "◎" [30x26 @1811,568] fill=#747a73 20px Lora Bold
+          │ ◎
+      TEXT "我的" [42x14 @1806,599] fill=#747a73 11px Lora Regular
+          │ 我的
+    FRAME "09｜故事书" [390x844 @1700,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @1700,89] fill=#c98362
+      TEXT "记忆银行" [220x31 @1724,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "‹" [30x38 @1724,191] fill=#4e6657 30px Lora Bold
+          │ ‹
+      TEXT "我们的故事书" [290x32 @1758,199] fill=#26312b 25px Lora Bold
+          │ 我们的故事书
+      TEXT "已经保存的每一段声音，都值得被记住。" [342x19 @1724,253] fill=#747a73 15px Lora Regular
+          │ 已经保存的每一段声音，都值得被记住。
+      TEXT "8 个故事" [150x28 @1724,311] fill=#26312b 22px Lora Bold
+          │ 8 个故事
+      TEXT "按时间排序 ⌄" [110x17 @1958,317] fill=#747a73 13px Lora Regular
+          │ 按时间排序  ⌄
+      ROUNDED_RECTANGLE "Rectangle" [342x88 @1724,367] fill=#ffffff
+      TEXT "01" [30x23 @1744,387] fill=#c98362 18px Lora Bold
+          │ 01
+      TEXT "外婆的桂花树" [220x23 @1788,382] fill=#26312b 18px Lora Bold
+          │ 外婆的桂花树
+      TEXT "03:42 · 自然整理" [200x17 @1788,415] fill=#747a73 13px Lora Regular
+          │ 03:42 · 自然整理
+      TEXT "›" [20x28 @2030,395] fill=#4e6657 22px Lora Bold
+          │ ›
+      ROUNDED_RECTANGLE "Rectangle" [342x88 @1724,479] fill=#ffffff
+      TEXT "02" [30x23 @1744,499] fill=#c98362 18px Lora Bold
+          │ 02
+      TEXT "第一次离开家" [220x23 @1788,494] fill=#26312b 18px Lora Bold
+          │ 第一次离开家
+      TEXT "05:18 · 原味口述" [200x17 @1788,527] fill=#747a73 13px Lora Regular
+          │ 05:18 · 原味口述
+      TEXT "›" [20x28 @2030,507] fill=#4e6657 22px Lora Bold
+          │ ›
+      ROUNDED_RECTANGLE "Rectangle" [342x88 @1724,591] fill=#ffffff
+      TEXT "03" [30x23 @1744,611] fill=#c98362 18px Lora Bold
+          │ 03
+      TEXT "院子里的夏天" [220x23 @1788,606] fill=#26312b 18px Lora Bold
+          │ 院子里的夏天
+      TEXT "02:56 · 适合成书" [200x17 @1788,639] fill=#747a73 13px Lora Regular
+          │ 02:56 · 适合成书
+      TEXT "›" [20x28 @2030,619] fill=#4e6657 22px Lora Bold
+          │ ›
+      ROUNDED_RECTANGLE "Rectangle" [390x76 @1700,857] fill=#ffffff
+      TEXT "⌂" [30x26 @1742,870] fill=#747a73 20px Lora Bold
+          │ ⌂
+      TEXT "首页" [42x14 @1737,901] fill=#747a73 11px Lora Regular
+          │ 首页
+      TEXT "◉" [30x26 @1840,870] fill=#747a73 20px Lora Bold
+          │ ◉
+      TEXT "讲述" [42x14 @1835,901] fill=#747a73 11px Lora Regular
+          │ 讲述
+      TEXT "▤" [30x26 @1938,870] fill=#4e6657 20px Lora Bold
+          │ ▤
+      TEXT "故事" [42x14 @1933,901] fill=#4e6657 11px Lora Regular
+          │ 故事
+      TEXT "◎" [30x26 @2036,870] fill=#747a73 20px Lora Bold
+          │ ◎
+      TEXT "我的" [42x14 @2031,901] fill=#747a73 11px Lora Regular
+          │ 我的
+    FRAME "10｜个人中心" [390x844 @2120,89] fill=#f6f2e9
+      ROUNDED_RECTANGLE "Rectangle" [390x92 @2120,89] fill=#4e6657
+      TEXT "记忆银行" [220x31 @2144,113] fill=#ffffff 24px Lora Bold
+          │ 记忆银行
+      TEXT "‹" [30x38 @2144,191] fill=#4e6657 30px Lora Bold
+          │ ‹
+      TEXT "我的账户" [290x32 @2178,199] fill=#26312b 25px Lora Bold
+          │ 我的账户
+      TEXT "这些故事，属于你，也属于家人。" [342x19 @2144,253] fill=#747a73 15px Lora Regular
+          │ 这些故事，属于你，也属于家人。
+      ROUNDED_RECTANGLE "Rectangle" [342x108 @2144,311] fill=#ffffff
+      ROUNDED_RECTANGLE "Rectangle" [60x60 @2168,333] fill=#819276
+      TEXT "林" [28x31 @2186,349] fill=#ffffff 24px Lora Bold
+          │ 林
+      TEXT "林阿姨" [160x26 @2252,337] fill=#26312b 20px Lora Bold
+          │ 林阿姨
+      TEXT "长辈账号 · 138****8899" [190x17 @2252,369] fill=#747a73 13px Lora Regular
+          │ 长辈账号 · 138****8899
+      TEXT "我的记录" [140x26 @2144,471] fill=#26312b 20px Lora Bold
+          │ 我的记录
+      ROUNDED_RECTANGLE "Rectangle" [100x82 @2144,513] fill=#ffffff
+      TEXT "8" [60x31 @2164,529] fill=#4e6657 24px Lora Bold
+          │ 8
+      TEXT "故事" [70x15 @2164,563] fill=#747a73 12px Lora Regular
+          │ 故事
+      ROUNDED_RECTANGLE "Rectangle" [100x82 @2260,513] fill=#ffffff
+      TEXT "42" [60x31 @2280,529] fill=#4e6657 24px Lora Bold
+          │ 42
+      TEXT "分钟原声" [70x15 @2280,563] fill=#747a73 12px Lora Regular
+          │ 分钟原声
+      ROUNDED_RECTANGLE "Rectangle" [100x82 @2376,513] fill=#ffffff
+      TEXT "4" [60x31 @2396,529] fill=#4e6657 24px Lora Bold
+          │ 4
+      TEXT "位家人" [70x15 @2396,563] fill=#747a73 12px Lora Regular
+          │ 位家人
+      TEXT "账户与家庭" [170x26 @2144,643] fill=#26312b 20px Lora Bold
+          │ 账户与家庭
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @2144,685] fill=#ffffff
+      TEXT "家庭与协作" [180x20 @2168,701] fill=#26312b 16px Lora Bold
+          │ 家庭与协作
+      TEXT "›" [20x28 @2450,699] fill=#4e6657 22px Lora Bold
+          │ ›
+      ROUNDED_RECTANGLE "Rectangle" [342x52 @2144,751] fill=#f5e0d6
+      TEXT "退出登录" [100x20 @2274,765] fill=#c98362 16px Lora Bold
+          │ 退出登录
+      ROUNDED_RECTANGLE "Rectangle" [390x76 @2120,857] fill=#ffffff
+      TEXT "⌂" [30x26 @2162,870] fill=#747a73 20px Lora Bold
+          │ ⌂
+      TEXT "首页" [42x14 @2157,901] fill=#747a73 11px Lora Regular
+          │ 首页
+      TEXT "◉" [30x26 @2260,870] fill=#747a73 20px Lora Bold
+          │ ◉
+      TEXT "讲述" [42x14 @2255,901] fill=#747a73 11px Lora Regular
+          │ 讲述
+      TEXT "▤" [30x26 @2358,870] fill=#747a73 20px Lora Bold
+          │ ▤
+      TEXT "故事" [42x14 @2353,901] fill=#747a73 11px Lora Regular
+          │ 故事
+      TEXT "◎" [30x26 @2456,870] fill=#4e6657 20px Lora Bold
+          │ ◎
+      TEXT "我的" [42x14 @2451,901] fill=#4e6657 11px Lora Regular
+          │ 我的
+  CANVAS "Internal Only Canvas"
