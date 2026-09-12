@@ -1,0 +1,58 @@
+{
+  "pages": [
+    "pages/components/index",
+    "pages/welcome/index",
+    "pages/role/index",
+    "pages/login/index",
+    "pages/home/index",
+    "pages/topic/index",
+    "pages/record/index",
+    "pages/story-preview/index",
+    "pages/family/index",
+    "pages/stories/index",
+    "pages/profile/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "backgroundColor": "#F6F2E9",
+    "navigationBarBackgroundColor": "#F6F2E9",
+    "navigationBarTitleText": "记忆银行",
+    "navigationBarTextStyle": "black",
+    "navigationStyle": "custom"
+  },
+  "tabBar": {
+    "color": "#747A73",
+    "selectedColor": "#4E6657",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "assets/tabbar/home.png",
+        "selectedIconPath": "assets/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/record/index",
+        "text": "讲述",
+        "iconPath": "assets/tabbar/record.png",
+        "selectedIconPath": "assets/tabbar/record-active.png"
+      },
+      {
+        "pagePath": "pages/stories/index",
+        "text": "故事",
+        "iconPath": "assets/tabbar/story.png",
+        "selectedIconPath": "assets/tabbar/story-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "assets/tabbar/mine.png",
+        "selectedIconPath": "assets/tabbar/mine-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

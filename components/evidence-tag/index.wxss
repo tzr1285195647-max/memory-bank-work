@@ -1,0 +1,24 @@
+.evidence {
+  display: inline-flex;
+  align-items: center;
+}
+
+.evidence__label,
+.evidence__duration,
+.evidence__mode {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.evidence__sep {
+  font-size: 13px;
+  color: var(--accent);
+  margin: 0 6px;
+}
+
+.evidence__play {
+  font-size: 13px;
+  color: var(--accent);
+  margin-left: 8px;
+}

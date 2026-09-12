@@ -1,0 +1,79 @@
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  border-radius: 14px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  transition: opacity 0.15s ease;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn__text {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* 深绿主按钮：设计稿到处使用 */
+.btn--primary {
+  background-color: var(--brand);
+}
+.btn--primary .btn__text {
+  color: var(--white);
+}
+
+/* 浅色卡上的次级按钮：描边 */
+.btn--secondary {
+  background-color: transparent;
+  border: 1px solid var(--brand);
+}
+.btn--secondary .btn__text {
+  color: var(--brand);
+}
+
+/* 浅陶土底 + 陶土文字：设计稿 10 屏「退出登录」 */
+.btn--danger {
+  background-color: var(--danger-soft);
+}
+.btn--danger .btn__text {
+  color: var(--accent);
+}
+
+/* 无底色、仅文字：设计稿「验证码登录」「还没有账户？注册」 */
+.btn--text {
+  background-color: transparent;
+  height: 44px;
+}
+.btn--text .btn__text {
+  color: var(--brand);
+  font-size: 15px;
+}
+
+.btn--disabled {
+  opacity: 0.5;
+}
+
+.btn--hover {
+  opacity: 0.85;
+}
+
+.btn__spinner {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: btn-spin 0.8s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

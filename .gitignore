@@ -29,3 +29,8 @@ desktop.ini
 
 # 设计稿解析的中间产物
 design/source/canvas.fig
+
+# 微信开发者工具的个人配置与构建产物
+project.private.config.json
+miniprogram_npm/
+node_modules/

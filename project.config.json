@@ -1,0 +1,43 @@
+{
+  "description": "记忆银行小程序 · 工程配置（appid 待填）",
+  "appid": "touristappid",
+  "projectname": "memory-bank",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./",
+  "libVersion": "latest",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": false,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": false,
+    "useCompilerPlugins": false,
+    "ignoreUploadUnusedFiles": true,
+    "checkSiteMap": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": []
+  },
+  "packOptions": {
+    "ignore": [
+      { "type": "folder", "value": "design" },
+      { "type": "folder", "value": "docs" },
+      { "type": "folder", "value": ".git" },
+      { "type": "file", "value": "README.md" },
+      { "type": "file", "value": "记忆银行_LangGraph完整架构图解.docx" }
+    ],
+    "include": []
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        { "name": "01 欢迎页", "pathName": "pages/welcome/index", "query": "", "scene": null },
+        { "name": "04 长辈首页", "pathName": "pages/home/index", "query": "", "scene": null },
+        { "name": "06 录音讲述", "pathName": "pages/record/index", "query": "", "scene": null },
+        { "name": "07 故事预览", "pathName": "pages/story-preview/index", "query": "", "scene": null }
+      ]
+    }
+  }
+}

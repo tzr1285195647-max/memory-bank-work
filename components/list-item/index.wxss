@@ -1,0 +1,88 @@
+.item {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+  min-height: 82px;
+}
+
+/* 09 屏故事列表：序号 + 标题 + 时长/整理方式 + › */
+.item--story {
+  min-height: 88px;
+}
+
+/* 05 屏主题列表：字形 + 标题 + 副标题 + → */
+.item--topic {
+  min-height: 82px;
+}
+
+/* 10 屏设置行 */
+.item--row {
+  min-height: 52px;
+  padding: 16px 20px;
+}
+
+.item__index {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--font-latin);
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.item__glyph {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.item__glyph-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.item__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.item__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.item__subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.item__trailing {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.item__arrow {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--brand);
+  line-height: 1;
+}

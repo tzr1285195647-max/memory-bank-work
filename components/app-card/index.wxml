@@ -1,0 +1,4 @@
+<!-- 通用卡片：设计稿 342 宽，圆角随内容高度分档（18/20/24/28） -->
+<view class="card card--{{tone}} card--r{{radius}} {{shadow ? 'card--shadow' : ''}} {{padded ? 'card--padded' : ''}}" bindtap="onTap">
+  <slot></slot>
+</view>

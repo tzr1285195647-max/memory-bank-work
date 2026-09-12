@@ -1,0 +1,20 @@
+<!-- 列表项：设计稿 342 宽，圆角 18；三种形态对应不同屏 -->
+<app-card tone="{{tone}}" radius="{{18}}" tappable="{{true}}" bind:tap="onTap">
+  <view class="item item--{{variant}}">
+    <text wx:if="{{index}}" class="item__index">{{index}}</text>
+
+    <view wx:if="{{variant === 'topic'}}" class="item__glyph">
+      <text class="item__glyph-text">{{glyph}}</text>
+    </view>
+
+    <view class="item__main">
+      <text class="item__title">{{title}}</text>
+      <text wx:if="{{subtitle}}" class="item__subtitle">{{subtitle}}</text>
+    </view>
+
+    <view class="item__trailing">
+      <slot name="trailing"></slot>
+      <text wx:if="{{arrow}}" class="item__arrow">{{arrow === 'play' ? '▶' : '›'}}</text>
+    </view>
+  </view>
+</app-card>

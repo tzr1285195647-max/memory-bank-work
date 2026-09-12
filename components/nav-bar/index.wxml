@@ -1,0 +1,20 @@
+<!-- 顶栏：设计稿 390×92，左品牌名 + 可选返回 + 右侧 ⋯ -->
+<view
+  class="nav {{preview ? 'nav--preview' : ''}}"
+  style="background-color: {{color}}; {{preview ? '' : 'padding-top: ' + statusBarHeight + 'px;'}}"
+>
+  <view class="nav__bar" style="height: {{preview ? 92 : barHeight}}px;">
+    <view class="nav__left" bindtap="onBack">
+      <text wx:if="{{showBack}}" class="nav__back">‹</text>
+    </view>
+    <view class="nav__center">
+      <text class="nav__title">{{title}}</text>
+      <text wx:if="{{subtitle}}" class="nav__subtitle">{{subtitle}}</text>
+    </view>
+    <view class="nav__right" bindtap="onMore">
+      <text wx:if="{{showMore}}" class="nav__more">⋯</text>
+    </view>
+  </view>
+</view>
+<!-- 占位，避免内容被固定顶栏遮住 -->
+<view wx:if="{{placeholder && !preview}}" style="height: {{statusBarHeight + barHeight}}px;"></view>

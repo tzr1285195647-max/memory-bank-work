@@ -1,0 +1,45 @@
+.card {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 底色：对应设计稿里的四种卡片 */
+.card--white {
+  background-color: var(--bg-card);
+}
+
+.card--green {
+  background-color: var(--surface-green);
+}
+
+.card--clay {
+  background-color: var(--surface-clay);
+}
+
+.card--plain {
+  background-color: transparent;
+}
+
+/* 圆角分档：数值取自 design-spec.json 实测 */
+.card--r18 {
+  border-radius: 18px;
+}
+.card--r20 {
+  border-radius: 20px;
+}
+.card--r24 {
+  border-radius: 24px;
+}
+.card--r28 {
+  border-radius: 28px;
+}
+
+.card--shadow {
+  box-shadow: 0 2px 12px rgba(38, 49, 43, 0.06);
+}
+
+/* 设计稿内边距：卡片内文字距边约 20–24px */
+.card--padded {
+  padding: 20px;
+}

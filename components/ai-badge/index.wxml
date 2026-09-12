@@ -1,0 +1,4 @@
+<!-- AI 内容标识：产品规则要求「AI 生成或整理的内容必须显式标注」 -->
+<view class="ai-badge ai-badge--{{size}}">
+  <text class="ai-badge__text">{{text}}</text>
+</view>

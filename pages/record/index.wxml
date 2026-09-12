@@ -1,0 +1,9 @@
+<nav-bar title="记忆银行" theme="accent" showBack="{{false}}" />
+
+<view class="page page--tab container">
+  <view class="placeholder">
+    <text class="placeholder__no">06</text>
+    <text class="placeholder__title">录音讲述</text>
+    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+  </view>
+</view>

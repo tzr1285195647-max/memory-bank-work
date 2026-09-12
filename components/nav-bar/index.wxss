@@ -1,0 +1,74 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+/* 预览模式：回到文档流，便于在组件预览页里平铺查看 */
+.nav--preview {
+  position: relative;
+  width: 100%;
+}
+
+/* 设计稿顶栏内容高 92px；此处按胶囊按钮安全高度取值 */
+.nav__bar {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.nav__left,
+.nav__right {
+  width: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.nav__right {
+  justify-content: flex-end;
+}
+
+.nav__center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.nav__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: var(--font-latin);
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nav__subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nav__back {
+  font-size: 30px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.nav__more {
+  font-size: 25px;
+  color: #ffffff;
+  line-height: 1;
+}

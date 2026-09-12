@@ -1,0 +1,10 @@
+<!-- 主按钮：设计稿 342×52，圆角 12/14/16，文字 17px Bold -->
+<view
+  class="btn btn--{{type}} {{block ? 'btn--block' : ''}} {{disabled || loading ? 'btn--disabled' : ''}}"
+  hover-class="{{disabled || loading ? 'none' : 'btn--hover'}}"
+  hover-stay-time="80"
+  bindtap="onTap"
+>
+  <view wx:if="{{loading}}" class="btn__spinner"></view>
+  <text class="btn__text">{{loading ? loadingText : text}}</text>
+</view>

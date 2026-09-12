@@ -1,0 +1,114 @@
+<nav-bar title="组件预览" theme="brand" placeholder="{{true}}" />
+
+<view class="page container demo">
+  <view class="demo__section">
+    <text class="t-section">设计 token</text>
+    <view class="demo__swatches">
+      <view wx:for="{{palette}}" wx:key="name" class="demo__swatch">
+        <view class="demo__swatch-color" style="background-color: {{item.hex}};"></view>
+        <text class="t-caption">{{item.name}}</text>
+        <text class="demo__hex">{{item.hex}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="demo__section">
+    <text class="t-section">顶栏 nav-bar</text>
+    <view class="demo__stack">
+      <nav-bar title="记忆银行" theme="brand" showBack="{{false}}" preview="{{true}}" />
+    </view>
+    <view class="demo__stack">
+      <nav-bar title="记忆银行" theme="brandLight" showBack="{{false}}" preview="{{true}}" />
+    </view>
+    <view class="demo__stack">
+      <nav-bar title="记忆银行" theme="accent" showBack="{{false}}" preview="{{true}}" />
+    </view>
+  </view>
+
+  <view class="demo__section">
+    <text class="t-section">按钮 primary-button</text>
+    <view class="demo__stack">
+      <primary-button text="我是长辈，开始讲述" type="primary" bind:tap="onDemoTap" />
+    </view>
+    <view class="demo__stack">
+      <primary-button text="保存修改并重审" type="secondary" bind:tap="onDemoTap" />
+    </view>
+    <view class="demo__stack">
+      <primary-button text="退出登录" type="danger" bind:tap="onDemoTap" />
+    </view>
+    <view class="demo__stack">
+      <primary-button text="正在提交" type="primary" loading="{{true}}" />
+    </view>
+    <view class="demo__stack">
+      <primary-button text="已禁用" type="primary" disabled="{{true}}" />
+    </view>
+    <view class="demo__stack demo__stack--center">
+      <primary-button text="验证码登录" type="text" block="{{false}}" bind:tap="onDemoTap" />
+    </view>
+  </view>
+
+  <view class="demo__section">
+    <text class="t-section">卡片 app-card</text>
+    <view class="demo__stack">
+      <app-card tone="green" radius="{{28}}" padded="{{true}}">
+        <text style="font-size: 72px; color: #C98362; line-height: 1;">“</text>
+        <view class="t-hero mt-8">那些被时间\n温柔保存的声音</view>
+      </app-card>
+    </view>
+    <view class="demo__stack">
+      <app-card tone="clay" radius="{{24}}" padded="{{true}}">
+        <text class="t-caption c-accent">今日叙事</text>
+        <view class="t-hero mt-8">我的家乡</view>
+        <text class="t-caption mt-8">老街、河流、赶集与邻里</text>
+      </app-card>
+    </view>
+    <view class="demo__stack">
+      <app-card tone="white" radius="{{20}}" padded="{{true}}">
+        <view class="t-card-title">外婆的桂花树</view>
+        <text class="t-caption mt-8">上周 · 03:42</text>
+      </app-card>
+    </view>
+  </view>
+
+  <view class="demo__section">
+    <text class="t-section">列表项 list-item</text>
+    <view class="demo__stack">
+      <list-item variant="story" index="01" title="外婆的桂花树" subtitle="03:42 · 自然整理" arrow="›" />
+    </view>
+    <view class="demo__stack">
+      <list-item variant="topic" glyph="乡" title="我的家乡" subtitle="老街、河流、赶集与邻里" arrow="→" />
+    </view>
+    <view class="demo__stack">
+      <list-item variant="row" title="家庭与协作" arrow="›" />
+    </view>
+  </view>
+
+  <view class="demo__section">
+    <text class="t-section">规则标识</text>
+    <view class="demo__row">
+      <ai-badge />
+      <ai-badge size="small" text="AI 整理" />
+      <evidence-tag durationMs="{{222000}}" mode="自然整理" />
+    </view>
+    <text class="t-caption mt-8">「AI 整理 · 待确认」是产品规则要求的显式标注；来源标识同时给出原声时长与整理方式。</text>
+  </view>
+
+  <view class="demo__section">
+    <text class="t-section">字号阶梯</text>
+    <view class="demo__stack">
+      <text class="t-hero">30px 页面大标题</text>
+      <text class="t-title">25px 子页标题</text>
+      <text class="t-section">20px 区块标题</text>
+      <text class="t-card-title">18px 卡片标题</text>
+      <text class="t-body">16px 正文说明</text>
+      <text class="t-note">15px 次级说明</text>
+      <text class="t-caption">13px 注释</text>
+    </view>
+  </view>
+
+  <view class="demo__section">
+    <text class="t-section">rpx 换算自检</text>
+    <text class="t-caption">下方方块宽度为 342px 设计值（657.7rpx），应左右各留 24px 边距：</text>
+    <view class="demo__ruler"></view>
+  </view>
+</view>
