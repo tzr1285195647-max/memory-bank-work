@@ -20,6 +20,10 @@ Page({
   },
 
   onFamily() {
+    wx.showToast({ title: '邀请与权限管理属于 P1', icon: 'none' });
+  },
+
+  onFamilyBoard() {
     wx.navigateTo({ url: '/pages/family/index' });
   },
 

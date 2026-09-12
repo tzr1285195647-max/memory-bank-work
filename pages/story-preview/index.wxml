@@ -22,7 +22,15 @@
 
     <!-- 来源标识：原声时长 + 整理方式（证据可追溯） -->
     <view class="preview__meta">
-      <evidence-tag durationMs="{{draft.durationMs}}" mode="{{draft.mode}}" />
+      <evidence-tag
+        durationMs="{{draft.durationMs}}"
+        mode="{{draft.mode}}"
+        playable="{{hasAudio}}"
+        bind:play="onTogglePlay"
+      />
+      <text wx:if="{{hasAudio && playing}}" class="preview__playing">{{playText}} 播放中</text>
+      <text wx:if="{{hasAudio && !playing}}" class="preview__playing">点击回听原声</text>
+      <text wx:if="{{!hasAudio}}" class="preview__playing">本地未保留原声</text>
     </view>
 
     <!-- 产品规则要求：AI 生成或整理的内容必须显式标注 -->

@@ -58,6 +58,13 @@
 .preview__meta {
   margin-top: 36px;
   display: flex;
+  align-items: center;
+}
+
+.preview__playing {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .preview__ai {

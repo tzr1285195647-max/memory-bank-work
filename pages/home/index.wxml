@@ -1,4 +1,4 @@
-<nav-bar title="记忆银行" theme="brandLight" showBack="{{false}}" showMore="{{true}}" bind:more="onMore" />
+<nav-bar title="记忆银行" theme="brandLight" showBack="{{false}}" showMore="{{false}}" />
 
 <view class="page page--tab home">
   <view class="home__intro">

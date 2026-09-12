@@ -29,14 +29,4 @@ Page({
   onStoryTap(e) {
     wx.navigateTo({ url: `/pages/story-preview/index?id=${e.currentTarget.dataset.id}` });
   },
-
-  onMore() {
-    wx.showActionSheet({
-      itemList: ['我的账户', '家庭看板'],
-      success: ({ tapIndex }) => {
-        wx.navigateTo({ url: tapIndex === 0 ? '/pages/profile/index' : '/pages/family/index' });
-      },
-      fail: () => {},
-    });
-  },
 });

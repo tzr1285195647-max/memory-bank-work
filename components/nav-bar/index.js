@@ -33,8 +33,9 @@ Component({
     attached() {
       const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
       const statusBarHeight = info.statusBarHeight || 20;
-      // 设计稿顶栏内容区 92px，其中已含状态栏；内容区不低于 64px 才能避开胶囊按钮
-      const barHeight = Math.max(64, 92 - statusBarHeight);
+      // 设计稿顶栏内容区固定 92px，叠加在状态栏之下。
+      // 胶囊按钮位于状态栏右侧、不占用内容区高度，因此这里不做压缩。
+      const barHeight = 92;
       this.setData({ statusBarHeight, barHeight });
       this.applyTheme();
     },

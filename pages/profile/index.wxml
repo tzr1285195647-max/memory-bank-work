@@ -35,6 +35,11 @@
       <text class="profile__row-arrow">›</text>
     </view>
 
+    <view class="profile__row" hover-class="profile__row--hover" bindtap="onFamilyBoard">
+      <text class="profile__row-title">家庭看板</text>
+      <text class="profile__row-arrow">›</text>
+    </view>
+
     <!-- 产品规则要求：授权撤回必须可达（设计稿未画，此处补齐） -->
     <view class="profile__row" hover-class="profile__row--hover" bindtap="onRevoke">
       <text class="profile__row-title">撤回授权并删除内容</text>

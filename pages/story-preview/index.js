@@ -1,26 +1,49 @@
 const store = require('../../store/index');
 const mock = require('../../mock/index');
+const { VoicePlayer } = require('../../utils/player');
 
 Page({
   data: {
     draft: { title: '', durationMs: 0, mode: '自然整理' },
     body: '',
     editing: false,
+    hasAudio: false,
+    playing: false,
+    playText: '00:00',
   },
 
   onLoad(options) {
     const snapshot = store.snapshot();
-    // 优先用录音后带过来的草稿；其次按 id 取已有故事（从故事书进来）
     let draft = snapshot.currentDraft;
     if (!draft && options.id) {
       const story = mock.stories.find((item) => item.id === options.id);
-      if (story) {
-        draft = { ...story, title: story.title };
-      }
+      if (story) draft = { ...story };
     }
     if (!draft) draft = mock.draftFromTopic(options.topic || snapshot.currentTopic || 'hometown');
 
-    this.setData({ draft, body: draft.body });
+    this.player = new VoicePlayer({
+      statechange: ({ playing, currentText }) => {
+        this.setData({ playing, playText: currentText });
+      },
+      timeupdate: ({ text }) => this.setData({ playText: text }),
+      error: () => wx.showToast({ title: '原声播放失败', icon: 'none' }),
+    });
+
+    const hasAudio = Boolean(draft.audioPath);
+    if (hasAudio) this.player.load(draft.audioPath, draft.durationMs);
+    this.setData({ draft, body: draft.body, hasAudio });
+  },
+
+  onUnload() {
+    if (this.player) this.player.destroy();
+  },
+
+  onTogglePlay() {
+    if (!this.data.hasAudio) {
+      wx.showToast({ title: '这段故事没有保留原声', icon: 'none' });
+      return;
+    }
+    this.player.toggle();
   },
 
   onEdit() {

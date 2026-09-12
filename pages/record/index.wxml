@@ -1,4 +1,4 @@
-<nav-bar title="记忆银行" theme="accent" showBack="{{true}}" showMore="{{false}}" />
+<nav-bar title="记忆银行" theme="{{navTheme}}" showBack="{{true}}" showMore="{{false}}" />
 
 <!-- tab 进入且未选主题时，先引导选题 -->
 <view wx:if="{{!topicTitle}}" class="page page--tab record record--empty">
@@ -48,7 +48,13 @@
       bind:tap="onToggle"
     />
     <view wx:if="{{seconds > 0 && !recording}}" class="record__finish">
-      <primary-button text="讲完了，生成故事" type="secondary" bind:tap="onFinish" />
+      <primary-button
+        text="讲完了，生成故事"
+        type="secondary"
+        loading="{{uploading}}"
+        loadingText="正在保存"
+        bind:tap="onFinish"
+      />
     </view>
   </view>
 </view>
