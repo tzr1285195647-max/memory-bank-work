@@ -23,6 +23,6 @@
   flex-direction: column;
 }
 
-.topic__list > * {
+.topic__list > list-item {
   margin-bottom: 23px;
 }

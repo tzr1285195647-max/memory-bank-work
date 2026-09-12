@@ -107,7 +107,7 @@
   flex-direction: column;
 }
 
-.profile__rows > * {
+.profile__rows > .profile__row {
   margin-bottom: 14px;
 }
 

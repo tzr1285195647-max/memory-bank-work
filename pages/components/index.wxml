@@ -86,9 +86,9 @@
   <view class="demo__section">
     <text class="t-section">规则标识</text>
     <view class="demo__row">
-      <ai-badge />
-      <ai-badge size="small" text="AI 整理" />
-      <evidence-tag durationMs="{{222000}}" mode="自然整理" />
+      <ai-badge class="demo__row-item" />
+      <ai-badge class="demo__row-item" size="small" text="AI 整理" />
+      <evidence-tag class="demo__row-item" durationMs="{{222000}}" mode="自然整理" />
     </view>
     <text class="t-caption mt-8">「AI 整理 · 待确认」是产品规则要求的显式标注；来源标识同时给出原声时长与整理方式。</text>
   </view>

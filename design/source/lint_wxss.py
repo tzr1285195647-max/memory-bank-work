@@ -78,23 +78,33 @@ for sel, count in sorted(selectors_seen.items()):
     if any(ch in sel for ch in (" > ", " + ", " ~ ")):
         print(f"  {sel:<40} {count}")
 
-sys.exit(1 if problems else 0)
-
-
-# 追加：本工程禁止的写法（WXSS 编译器不接受）
+print("\n=== 禁用写法检查（WXSS 编译器不接受的语法）===")
 FORBIDDEN = {
-    "env(": "WXSS 编译器不支持 env()，安全区请用固定内边距",
-    "constant(": "WXSS 编译器不支持 constant()",
+    "> *": "WXSS 不支持通配选择器 *",
+    " * {": "WXSS 不支持通配选择器 *",
+    "env(": "WXSS 不支持 env()，安全区请用固定内边距",
+    "constant(": "WXSS 不支持 constant()",
     ":root": "小程序用 page 而非 :root 定义变量",
 }
-bad = 0
+banned = 0
 for path in sorted(ROOT.rglob("*.wxss")):
     if any(part in SKIP for part in path.parts):
         continue
     for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        stripped = line.strip()
         for token, why in FORBIDDEN.items():
-            if token in line:
+            if token in line and not stripped.startswith("/*"):
                 print(f"  ✗ {path.relative_to(ROOT)}:{i} 含 {token!r} —— {why}")
-                bad += 1
-if not bad:
-    print("  禁用写法检查通过")
+                banned += 1
+    # 关键词出现在注释里也要提醒（避免"以为写了"）
+for path in sorted(ROOT.rglob("*.wxss")):
+    if any(part in SKIP for part in path.parts):
+        continue
+    for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        stripped = line.strip()
+        if stripped.startswith("/*") and any(t in line for t in FORBIDDEN):
+            print(f"  ! {path.relative_to(ROOT)}:{i} 注释中出现禁用关键字（仅提醒）")
+if not banned:
+    print("  OK 未使用通配选择器 / env() / constant() / :root")
+
+sys.exit(1 if (problems or banned) else 0)

@@ -80,7 +80,7 @@
   flex-direction: column;
 }
 
-.preview__actions > * {
+.preview__actions > primary-button {
   margin-bottom: 14px;
 }
 
