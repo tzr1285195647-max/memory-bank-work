@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from .api import router
 from .config import settings
 from .database import init_database
+from .routes import agent as agent_routes
 
 
 @asynccontextmanager
@@ -36,6 +37,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(router)
+    app.include_router(agent_routes.router)
 
     # 录音文件访问：演示用静态目录，生产应改为带签名的短期 URL
     app.mount("/media", StaticFiles(directory=settings.objects_dir), name="media")

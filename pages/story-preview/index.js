@@ -2,6 +2,17 @@ const store = require('../../store/index');
 const api = require('../../utils/api');
 const { VoicePlayer } = require('../../utils/player');
 
+// 七要素中英对照（与后端 backend/agents/state.py 的 ELEMENT_LABELS 保持一致）
+const ELEMENT_LABELS = {
+  time: '时间',
+  place: '地点',
+  people: '人物',
+  event: '事件',
+  result: '结果',
+  impact: '影响',
+  feeling: '感受',
+};
+
 Page({
   data: {
     draft: { title: '', durationMs: 0, mode: '自然整理' },
@@ -54,7 +65,20 @@ Page({
 
     const hasAudio = Boolean(draft.audioPath || draft.audioUrl);
     if (hasAudio) this.player.load(draft.audioPath || draft.audioUrl, draft.durationMs);
-    this.setData({ draft, body: draft.body || '', hasAudio });
+
+    // 证据链与缺失要素转成更易读的形式
+    const claims = (draft.claims || []).map((claim) => ({
+      ...claim,
+      elementLabel: ELEMENT_LABELS[claim.element] || claim.element,
+    }));
+    const missingFields = (draft.missingFields || []).map(
+      (element) => ELEMENT_LABELS[element] || element
+    );
+    this.setData({
+      draft: { ...draft, claims, missingFields, findings: draft.findings || [] },
+      body: draft.body || '',
+      hasAudio,
+    });
   },
 
   onUnload() {
@@ -105,30 +129,57 @@ Page({
     }
   },
 
-  /** 确认故事：产品规则要求人工确认后才进入故事书 */
+  /** 确认故事：产品规则要求人工确认后才进入故事书；有智能体会话时走智能体确认 */
   async onConfirm() {
     const { draft, body } = this.data;
     if (!body.trim()) {
       wx.showToast({ title: '内容不能为空', icon: 'none' });
       return;
     }
-    const storyId = draft.id;
-    if (!storyId) {
+    this.setData({ saving: true });
+
+    // 优先走多智能体确认（会按证据重新核对正文）
+    if (draft.sessionId) {
+      try {
+        await api.reviewInterview({ sessionId: draft.sessionId, action: 'approve' });
+        // 智能体批准后，再在故事书里落为已确认
+        if (draft.id) await api.reviewStory({ storyId: draft.id, body });
+        store.set({ currentDraft: null });
+        this.setData({ saving: false });
+        wx.showToast({ title: '已保存到故事书', icon: 'success' });
+        setTimeout(() => wx.reLaunch({ url: '/pages/stories/index' }), 800);
+        return;
+      } catch (err) {
+        this.setData({ saving: false });
+        wx.showModal({
+          title: '无法确认',
+          content: err.message || '这段文字里有无法追溯到原声的内容。',
+          showCancel: false,
+        });
+        return;
+      }
+    }
+
+    // 无会话（后端未连接）：本地演示路径
+    if (!draft.id) {
       store.set({ currentDraft: { ...draft, body, status: 'confirmed' } });
       wx.showToast({ title: '本地演示：已确认', icon: 'success' });
       setTimeout(() => wx.reLaunch({ url: '/pages/stories/index' }), 800);
       return;
     }
-    this.setData({ saving: true });
     try {
-      await api.confirmStory(storyId, { consentVersion: store.snapshot().consentVersion || 1 });
+      await api.reviewStory({ storyId: draft.id, body });
       store.set({ currentDraft: null });
       this.setData({ saving: false });
       wx.showToast({ title: '已保存到故事书', icon: 'success' });
       setTimeout(() => wx.reLaunch({ url: '/pages/stories/index' }), 800);
     } catch (err) {
       this.setData({ saving: false });
-      wx.showToast({ title: err.message || '确认失败', icon: 'none' });
+      wx.showModal({
+        title: '无法确认',
+        content: err.message || '这段文字里有无法追溯到原声的内容。',
+        showCancel: false,
+      });
     }
   },
 });

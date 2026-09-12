@@ -39,6 +39,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, Send, interrupt
 
+from ..evidence_audit import audit_text
 from . import state as st
 from .provider import AgentProvider
 
@@ -264,7 +265,9 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         action = decision.get("action", "approve")
         patch: dict[str, Any] = {"review_action": action, **_trace("review.decision", action=action)}
         if action == "edit" and decision.get("edited_text") is not None:
-            patch["draft_text"] = decision["edited_text"]
+            # 改写先作为"待审文本"暂存；审计通过才提交为正文，
+            # 否则被拒的改写会覆盖掉用户原本可用的草稿
+            patch["pending_text"] = decision["edited_text"]
         return patch
 
     def review_apply(state: st.MemoryBankState) -> dict[str, Any]:
@@ -274,23 +277,44 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         if action == "request_more":
             return {"next_action": "request_more", **_trace("review.apply", action=action)}
         if action == "edit":
-            # 人工改写后必须重新审计：删掉证据标记的事实需要补录
-            return {"next_action": "reaudit", **_trace("review.apply", action=action)}
+            # 审计对象是待审文本，正文暂不替换（被拒的改写不得覆盖可用草稿）
+            candidate = state.get("pending_text") or state.get("draft_text", "")
+            findings = audit_text(body=candidate, claims=state.get("claims", []))
+            patch: dict[str, Any] = {
+                "audit_findings": findings,
+                "audit_passed": not findings,
+                "next_action": "reaudit",
+                **_trace("review.apply", action=action, findings=len(findings)),
+            }
+            if not findings:
+                # 通过才提交为正文
+                patch["draft_text"] = candidate
+                patch["approved_text"] = candidate
+            return patch
+
+        # 批准：必须以**当前正文**重新核对，不能沿用早先的审计结论
+        findings = audit_text(body=state.get("draft_text", ""), claims=state.get("claims", []))
         return {
+            "audit_findings": findings,
+            "audit_passed": not findings,
             "approved_text": state.get("draft_text", ""),
             "next_action": "approved",
-            **_trace("review.apply", action="approve"),
+            **_trace("review.apply", action="approve", findings=len(findings)),
         }
 
     def route_after_review(state: st.MemoryBankState) -> str:
-        action = state.get("next_action", "approved")
-        if action == "reaudit":
-            return "audit"
+        """按**确认动作**路由。
+
+        不能用 next_action：writing_audit 也写这个键（值为 "review"），
+        若用它判断会把确认动作读错。
+        """
+        action = state.get("review_action", "approve")
+        if action == "reject":
+            return "end"
         if action == "request_more":
             return "select_question"
-        if action == "rejected":
-            return "end"
-        return "creative"
+        # approve / edit：都要以当前审计结论为准
+        return "creative" if state.get("audit_passed", True) else "select_question"
 
     # ------------------------------------------------------------ 交付
 

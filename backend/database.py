@@ -107,6 +107,13 @@ class Story(Base):
     recording_id: Mapped[str | None] = mapped_column(ForeignKey("recordings.id"), default=None)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    # --- 证据链（由多智能体生成，随草稿一起保存，便于界面展示"凭什么这么说"）---
+    session_id: Mapped[str] = mapped_column(String(64), default="", index=True)
+    claims_json: Mapped[str] = mapped_column(Text, default="[]")
+    missing_fields_json: Mapped[str] = mapped_column(Text, default="[]")
+    findings_json: Mapped[str] = mapped_column(Text, default="[]")
+    conflicts_json: Mapped[str] = mapped_column(Text, default="[]")
+    audit_passed: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(default=utc_now, onupdate=utc_now)
 

@@ -170,6 +170,7 @@ class MemoryBankState(TypedDict, total=False):
     # --- 写作与审计 ---
     draft_sentences: list[dict[str, Any]]
     draft_text: str
+    pending_text: str | None
     audit_findings: list[dict[str, Any]]
     audit_passed: bool
 

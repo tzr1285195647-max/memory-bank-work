@@ -88,7 +88,7 @@ Page({
     wx.switchTab({ url: '/pages/topic/index' });
   },
 
-  /** 结束录音 -> 上传 -> 生成待确认草稿 -> 进入预览 */
+  /** 结束录音 -> 上传 -> 多智能体生成草稿（含审计）-> 进入预览 */
   async onFinish() {
     if (this.data.seconds < 1) {
       wx.showToast({ title: '先讲几句再生成吧', icon: 'none' });
@@ -103,38 +103,73 @@ Page({
       console.error('[record] finish failed', err);
     }
 
-    let draft = null;
-    let audioPath = payload.tempFilePath;
+    let recording = null;
+    let view = null;
     try {
-      const recording = await api.uploadRecording({
+      recording = await api.uploadRecording({
         filePath: payload.tempFilePath,
         topicId: this.data.topicId,
         durationMs: payload.durationMs,
       });
-      draft = await api.createDraft({
+      // 多智能体流程：开启采访 → 提交讲述（含并行证据抽取与写作审计）
+      const started = await api.startInterview({
         topicId: this.data.topicId,
-        durationMs: payload.durationMs,
+        subjectName: '讲述者',
+        maxRounds: 3,
         recordingId: recording.assetId,
       });
-      if (draft && draft.audioUrl) audioPath = draft.audioUrl;
+      view = await api.answerInterview({
+        sessionId: started.session_id,
+        // 当前未接入 ASR：先把录音时长与主题交给智能体，正文由演示文案承载
+        answer: `（${this.data.topicTitle || '这段讲述'}，时长 ${this.data.timerText}，转写待接入）`,
+        finish: true,
+        topicId: this.data.topicId,
+        recordingId: recording.assetId,
+        durationMs: payload.durationMs,
+      });
+      if (view && view.audit_passed === false) {
+        wx.showToast({ title: '部分内容缺少证据，已退回补充', icon: 'none' });
+      }
     } catch (err) {
       // 后端不可用时仍允许本地回听刚录的原声，演示不中断
-      console.warn('[record] 上传或生成草稿失败', err && err.message);
+      console.warn('[record] 智能体流程不可用，降级到本地草稿', err && err.message);
       wx.showToast({ title: '后端未连接，仅本地演示', icon: 'none' });
     }
 
+    const audioPath = (view && view.audioUrl) || payload.tempFilePath;
     store.set({
-      currentDraft: draft
-        ? { ...draft, audioPath, topicId: this.data.topicId }
-        : {
-            id: `local-${Date.now()}`,
-            title: this.data.topicTitle || '未命名主题',
-            body: '（这段文字将根据你的讲述生成，当前为演示占位内容。）',
+      currentDraft: view
+        ? {
+            id: view.storyId || '',
+            sessionId: view.session_id,
+            title: (view.draft_text || '').split('\n')[0].replace(/[《》]/g, '') || this.data.topicTitle,
+            body: view.draft_text || '',
             mode: '自然整理',
             status: 'pending_review',
             durationMs: payload.durationMs,
             topicId: this.data.topicId,
             audioPath,
+            claims: view.claims || [],
+            missingFields: view.missing_fields || [],
+            findings: view.audit_findings || [],
+            conflicts: view.conflicts || [],
+            auditPassed: view.audit_passed !== false,
+          }
+        : {
+            id: '',
+            sessionId: '',
+            title: this.data.topicTitle || '未命名主题',
+            body: '（后端未连接，这段为本地演示占位内容。）',
+            mode: '自然整理',
+            status: 'pending_review',
+            durationMs: payload.durationMs,
+            topicId: this.data.topicId,
+            audioPath,
+            claims: [],
+            missingFields: [],
+            findings: [],
+            conflicts: [],
+            auditPassed: true,
           },
     });
 

@@ -129,6 +129,73 @@ module.exports = {
     return request({ path: '/api/consent/revoke', method: 'POST', data: {} });
   },
 
+  // ---------------------------------------------------------------- 多智能体流程
+  // 采访导演 → 证据抽取（并行）→ 写作 → 审计 → 人工确认
+
+  /** 开启采访会话：返回采访导演提出的第一个问题 */
+  startInterview({ topicId, subjectName = '讲述者', maxRounds = 3, recordingId = '' }) {
+    return request({
+      path: '/api/agent/interviews',
+      method: 'POST',
+      data: {
+        topicId,
+        subjectName,
+        maxRounds,
+        recordingId: recordingId || null,
+        consentVersion: store.snapshot().consentVersion || 1,
+      },
+    });
+  },
+
+  /** 提交一轮讲述；finish=true 时触发写作与审计，产出待确认草稿 */
+  answerInterview({ sessionId, answer, finish = false, topicId = '', recordingId = '', durationMs = 0 }) {
+    return request({
+      path: '/api/agent/interviews/answers',
+      method: 'POST',
+      data: {
+        sessionId,
+        answer,
+        finish,
+        topicId,
+        recordingId: recordingId || null,
+        durationMs,
+        consentVersion: store.snapshot().consentVersion || 1,
+      },
+    });
+  },
+
+  /** 尊重停止意愿 */
+  stopInterview({ sessionId }) {
+    return request({
+      path: '/api/agent/interviews/stop',
+      method: 'POST',
+      data: { sessionId, consentVersion: store.snapshot().consentVersion || 1 },
+    });
+  },
+
+  /** 人工确认：approve | edit | request_more | reject */
+  reviewInterview({ sessionId, action, editedText }) {
+    return request({
+      path: '/api/agent/interviews/review',
+      method: 'POST',
+      data: {
+        sessionId,
+        action,
+        editedText: editedText === undefined ? null : editedText,
+        consentVersion: store.snapshot().consentVersion || 1,
+      },
+    });
+  },
+
+  /** 故事书里的确认：会先按证据核对正文 */
+  reviewStory({ storyId, body }) {
+    return request({
+      path: `/api/agent/stories/${storyId}/review`,
+      method: 'POST',
+      data: { body, consentVersion: store.snapshot().consentVersion || 1 },
+    }).then(normalizeStory);
+  },
+
   uploadRecording,
   createDraft,
 };

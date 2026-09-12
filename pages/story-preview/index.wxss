@@ -94,3 +94,131 @@
 .preview__confirm {
   margin-top: 0;
 }
+
+/* 证据链：每条事实与它的原文来源 */
+.preview__evidence {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background-color: var(--bg-card);
+}
+
+.preview__evidence-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.preview__evidence-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.preview__evidence-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.preview__claim {
+  margin-top: 14px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.preview__claim-element {
+  flex-shrink: 0;
+  width: 44px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  padding-top: 2px;
+}
+
+.preview__claim-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.preview__claim-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.preview__claim-quote {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* 七要素完整度 */
+.preview__missing {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background-color: var(--surface-clay);
+  display: flex;
+  flex-direction: column;
+}
+
+.preview__missing-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.preview__missing-tags {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.preview__missing-tag {
+  font-size: 12px;
+  color: var(--accent);
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  padding: 3px 10px;
+  margin: 0 8px 8px 0;
+}
+
+.preview__missing-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* 审计发现 */
+.preview__findings {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background-color: var(--danger-soft);
+}
+
+.preview__findings-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.preview__finding {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview__finding-text {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.preview__finding-excerpt {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}

@@ -27,6 +27,8 @@ python backend/run.py
 
 ## 接口一览
 
+### 基础接口
+
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/health` | 健康检查 |
@@ -36,12 +38,48 @@ python backend/run.py
 | GET | `/api/home` | 今日叙事 + 最近的故事 |
 | GET | `/api/family` | 家庭看板（成员、进度、待确认） |
 | POST | `/api/recordings` | 上传录音（multipart） |
-| POST | `/api/stories/draft` | 生成待确认草稿 |
 | GET | `/api/stories` | 故事列表 |
 | GET | `/api/stories/{id}` | 故事详情（含原声地址） |
-| PATCH | `/api/stories/{id}` | 修改正文（会退回待确认） |
-| POST | `/api/stories/{id}/confirm` | 确认故事 |
 | POST | `/api/consent/revoke` | 撤回授权并删除内容与原声 |
+| GET | `/fonts/*.ttf` | 思源宋体子集（供 wx.loadFontFace） |
+
+### 多智能体接口（`/api/agent`）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/agent/interviews` | 开启采访，返回采访导演的第一个问题 |
+| POST | `/api/agent/interviews/answers` | 提交一轮讲述（`finish=true` 触发写作与审计） |
+| POST | `/api/agent/interviews/stop` | 尊重停止意愿，不再追问 |
+| POST | `/api/agent/interviews/review` | 人工确认：`approve` / `edit` / `request_more` / `reject` |
+| POST | `/api/agent/stories/{id}/review` | 故事书里的确认（先按证据核对正文） |
+
+**典型流程**：
+
+```powershell
+# 1) 开启采访（拿到 session_id 与第一个问题）
+curl -X POST http://127.0.0.1:8787/api/agent/interviews -H "Authorization: Bearer <token>" `
+  -H "Content-Type: application/json" `
+  -d '{"topicId":"hometown","subjectName":"林阿姨","maxRounds":3,"consentVersion":1}'
+
+# 2) 提交讲述（finish=true 时产出草稿 + 证据链 + 审计结论）
+curl -X POST http://127.0.0.1:8787/api/agent/interviews/answers -H "Authorization: Bearer <token>" `
+  -H "Content-Type: application/json" `
+  -d '{"sessionId":"interview-xxx","answer":"那年秋天，院子里的桂花开得很早。","finish":true,"topicId":"hometown","consentVersion":1}'
+
+# 3) 人工确认（改写引入无证据内容会返回 403）
+curl -X POST http://127.0.0.1:8787/api/agent/interviews/review -H "Authorization: Bearer <token>" `
+  -H "Content-Type: application/json" `
+  -d '{"sessionId":"interview-xxx","action":"approve","consentVersion":1}'
+```
+
+返回体里与证据相关的字段：`claims`（每条带 `quote` 与 `turn_id`）、`missing_fields`、
+`audit_findings`、`audit_passed`、`conflicts`、`draft_text`、`storyId`。
+
+**错误语义**：
+
+- `403` —— 授权版本不符 / 改写引入了无法追溯到原声的内容
+- `409` —— 会话不在人工确认点（例如改写被拒后已退回采访），此时发确认动作无效
+- `404` —— 会话或故事不存在
 
 ## 产品规则在服务端的落地位置
 

@@ -39,6 +39,39 @@
     </view>
   </view>
 
+  <!-- 证据链：让"凭什么这么说"可见 -->
+  <view wx:if="{{draft.claims.length}}" class="preview__evidence">
+    <view class="preview__evidence-head">
+      <text class="preview__evidence-title">证据链 · {{draft.claims.length}} 条</text>
+      <text class="preview__evidence-hint">每条事实都能回到讲述原句</text>
+    </view>
+    <view wx:for="{{draft.claims}}" wx:key="id" class="preview__claim">
+      <text class="preview__claim-element">{{item.elementLabel}}</text>
+      <view class="preview__claim-body">
+        <text class="preview__claim-text">{{item.text}}</text>
+        <text class="preview__claim-quote">原文：{{item.quote}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 七要素完整度：查漏补缺的界面表达 -->
+  <view wx:if="{{draft.missingFields.length}}" class="preview__missing">
+    <text class="preview__missing-title">还缺 {{draft.missingFields.length}} 个要素</text>
+    <view class="preview__missing-tags">
+      <text wx:for="{{draft.missingFields}}" wx:key="*this" class="preview__missing-tag">{{item}}</text>
+    </view>
+    <text class="preview__missing-hint">缺失的要素会留空，不会替你补上；可以继续讲述补齐。</text>
+  </view>
+
+  <!-- 审计发现：无证据内容会被退回 -->
+  <view wx:if="{{draft.findings.length}}" class="preview__findings">
+    <text class="preview__findings-title">审计发现 {{draft.findings.length}} 处问题</text>
+    <view wx:for="{{draft.findings}}" wx:key="sentence_id" class="preview__finding">
+      <text class="preview__finding-text">{{item.message}}</text>
+      <text class="preview__finding-excerpt">{{item.excerpt}}</text>
+    </view>
+  </view>
+
   <view class="preview__hint">
     <text>{{editing ? '改好后点下方按钮保存。' : '这段文字来自你的讲述，你可以继续修改或确认。'}}</text>
   </view>

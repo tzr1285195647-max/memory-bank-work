@@ -175,8 +175,8 @@ def test_auditor_rejects_unsupported_sentence():
     assert ids == {"s2", "s4"}, "过渡句不应被判定为问题"
 
 
-def test_edit_is_recorded_and_returns_to_review(runtime):
-    """人工改写：必须记录改写动作、更新正文，并重新走审计后回到确认点。"""
+def test_rejected_edit_does_not_overwrite_draft(runtime):
+    """改写引入无证据内容时必须被拒，且**不得覆盖**原有可用草稿。"""
     start(runtime, "audit-1")
     view = runtime.resume(
         "audit-1",
@@ -186,12 +186,31 @@ def test_edit_is_recorded_and_returns_to_review(runtime):
     assert view["audit_passed"] is True
     original = view["draft_text"]
 
-    edited_text = f"{original}\n他后来去了北京。"
-    view = runtime.resume("audit-1", {"action": "edit", "edited_text": edited_text})
-    # 改写被记录，正文被替换，并回到确认点等待人再次决定
-    assert view["draft_text"] == edited_text
-    assert view["stage"] == "review"
-    assert "他后来去了北京" in view["draft_text"]
+    view = runtime.resume("audit-1", {"action": "edit", "edited_text": "他后来去了北京，那年他二十五岁。"})
+    # 改写被审计拒绝，草稿保持原样（用户的可用内容不能因为一次错误改写而丢失）
+    assert view["audit_passed"] is False
+    assert view["audit_findings"], "改写引入新事实必须被审计报出"
+    assert view["draft_text"] == original, "被拒的改写不应覆盖原草稿"
+
+    # 此时批准也必须被拒（批准以当前正文重新核对）
+    view = runtime.resume("audit-1", {"action": "approve"})
+    assert not view.get("delivery"), "存在无证据内容时不得产出交付物"
+
+
+def test_edit_with_evidence_backed_text_is_accepted(runtime):
+    """只做措辞润色、不引入新事实的改写应当通过，并更新正文。"""
+    start(runtime, "audit-2")
+    view = runtime.resume(
+        "audit-2",
+        {"answer": "那年秋天，院子里的桂花开得很早。", "finish": True},
+    )
+    original = view["draft_text"]
+    polished = original.replace(
+        "这是林阿姨亲口讲述并等待确认的一段家庭记忆。", "这是林阿姨亲口讲述的一段家庭记忆。"
+    )
+    view = runtime.resume("audit-2", {"action": "edit", "edited_text": polished})
+    assert view["audit_passed"] is True, str(view["audit_findings"])
+    assert view["draft_text"] == polished, "通过审计的改写应当更新正文"
 
 
 # --------------------------------------------------------------- 确认与交付
