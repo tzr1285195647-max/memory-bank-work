@@ -25,6 +25,7 @@ class Settings:
     max_upload_bytes: int
     host: str
     port: int
+    project_root: Path = PROJECT_ROOT
 
     @property
     def database_path(self) -> Path:

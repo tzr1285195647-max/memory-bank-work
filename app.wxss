@@ -25,7 +25,8 @@ page {
   --radius-card-xl: 28px;
   --radius-pill: 6px;
 
-  /* 字体 */
+  /* 字体：SourceHanSerifSC 由 wx.loadFontFace 加载思源宋体子集，
+     加载失败时按后面的顺序降级到系统宋体，版式不会崩 */
   --font-serif: "SourceHanSerifSC", "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
   --font-latin: "Lora", Georgia, serif;
 

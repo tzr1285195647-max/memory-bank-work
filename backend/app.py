@@ -40,6 +40,11 @@ def create_app() -> FastAPI:
     # 录音文件访问：演示用静态目录，生产应改为带签名的短期 URL
     app.mount("/media", StaticFiles(directory=settings.objects_dir), name="media")
 
+    # 小程序字体子集：wx.loadFontFace 需要 http(s) 地址
+    fonts_dir = settings.project_root / "assets" / "fonts"
+    if fonts_dir.exists():
+        app.mount("/fonts", StaticFiles(directory=fonts_dir), name="fonts")
+
     return app
 
 
