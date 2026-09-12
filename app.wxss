@@ -50,8 +50,8 @@ page {
 }
 
 .page--tab {
-  /* tabBar 页面需要给原生 tabBar 让位 */
-  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  /* tabBar 页面需要给原生 tabBar 让位（76px 底栏 + 34px 安全区余量） */
+  padding-bottom: 110px;
 }
 
 .container {
