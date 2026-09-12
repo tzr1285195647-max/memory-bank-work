@@ -80,6 +80,31 @@ if leftovers:
 else:
     print("  OK 未发现占位内容残留")
 
+print("\n=== 7. 非法位置的 .wxml / .wxss（会被工具扫描但缺少配套文件，导致编译或渲染失败）===")
+pages_dir = (ROOT / "pages").resolve()
+comps_dir = (ROOT / "components").resolve()
+misplaced: list[str] = []
+for path in list(ROOT.rglob("*.wxml")) + list(ROOT.rglob("*.wxss")):
+    resolved = path.resolve()
+    if any(part in {".git", "node_modules", "design", "docs"} for part in path.parts):
+        continue
+    if path.name == "app.wxss" and resolved.parent == ROOT:
+        continue
+    if pages_dir in resolved.parents or comps_dir in resolved.parents:
+        # 页面/组件的四件套必须同名，检查配套文件
+        stem = path.with_suffix("")
+        for ext in (".js", ".json"):
+            if not stem.with_suffix(ext).exists():
+                misplaced.append(f"{path.relative_to(ROOT)} 缺少配套 {stem.name}{ext}")
+        continue
+    misplaced.append(f"{path.relative_to(ROOT)} 位于非法目录（只允许 pages/<name>/ 与 components/<name>/）")
+if misplaced:
+    problems.extend(misplaced)
+    for item in misplaced:
+        print(f"  ✗ {item}")
+else:
+    print("  OK 未发现位置异常或缺少配套的样式/模板文件")
+
 print("\n" + "=" * 66)
 print(f"检查项 {checked} 个，问题 {len(problems)} 个")
 for item in problems:
