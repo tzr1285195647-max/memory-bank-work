@@ -34,3 +34,6 @@ design/source/canvas.fig
 project.private.config.json
 miniprogram_npm/
 node_modules/
+
+# 临时的桌面截图目录（已弃用该调试方式）
+.tmp_shot/

@@ -1,6 +1,6 @@
 {
   "description": "记忆银行小程序 · 工程配置（appid 待填）",
-  "appid": "touristappid",
+  "appid": "wx2431d793d088a51d",
   "projectname": "memory-bank",
   "compileType": "miniprogram",
   "miniprogramRoot": "./",
@@ -18,26 +18,75 @@
     "checkSiteMap": false,
     "uploadWithSourceMap": true,
     "packNpmManually": false,
-    "packNpmRelationList": []
+    "packNpmRelationList": [],
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "packOptions": {
     "ignore": [
-      { "type": "folder", "value": "design" },
-      { "type": "folder", "value": "docs" },
-      { "type": "folder", "value": ".git" },
-      { "type": "file", "value": "README.md" },
-      { "type": "file", "value": "记忆银行_LangGraph完整架构图解.docx" }
+      {
+        "value": "design",
+        "type": "folder"
+      },
+      {
+        "value": "docs",
+        "type": "folder"
+      },
+      {
+        "value": ".git",
+        "type": "folder"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      },
+      {
+        "value": "记忆银行_LangGraph完整架构图解.docx",
+        "type": "file"
+      }
     ],
     "include": []
   },
   "condition": {
     "miniprogram": {
       "list": [
-        { "name": "01 欢迎页", "pathName": "pages/welcome/index", "query": "", "scene": null },
-        { "name": "04 长辈首页", "pathName": "pages/home/index", "query": "", "scene": null },
-        { "name": "06 录音讲述", "pathName": "pages/record/index", "query": "", "scene": null },
-        { "name": "07 故事预览", "pathName": "pages/story-preview/index", "query": "", "scene": null }
+        {
+          "name": "01 欢迎页",
+          "pathName": "pages/welcome/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "04 长辈首页",
+          "pathName": "pages/home/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "06 录音讲述",
+          "pathName": "pages/record/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "07 故事预览",
+          "pathName": "pages/story-preview/index",
+          "query": "",
+          "scene": null
+        }
       ]
     }
-  }
+  },
+  "simulatorPluginLibVersion": {},
+  "editorSetting": {}
 }
