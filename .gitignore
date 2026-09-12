@@ -54,3 +54,6 @@ backend/.data/
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
+
+# 提交消息临时文件
+commit-msg.tmp
