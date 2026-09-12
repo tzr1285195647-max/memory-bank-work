@@ -38,8 +38,17 @@ class AgentRuntime:
         self._lock = threading.Lock()
         self._saver_conn = SqliteSaver.from_conn_string(str(checkpoint_path))
         self.checkpointer = self._saver_conn.__enter__()
-        self.provider = provider or MockAgentProvider()
+        if provider is None:
+            # 按配置选择：有 LLM_API_KEY 就用真实模型（失败自动回落），否则纯 Mock
+            from .llm import build_provider
+
+            provider = build_provider()
+        self.provider = provider
         self.graph = build_parent_graph(self.provider, self.checkpointer)
+
+    @property
+    def provider_name(self) -> str:
+        return getattr(self.provider, "name", type(self.provider).__name__)
 
     # ------------------------------------------------------------ 生命周期
 

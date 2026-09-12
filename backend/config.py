@@ -10,8 +10,14 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
+
+# 从仓库根目录的 .env 读取配置（该文件已在 .gitignore 中，不会进版本库）。
+# 这样 API Key 不必写进代码、不必进 shell 历史，也不必出现在任何对话里。
+load_dotenv(PROJECT_ROOT / ".env", override=False)
 
 
 @dataclass(frozen=True)
@@ -26,6 +32,16 @@ class Settings:
     host: str
     port: int
     project_root: Path = PROJECT_ROOT
+    # --- 大模型（留空则使用确定性 Mock 智能体，离线可跑）---
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_model: str = "deepseek-chat"
+    llm_timeout_seconds: float = 60.0
+    llm_max_retries: int = 2
+
+    @property
+    def llm_enabled(self) -> bool:
+        return bool(self.llm_api_key.strip())
 
     @property
     def database_path(self) -> Path:
@@ -49,6 +65,11 @@ def load_settings() -> Settings:
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024))),
         host=os.getenv("HOST", "127.0.0.1"),
         port=int(os.getenv("PORT", "8787")),
+        llm_api_key=os.getenv("LLM_API_KEY", ""),
+        llm_base_url=os.getenv("LLM_BASE_URL", "https://api.deepseek.com").rstrip("/"),
+        llm_model=os.getenv("LLM_MODEL", "deepseek-chat"),
+        llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "60")),
+        llm_max_retries=int(os.getenv("LLM_MAX_RETRIES", "2")),
     )
 
 

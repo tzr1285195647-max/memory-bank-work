@@ -1,0 +1,115 @@
+# 接入真实大模型
+
+智能体层默认用**确定性 Mock 实现**（离线可跑、结果可复现）。配置 API Key 后自动切换到真实模型，
+**架构、图、审计、测试都不需要改动**——因为模型只是 `AgentProvider` 的一个实现。
+
+## 一、怎么把 Key 给我（推荐方式）
+
+**不要把 Key 贴进对话**。钥匙放在仓库根目录的 `.env` 文件里，后端启动时读取：
+
+```powershell
+cd D:\记忆银行
+Copy-Item .env.example .env
+notepad .env          # 填 LLM_API_KEY 一行即可
+```
+
+`.env` 的内容（只改第一行）：
+
+```ini
+LLM_API_KEY=sk-你的密钥
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-chat
+```
+
+改完**重启后端**即可：
+
+```powershell
+python backend/run.py
+```
+
+### 为什么用 .env
+
+| 方式 | 风险 |
+|---|---|
+| 贴进对话 | 密钥进入对话记录，可能被转发、留存 |
+| 写进代码/配置文件 | 容易误提交到 Git |
+| `$env:LLM_API_KEY=...` | 只对当前 shell 有效，换窗口就没了 |
+| **`.env` 文件** | **已在 `.gitignore` 中，不进版本库；后端启动自动读取** |
+
+`.env` 已被 `.gitignore` 忽略（第 4 行 `.env`），可以用 `git check-ignore -v .env` 复核。
+
+## 二、确认当前用的是模型还是 Mock
+
+```powershell
+curl http://127.0.0.1:8787/api/agent/status -H "Authorization: Bearer <token>"
+```
+
+返回示例：
+
+```json
+{
+  "provider": "llm-with-fallback",
+  "llmEnabled": true,
+  "model": "deepseek-chat",
+  "baseUrl": "https://api.deepseek.com",
+  "fallbackCount": 0,
+  "lastError": null
+}
+```
+
+- `provider` 为 `mock-agents` → 没读到 Key（检查 `.env` 位置与重启）
+- `provider` 为 `llm-with-fallback` → 已接入模型
+- `fallbackCount > 0` → 模型调用失败过，已自动回落到确定性实现（`lastError` 有原因）
+
+## 三、换其他厂商
+
+接口走 **OpenAI 兼容协议**，改三行即可：
+
+| 厂商 | LLM_BASE_URL | LLM_MODEL 示例 |
+|---|---|---|
+| DeepSeek | `https://api.deepseek.com` | `deepseek-chat` |
+| 阿里通义 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| 智谱 | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-plus` |
+| 月之暗面 | `https://api.moonshot.cn/v1` | `moonshot-v1-8k` |
+
+## 四、模型输出不可信：四道本地校验
+
+这是本项目对"AI 会不会编"的技术回答——**不靠提示词，靠校验**：
+
+| 环节 | 校验 | 不合规时 |
+|---|---|---|
+| 停止意愿 | **本地关键词规则**先判定，不让模型决定是否继续追问 | 直接停止，不再问 |
+| 证据抽取 | 每条事实的 `quote` 必须**真的出现在讲述原文里**（子串匹配），要素必须在七要素内 | 丢弃该条，并记录丢弃数 |
+| 写作 | 引用 id 必须真实存在；标题/来源说明句才允许无引用 | 无引用的事实句由审计报出 |
+| 审计 | **始终用确定性实现**，不交给模型自证 | 有问题即退回采访 |
+
+审计为什么不用模型：审计规则必须**可解释、可复现**。让模型自己检查自己写的东西，
+既不可复现也无法向评委解释。
+
+## 五、失败与降级策略
+
+```text
+选择实现：
+  未配置 Key            → MockAgentProvider（纯确定性）
+  配置了 Key            → FallbackAgentProvider(LLMAgentProvider)
+                           ├── 调用成功 → 用模型结果
+                           └── 失败/输出不合规 → 回落 Mock，并累计 fallbackCount
+```
+
+调用失败会重试 `LLM_MAX_RETRIES` 次（指数无关，固定间隔），仍失败则回落。
+
+**日志安全**：只记录长度、条数、错误类别；**不打印讲述正文、不打印密钥**。
+模型返回的原始响应体也不写日志（可能含敏感内容）。
+
+## 六、自测
+
+```powershell
+# 单元测试（不需要 Key，走 Mock）
+python -m pytest backend/tests -q
+
+# 端到端（需要后端在跑）
+python backend/agent_http_check.py
+
+# 显式验证"模型输出不合规会被丢弃"：见 backend/tests/test_llm_provider.py
+python -m pytest backend/tests/test_llm_provider.py -q
+```

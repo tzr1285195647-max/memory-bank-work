@@ -74,6 +74,21 @@ class StoryReviewRequest(BaseModel):
     consentVersion: int = Field(ge=1)
 
 
+@router.get("/status")
+def agent_status(session: SessionDep, auth: AuthDep) -> dict[str, Any]:
+    """当前使用的智能体实现与降级情况，便于确认现场用的是模型还是 Mock。"""
+    runtime = _runtime()
+    provider = runtime.provider
+    return {
+        "provider": runtime.provider_name,
+        "llmEnabled": settings.llm_enabled,
+        "model": settings.llm_model if settings.llm_enabled else None,
+        "baseUrl": settings.llm_base_url if settings.llm_enabled else None,
+        "fallbackCount": getattr(provider, "fallback_count", 0),
+        "lastError": getattr(provider, "last_error", None),
+    }
+
+
 def _runtime():
     return get_runtime(settings.data_dir / "checkpoints.sqlite3")
 
