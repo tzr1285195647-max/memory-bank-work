@@ -84,8 +84,10 @@ def agent_status(session: SessionDep, auth: AuthDep) -> dict[str, Any]:
         "llmEnabled": settings.llm_enabled,
         "model": settings.llm_model if settings.llm_enabled else None,
         "baseUrl": settings.llm_base_url if settings.llm_enabled else None,
+        "strictSchema": getattr(getattr(provider, "primary", None), "_strict_schema_supported", None),
         "fallbackCount": getattr(provider, "fallback_count", 0),
         "lastError": getattr(provider, "last_error", None),
+        "dropReasons": getattr(getattr(provider, "primary", None), "last_drop_reasons", []),
     }
 
 

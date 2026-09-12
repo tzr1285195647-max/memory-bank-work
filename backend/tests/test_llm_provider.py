@@ -24,11 +24,14 @@ TRANSCRIPT = "那年秋天，院子里的桂花开得很早。我和妹妹每天
 
 
 def provider_with(responses: list) -> LLMAgentProvider:
-    """构造一个用固定序列代替真实 HTTP 的适配器。"""
+    """构造一个用固定序列代替真实 HTTP 的适配器。
+
+    注意签名要与 `_chat` 保持一致（含 schema 参数），否则真实调用会穿透到网络。
+    """
     provider = LLMAgentProvider(api_key="test-key")
     queue = list(responses)
 
-    def fake_chat(*, user_prompt: str, max_tokens: int = 2000):
+    def fake_chat(*, user_prompt: str, max_tokens: int = 2000, schema: dict | None = None):
         if not queue:
             raise LLMUnavailableError("桩：没有更多响应")
         item = queue.pop(0)
@@ -76,6 +79,26 @@ def test_missing_fields_stay_missing_when_model_omits_them():
     for element in SEVEN_ELEMENTS:
         if element != "time":
             assert element in result["missing_fields"], "未讲到的要素必须保持缺失"
+
+
+def test_quote_with_punctuation_variance_is_accepted():
+    """模型常把标点写成半角或漏标点，这属于格式差异，不应误判为编造。"""
+    transcript = "那年秋天，院子里的桂花开得很早。"
+    provider = provider_with(
+        [{"claims": [{"element": "time", "text": "那年秋天", "quote": "那年秋天,院子里的桂花开得很早"}]}]
+    )
+    result = provider.extract_claims(transcript=transcript, turn_id="t1")
+    assert len(result["claims"]) == 1, "仅标点差异应被接受"
+
+
+def test_paraphrased_quote_is_still_rejected():
+    """放宽只针对标点与空白；改写用词仍然必须被拒。"""
+    transcript = "那年秋天，院子里的桂花开得很早。"
+    provider = provider_with(
+        [{"claims": [{"element": "time", "text": "那年秋天", "quote": "那年秋天院子里桂花盛开得很早"}]}]
+    )
+    with pytest.raises(LLMUnavailableError):
+        provider.extract_claims(transcript=transcript, turn_id="t1")
 
 
 # --------------------------------------------------------------- 写作校验

@@ -1,0 +1,27 @@
+fix(agents): 修复真实模型的 schema 模式与校验过严问题
+
+接入 DeepSeek 后实测发现三个问题，都已修复：
+
+1. 严格 JSON Schema 不受支持：DeepSeek 返回 400
+   "This response_format type is unavailable now"。
+   改为能力探测 + 自动切换 json_object，并把探测失败与真实降级区分开
+   （探测不计入 fallbackCount，否则状态指标会误导人）。
+   真正的 bug 是 response_format 在重试循环外只算了一次，
+   导致探测失败后仍用旧 payload 重试——已移入循环内。
+
+2. 校验过严：模型把标点写成半角或漏标点时，合法证据被误判为编造。
+   新增标点与空白归一后的匹配，但不允许改写（归一后仍须是子串）。
+   新增两条测试锁住边界：仅标点差异放行、改写仍拒绝。
+
+3. 测试会调用真模型：.env 配了 Key 后 pytest 静默走网络，
+   耗时从 8 秒涨到 218 秒且出现随机失败。
+   新增 backend/tests/conftest.py 强制清空 LLM_API_KEY。
+
+其他：
+- 错误详情可诊断（记录 HTTP 状态与简短 message，不记录讲述原文与密钥）
+- 清理误入库的数据库文件（app.db / checkpoints.sqlite3），
+  .gitignore 增加 *.db / *.sqlite3 通配规则防止再犯
+- /api/agent/status 增加 strictSchema 与 dropReasons
+
+实测：真实模型端到端 23 项全过、降级 0 次、8 条证据 quote 与原文精确对应；
+测试 47 passed（7.9 秒，不触网）。

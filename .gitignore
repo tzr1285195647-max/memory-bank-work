@@ -46,3 +46,11 @@ backend/.data/
 
 # pytest 临时目录（沙箱下系统临时目录不可写）
 .pytest-tmp/
+
+# 数据库与端口文件（无论出现在哪个目录都不能入库）
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

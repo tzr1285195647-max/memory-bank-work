@@ -36,8 +36,50 @@ SYSTEM_RULES = """你是「记忆银行」的智能体，帮助家庭保存长�
 只输出 JSON，不要输出任何解释文字。"""
 
 
+def _normalize_for_match(text: str) -> str:
+    """去掉空白，并统一常见中英标点，用于容忍模型输出的格式差异。"""
+    table = str.maketrans(
+        {
+            "，": ",",
+            "。": ".",
+            "！": "!",
+            "？": "?",
+            "；": ";",
+            "：": ":",
+            "、": ",",
+            "（": "(",
+            "）": ")",
+            "“": '"',
+            "”": '"',
+            "‘": "'",
+            "’": "'",
+            "—": "-",
+            "～": "~",
+        }
+    )
+    return "".join(ch for ch in text.translate(table) if not ch.isspace())
+
+
+def _quote_in_transcript(quote: str, transcript: str) -> bool:
+    """校验 quote 是否来自讲述原文。
+
+    先做严格子串匹配；不中时退一步做「忽略空白与标点差异」的匹配——
+    模型常把标点写成全角/半角或漏掉标点，这属于格式差异而非编造。
+    **不允许改写**：归一后仍是子串才通过，语序与用词必须照旧。
+    """
+    if not quote:
+        return False
+    if quote in transcript:
+        return True
+    return _normalize_for_match(quote) in _normalize_for_match(transcript)
+
+
 class LLMUnavailableError(RuntimeError):
     """模型调用失败或输出不合规，调用方可据此降级或重试。"""
+
+
+class SchemaModeProbe(RuntimeError):
+    """用于探测服务端是否支持严格 JSON Schema 的内部异常，不算降级。"""
 
 
 def _extract_json(text: str) -> Any:
@@ -75,13 +117,25 @@ class LLMAgentProvider(MockAgentProvider):
         self.api_key = (api_key if api_key is not None else settings.llm_api_key).strip()
         self.base_url = (base_url or settings.llm_base_url).rstrip("/")
         self.model = model or settings.llm_model
+        # 调试用：最近一次被丢弃的原因（不含讲述原文，避免敏感内容落盘）
+        self.last_drop_reasons: list[str] = []
+        self.last_missing_fields: dict[str, int] = {}
+        # 服务端是否支持严格 JSON Schema（None = 未探测过）
+        self._strict_schema_supported: bool | None = None
         if not self.api_key:
             raise LLMUnavailableError("未配置 LLM_API_KEY")
 
     # ------------------------------------------------------------ 底层调用
 
-    def _chat(self, *, user_prompt: str, max_tokens: int = 2000) -> Any:
-        payload = {
+    def _chat(self, *, user_prompt: str, max_tokens: int = 2000, schema: dict[str, Any] | None = None) -> Any:
+        """调用模型并取回 JSON。
+
+        schema 优先用**严格 JSON Schema**（服务端保证结构）；若服务端不支持
+        （例如 DeepSeek 目前返回 "This response_format type is unavailable now"），
+        自动退回 json_object 模式并记住该能力，后续不再尝试。
+        两种模式下本地校验都照常执行——服务端保证格式不等于内容可信。
+        """
+        payload_base = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": SYSTEM_RULES},
@@ -89,14 +143,26 @@ class LLMAgentProvider(MockAgentProvider):
             ],
             "temperature": 0.2,
             "max_tokens": max_tokens,
-            "response_format": {"type": "json_object"},
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
         last_error: Exception | None = None
+        self.last_http_status: int | None = None
+        self.last_error_detail: str = ""
         for attempt in range(settings.llm_max_retries + 1):
+            # 每轮重新决定 response_format：上一轮可能刚探测出服务端不支持严格 schema
+            strict = bool(schema) and self._strict_schema_supported is not False
+            if strict:
+                response_format: dict[str, Any] = {
+                    "type": "json_schema",
+                    "json_schema": {"name": "memory_bank_payload", "strict": True, "schema": schema},
+                }
+            else:
+                response_format = {"type": "json_object"}
+            LOGGER.debug("LLM attempt=%s strict_schema=%s", attempt + 1, strict)
+            payload = {**payload_base, "response_format": response_format}
             try:
                 response = httpx.post(
                     f"{self.base_url}/chat/completions",
@@ -104,21 +170,45 @@ class LLMAgentProvider(MockAgentProvider):
                     json=payload,
                     timeout=settings.llm_timeout_seconds,
                 )
+                self.last_http_status = response.status_code
                 if response.status_code >= 400:
-                    # 不打印响应体，避免把敏感内容写进日志
+                    # 只取错误类型与简短说明，不记录可能含敏感内容的完整响应
+                    detail = ""
+                    try:
+                        err = response.json().get("error") or {}
+                        detail = str(err.get("message") or err.get("type") or "")[:200]
+                    except Exception:  # noqa: BLE001
+                        detail = response.text[:200]
+                    self.last_error_detail = f"HTTP {response.status_code}: {detail}"
+                    # 服务端不支持严格 schema 时，标记并立即用 json_object 重试。
+                    # 这属于能力探测，不算一次降级（不计入 fallbackCount）。
+                    if response.status_code == 400 and "response_format" in detail and schema:
+                        self._strict_schema_supported = False
+                        LOGGER.info("服务端不支持 json_schema，改用 json_object 模式")
+                        raise SchemaModeProbe()
                     raise LLMUnavailableError(f"模型返回 HTTP {response.status_code}")
                 body = response.json()
                 content = body["choices"][0]["message"]["content"]
                 return _extract_json(content)
+            except SchemaModeProbe:
+                # 探测结果已记录（_strict_schema_supported=False），下一轮直接用
+                # json_object；这不算降级，也不记录错误详情
+                LOGGER.info("已切换到 json_object 模式，继续重试")
+                continue
             except (httpx.HTTPError, KeyError, IndexError, TypeError, LLMUnavailableError) as exc:
                 last_error = exc
+                if isinstance(exc, httpx.HTTPError):
+                    self.last_error_detail = f"{type(exc).__name__}: {str(exc)[:200]}"
+                elif not self.last_error_detail:
+                    self.last_error_detail = f"{type(exc).__name__}: {str(exc)[:200]}"
                 LOGGER.warning(
-                    "LLM 调用失败 attempt=%s/%s error=%s",
+                    "LLM 调用失败 attempt=%s/%s error=%s detail=%s",
                     attempt + 1,
                     settings.llm_max_retries + 1,
                     type(exc).__name__,
+                    self.last_error_detail[:160],
                 )
-        raise LLMUnavailableError(f"模型调用失败：{type(last_error).__name__}")
+        raise LLMUnavailableError(f"模型调用失败：{type(last_error).__name__}（{self.last_error_detail[:120]}）")
 
     # ------------------------------------------------------------ 采访导演
 
@@ -154,7 +244,22 @@ class LLMAgentProvider(MockAgentProvider):
             "不要暗示不存在的事实。若认为已经没有必要继续，把 question 设为 null。\n"
             '输出格式：{"question": "...", "target_element": "time|place|people|event|result|impact|feeling|null"}'
         )
-        data = self._chat(user_prompt=prompt, max_tokens=400)
+        data = self._chat(
+            user_prompt=prompt,
+            max_tokens=400,
+            schema={
+                "type": "object",
+                "properties": {
+                    "question": {"type": ["string", "null"]},
+                    "target_element": {
+                        "type": ["string", "null"],
+                        "enum": [*SEVEN_ELEMENTS, None],
+                    },
+                },
+                "required": ["question", "target_element"],
+                "additionalProperties": False,
+            },
+        )
 
         question = data.get("question")
         target = data.get("target_element")
@@ -185,34 +290,83 @@ class LLMAgentProvider(MockAgentProvider):
         prompt = (
             "请从下面这段讲述中抽取事实，按七要素分类。\n"
             "**quote 必须是讲述原文里的原样片段**（复制粘贴，不要改写、不要加标点以外的东西）。\n"
-            "讲述里没有的要素不要输出。\n\n"
+            "讲述里没有的要素不要输出；如果确实没有任何可抽取的事实，claims 返回空数组。\n\n"
             f"讲述内容：\n{transcript}\n\n"
             '输出格式：{"claims":[{"element":"time","text":"归一化表述","quote":"原文片段"}]}'
         )
-        data = self._chat(user_prompt=prompt, max_tokens=1500)
+        data = self._chat(
+            user_prompt=prompt,
+            max_tokens=1500,
+            schema={
+                "type": "object",
+                "properties": {
+                    "claims": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "element": {
+                                    "type": "string",
+                                    "enum": list(SEVEN_ELEMENTS),
+                                },
+                                "text": {"type": "string"},
+                                "quote": {"type": "string"},
+                            },
+                            "required": ["element", "text", "quote"],
+                            "additionalProperties": False,
+                        },
+                    }
+                },
+                "required": ["claims"],
+                "additionalProperties": False,
+            },
+        )
         raw_claims = data.get("claims")
         if not isinstance(raw_claims, list):
             raise LLMUnavailableError("模型未返回 claims 列表")
 
         claims: list[dict[str, Any]] = []
         dropped = 0
+        reasons: list[str] = []
+        missing_fields: dict[str, int] = {}
         for item in raw_claims:
             if not isinstance(item, dict):
                 dropped += 1
+                reasons.append("非对象条目")
                 continue
             element = str(item.get("element", "")).strip()
             quote = str(item.get("quote", "")).strip()
             text = str(item.get("text", "")).strip() or quote.strip("。！？；; ")
-            # 硬校验：要素合法 + quote 必须真的出现在讲述里
-            if element not in SEVEN_ELEMENTS or not quote or quote not in transcript:
+            if element not in SEVEN_ELEMENTS:
                 dropped += 1
+                reasons.append(f"非法要素 {element!r}")
+                missing_fields["element"] = missing_fields.get("element", 0) + 1
+                continue
+            if not quote:
+                dropped += 1
+                reasons.append("缺少 quote")
+                missing_fields["empty_quote"] = missing_fields.get("empty_quote", 0) + 1
+                continue
+            # 硬校验：quote 必须是讲述原文的子串（允许标点/空白归一，不允许改写）
+            if not _quote_in_transcript(quote, transcript):
+                dropped += 1
+                reasons.append("quote 不在原文")
+                missing_fields["not_substring"] = missing_fields.get("not_substring", 0) + 1
                 continue
             claims.append({"element": element, "text": text, "quote": quote, "confidence": 0.8})
 
+        self.last_drop_reasons = reasons[-10:]
+        self.last_missing_fields = missing_fields
         if dropped:
-            LOGGER.info("证据抽取丢弃 %s 条不合规结果（quote 不在原文或要素非法）", dropped)
+            LOGGER.info(
+                "证据抽取丢弃 %s 条不合规结果，原因分布=%s",
+                dropped,
+                missing_fields,
+            )
         if not claims and transcript.strip():
-            raise LLMUnavailableError("模型未产出任何可校验的证据")
+            raise LLMUnavailableError(
+                f"模型未产出任何可校验的证据（丢弃 {dropped} 条：{missing_fields or '无条目'}）"
+            )
 
         covered = {claim["element"] for claim in claims}
         return {
@@ -245,7 +399,31 @@ class LLMAgentProvider(MockAgentProvider):
             f"事实列表：\n{json.dumps(payload, ensure_ascii=False)}\n\n"
             '输出格式：{"title":"《...》","sentences":[{"text":"...","claim_ids":["claim-xxx"],"must_cite":true}]}'
         )
-        data = self._chat(user_prompt=prompt, max_tokens=2000)
+        data = self._chat(
+            user_prompt=prompt,
+            max_tokens=2000,
+            schema={
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "sentences": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "text": {"type": "string"},
+                                "claim_ids": {"type": "array", "items": {"type": "string"}},
+                                "must_cite": {"type": "boolean"},
+                            },
+                            "required": ["text", "claim_ids", "must_cite"],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
+                "required": ["title", "sentences"],
+                "additionalProperties": False,
+            },
+        )
         raw_sentences = data.get("sentences")
         if not isinstance(raw_sentences, list) or not raw_sentences:
             raise LLMUnavailableError("模型未返回 sentences")
