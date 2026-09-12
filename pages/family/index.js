@@ -1,14 +1,28 @@
-const mock = require('../../mock/index');
+const api = require('../../utils/api');
 
 Page({
   data: {
-    family: mock.family,
+    family: { memberCount: 0, invitedCount: 0, doneStories: 0, totalStories: 0, pending: [] },
     percent: 0,
+    loading: true,
   },
 
   onShow() {
-    const { doneStories, totalStories } = mock.family;
-    this.setData({ percent: totalStories ? Math.round((doneStories / totalStories) * 100) : 0 });
+    this.load();
+  },
+
+  async load() {
+    this.setData({ loading: true });
+    try {
+      const family = await api.getFamily();
+      const percent = family.totalStories
+        ? Math.round((family.doneStories / family.totalStories) * 100)
+        : 0;
+      this.setData({ family, percent, loading: false });
+    } catch (err) {
+      this.setData({ loading: false });
+      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+    }
   },
 
   onReview(e) {

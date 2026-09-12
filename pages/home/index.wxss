@@ -103,3 +103,7 @@
   color: var(--accent);
   margin-left: 12px;
 }
+
+.home__empty {
+  padding: 24px 0;
+}

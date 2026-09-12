@@ -1,29 +1,35 @@
 const store = require('../../store/index');
-const mock = require('../../mock/index');
-const { formatDuration } = require('../../utils/format');
+const api = require('../../utils/api');
 
 Page({
   data: {
-    today: mock.todayTopic,
+    today: { label: '今日叙事', title: '', subtitle: '', topicId: '' },
     recent: [],
+    loading: true,
   },
 
   onShow() {
-    // P0-4 接入 GET /home；当前用设计稿实测数据离线渲染
-    this.setData({
-      recent: mock.stories
-        .filter((item) => item.status === 'confirmed')
-        .slice(0, 2)
-        .map((item) => ({ ...item, durationText: formatDuration(item.durationMs) })),
-    });
+    this.load();
+  },
+
+  async load() {
+    this.setData({ loading: true });
+    try {
+      const data = await api.getHome();
+      this.setData({ today: data.today, recent: data.recent, loading: false });
+    } catch (err) {
+      this.setData({ loading: false });
+      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+    }
   },
 
   onRecord() {
     wx.navigateTo({ url: '/pages/topic/index' });
   },
+
   onTodayTap() {
-    store.set({ currentTopic: mock.todayTopic.topicId });
-    wx.navigateTo({ url: `/pages/record/index?topic=${mock.todayTopic.topicId}` });
+    store.set({ currentTopic: this.data.today.topicId });
+    wx.navigateTo({ url: `/pages/record/index?topic=${this.data.today.topicId}` });
   },
 
   onStoryTap(e) {

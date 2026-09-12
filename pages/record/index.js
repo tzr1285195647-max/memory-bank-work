@@ -1,7 +1,6 @@
 const store = require('../../store/index');
-const mock = require('../../mock/index');
+const api = require('../../utils/api');
 const { VoiceRecorder, formatDuration } = require('../../utils/recorder');
-const { uploadRecording } = require('../../utils/request');
 
 Page({
   data: {
@@ -23,12 +22,9 @@ Page({
 
   onLoad(options) {
     const topicId = options.topic || store.snapshot().currentTopic || '';
-    const topic = mock.topics.find((item) => item.id === topicId);
-    this.setData({
-      topicId,
-      topicTitle: topic ? topic.title : '',
-      fromTab: !options.topic,
-    });
+    this.setData({ topicId, fromTab: !options.topic });
+    this.loadTopicTitle(topicId);
+
     this.recorder = new VoiceRecorder({
       tick: ({ text, durationMs }) => {
         this.setData({ seconds: Math.floor(durationMs / 1000), timerText: text });
@@ -46,6 +42,17 @@ Page({
         wx.showToast({ title: '录音出错了，请重试', icon: 'none' });
       },
     });
+  },
+
+  async loadTopicTitle(topicId) {
+    if (!topicId) return;
+    try {
+      const topics = await api.getTopics();
+      const topic = topics.find((item) => item.id === topicId);
+      if (topic) this.setData({ topicTitle: topic.title });
+    } catch (err) {
+      console.warn('[record] 主题名加载失败', err && err.message);
+    }
   },
 
   onUnload() {
@@ -81,13 +88,14 @@ Page({
     wx.switchTab({ url: '/pages/topic/index' });
   },
 
-  /** 结束录音 -> 上传 -> 进入预览 */
+  /** 结束录音 -> 上传 -> 生成待确认草稿 -> 进入预览 */
   async onFinish() {
     if (this.data.seconds < 1) {
       wx.showToast({ title: '先讲几句再生成吧', icon: 'none' });
       return;
     }
     this.setData({ uploading: true });
+
     let payload = { durationMs: this.data.seconds * 1000, tempFilePath: this.recorder.tempFilePath };
     try {
       payload = await this.recorder.finish();
@@ -95,29 +103,41 @@ Page({
       console.error('[record] finish failed', err);
     }
 
-    let asset = { assetId: '', offline: true };
+    let draft = null;
+    let audioPath = payload.tempFilePath;
     try {
-      asset = await uploadRecording({
+      const recording = await api.uploadRecording({
         filePath: payload.tempFilePath,
         topicId: this.data.topicId,
         durationMs: payload.durationMs,
       });
-    } catch (err) {
-      // 后端未配置或失败都不阻塞演示：本地临时文件仍可回听
-      console.warn('[record] upload skipped', err && err.message);
-    }
-
-    const draft = mock.draftFromTopic(this.data.topicId);
-    store.set({
-      currentDraft: {
-        ...draft,
+      draft = await api.createDraft({
         topicId: this.data.topicId,
         durationMs: payload.durationMs,
-        audioPath: payload.tempFilePath,
-        assetId: asset.assetId || '',
-        uploaded: !asset.offline,
-      },
+        recordingId: recording.assetId,
+      });
+      if (draft && draft.audioUrl) audioPath = draft.audioUrl;
+    } catch (err) {
+      // 后端不可用时仍允许本地回听刚录的原声，演示不中断
+      console.warn('[record] 上传或生成草稿失败', err && err.message);
+      wx.showToast({ title: '后端未连接，仅本地演示', icon: 'none' });
+    }
+
+    store.set({
+      currentDraft: draft
+        ? { ...draft, audioPath, topicId: this.data.topicId }
+        : {
+            id: `local-${Date.now()}`,
+            title: this.data.topicTitle || '未命名主题',
+            body: '（这段文字将根据你的讲述生成，当前为演示占位内容。）',
+            mode: '自然整理',
+            status: 'pending_review',
+            durationMs: payload.durationMs,
+            topicId: this.data.topicId,
+            audioPath,
+          },
     });
+
     this.setData({ uploading: false });
     wx.navigateTo({ url: `/pages/story-preview/index?topic=${this.data.topicId}` });
   },

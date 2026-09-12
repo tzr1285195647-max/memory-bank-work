@@ -1,30 +1,31 @@
-const mock = require('../../mock/index');
-const { formatDuration } = require('../../utils/format');
+const api = require('../../utils/api');
 
 Page({
   data: {
     list: [],
+    total: 0,
     sortDesc: true,
+    loading: true,
   },
 
   onShow() {
-    this.render();
+    this.load();
   },
 
-  render() {
-    const items = mock.stories
-      .filter((item) => item.status === 'confirmed')
-      .map((item, i) => ({
-        ...item,
-        index: String(i + 1).padStart(2, '0'),
-        durationText: formatDuration(item.durationMs),
-      }));
-    this.setData({ list: this.data.sortDesc ? items : [...items].reverse() });
+  async load() {
+    this.setData({ loading: true });
+    try {
+      const data = await api.getStories();
+      this.setData({ list: data.items, total: data.total, loading: false });
+    } catch (err) {
+      this.setData({ loading: false });
+      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+    }
   },
 
   onSort() {
     const sortDesc = !this.data.sortDesc;
-    this.setData({ sortDesc }, () => this.render());
+    this.setData({ sortDesc, list: [...this.data.list].reverse() });
   },
 
   onOpen(e) {

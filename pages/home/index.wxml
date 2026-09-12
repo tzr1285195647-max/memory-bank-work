@@ -35,5 +35,8 @@
       </view>
       <text class="home__story-play">▶</text>
     </view>
+    <view wx:if="{{!loading && !recent.length}}" class="home__empty">
+      <text class="t-note">还没有故事，点上面的「按下讲述」开始第一段。</text>
+    </view>
   </view>
 </view>

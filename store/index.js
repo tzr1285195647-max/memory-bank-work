@@ -5,13 +5,14 @@
 
 const STORAGE_KEY = 'memoryBank.state';
 
-const persistedKeys = ['role', 'token', 'user', 'familyId'];
+const persistedKeys = ['role', 'token', 'user', 'familyId', 'consentVersion'];
 
 const state = {
   role: null, // 'elder' | 'family'
   token: null,
   user: null, // { id, displayName, phoneMasked }
   familyId: null,
+  consentVersion: 1, // 写请求必须携带；撤回或版本变化后旧请求一律作废
   currentTopic: null, // 05 选中的主题
   currentDraft: null, // 07 待确认草稿，仅内存，避免未确认内容被误恢复
   recording: { active: false, seconds: 0, tempFilePath: null, durationMs: 0 },
@@ -71,7 +72,7 @@ function subscribe(fn) {
 }
 
 function clearSession() {
-  set({ role: null, token: null, user: null, familyId: null, currentDraft: null });
+  set({ role: null, token: null, user: null, familyId: null, consentVersion: 1, currentDraft: null });
 }
 
 /** 仅用于测试与调试：把状态恢复成初始值。 */
@@ -81,6 +82,7 @@ function reset() {
     token: null,
     user: null,
     familyId: null,
+    consentVersion: 1,
     currentTopic: null,
     currentDraft: null,
     recording: { active: false, seconds: 0, tempFilePath: null, durationMs: 0 },

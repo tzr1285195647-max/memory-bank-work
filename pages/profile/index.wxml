@@ -21,7 +21,7 @@
 
   <!-- 设计稿：三个 100×82 小卡，圆角 16 -->
   <view class="profile__stats">
-    <view wx:for="{{profile.stats}}" wx:key="label" class="profile__stat">
+    <view wx:for="{{statsList}}" wx:key="label" class="profile__stat">
       <text class="profile__stat-value">{{item.value}}</text>
       <text class="profile__stat-label">{{item.label}}</text>
     </view>

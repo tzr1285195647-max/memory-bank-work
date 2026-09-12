@@ -1,79 +1,66 @@
 /**
  * 请求封装。
  *
- * P0-4 之前后端尚未部署，因此：
- * - 未配置 baseUrl 时，api.js 的调用会走 mock 分支（见 utils/api.js）
- * - 每次写请求都必须携带 consentVersion（产品安全基线要求）
- * - 业务查询一律带 familyId，禁止仅凭资源 ID 查询
+ * 约定（对应 backend/ 的实现）：
+ * - 鉴权：Authorization: Bearer <token>
+ * - 家庭范围：familyId 来自登录返回，随身份一起持久化；服务端也会从令牌解析，不信任请求体
+ * - 写请求必须携带 consentVersion（产品安全基线：撤回或旧版本一律丢弃）
+ * - 后端不可用时按 config.fallbackToMock 决定是否降级到 mock 数据
  */
 
 const store = require('../store/index');
-
-// 部署后填入，例如 https://api.example.com
-const BASE_URL = '';
+const runtime = require('../config');
 
 const TIMEOUT = 15000;
 
-function isConfigured() {
-  return Boolean(BASE_URL);
-}
-
-function buildUrl(path) {
+function endpoint(path) {
   if (/^https?:\/\//.test(path)) return path;
-  return `${BASE_URL}${path}`;
+  return `${runtime.baseUrl}${path}`;
 }
 
-function request(options) {
-  const { path, method = 'GET', data = {}, auth = true } = options;
-  if (!isConfigured()) {
-    return Promise.reject(new Error('BACKEND_NOT_CONFIGURED'));
-  }
+/** 把后端返回的相对音频地址补成完整 URL */
+function absoluteUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+  return `${runtime.baseUrl}${path}`;
+}
+
+function request({ path, method = 'GET', data = {}, auth = true, timeout = TIMEOUT }) {
   const snapshot = store.snapshot();
   const header = { 'Content-Type': 'application/json' };
   if (auth && snapshot.token) header.Authorization = `Bearer ${snapshot.token}`;
-  if (snapshot.familyId) header['X-Family-Id'] = snapshot.familyId;
 
   return new Promise((resolve, reject) => {
     wx.request({
-      url: buildUrl(path),
+      url: endpoint(path),
       method,
       data,
       header,
-      timeout: TIMEOUT,
+      timeout,
       success: ({ statusCode, data: body }) => {
         if (statusCode >= 200 && statusCode < 300) return resolve(body);
         if (statusCode === 401) {
           store.clearSession();
           wx.reLaunch({ url: '/pages/welcome/index' });
+          return reject(new Error('登录已过期，请重新登录'));
         }
-        reject(new Error((body && body.message) || `请求失败（${statusCode}）`));
+        const detail = (body && (body.detail || body.message)) || `请求失败（${statusCode}）`;
+        reject(new Error(typeof detail === 'string' ? detail : JSON.stringify(detail)));
       },
-      fail: (err) => reject(new Error(err.errMsg || '网络异常')),
+      fail: (err) => reject(new Error(err.errMsg || '网络异常，请确认后端已启动')),
     });
   });
 }
 
-/**
- * 上传录音。字段与后端契约一致（见 docs/TECH_PLAN.md 第 9 节）。
- * 当前无后端时返回一个本地可用的占位 assetId，保证链路能跑通。
- */
+/** 上传录音（multipart）。字段名与 backend/api.py 的 Form 参数一致。 */
 function uploadRecording({ filePath, topicId, durationMs }) {
   const snapshot = store.snapshot();
-  if (!isConfigured()) {
-    return Promise.resolve({
-      assetId: `local-${Date.now()}`,
-      filePath,
-      durationMs,
-      offline: true,
-    });
-  }
   return new Promise((resolve, reject) => {
     wx.uploadFile({
-      url: buildUrl('/recordings'),
+      url: endpoint('/api/recordings'),
       filePath,
       name: 'file',
       formData: {
-        familyId: snapshot.familyId || '',
         topicId: topicId || '',
         durationMs: String(durationMs || 0),
         consentVersion: String(snapshot.consentVersion || 1),
@@ -95,4 +82,27 @@ function uploadRecording({ filePath, topicId, durationMs }) {
   });
 }
 
-module.exports = { request, uploadRecording, isConfigured, BASE_URL };
+/** 生成待确认草稿（表单编码，因为要和上传接口用同一套字段习惯） */
+function createDraft({ topicId, durationMs, recordingId }) {
+  const snapshot = store.snapshot();
+  const query = [
+    `topicId=${encodeURIComponent(topicId || '')}`,
+    `durationMs=${encodeURIComponent(durationMs || 0)}`,
+    `consentVersion=${encodeURIComponent(snapshot.consentVersion || 1)}`,
+    `recordingId=${encodeURIComponent(recordingId || '')}`,
+  ].join('&');
+  return request({
+    path: `/api/stories/draft?${query}`,
+    method: 'POST',
+    data: {},
+  });
+}
+
+module.exports = {
+  request,
+  uploadRecording,
+  createDraft,
+  absoluteUrl,
+  baseUrl: runtime.baseUrl,
+  fallbackToMock: runtime.fallbackToMock,
+};

@@ -1,11 +1,12 @@
 const store = require('../../store/index');
-const { maskPhone } = require('../../utils/format');
+const api = require('../../utils/api');
 
 Page({
   data: {
     phone: '',
     password: '',
     submitting: false,
+    useMock: false,
   },
 
   onLoad(options) {
@@ -33,21 +34,49 @@ Page({
     return true;
   },
 
-  /** P0-4 接入 POST /auth/login；当前为离线演示登录 */
-  onLogin() {
+  async onLogin() {
     if (!this.validate()) return;
+    const role = store.snapshot().role || 'elder';
     this.setData({ submitting: true });
-    setTimeout(() => {
-      const role = store.snapshot().role || 'elder';
+
+    try {
+      const result = await api.login({
+        phone: this.data.phone,
+        password: this.data.password,
+        role,
+      });
       store.set({
         role,
-        token: 'demo-token',
-        user: { id: 'u1', displayName: role === 'family' ? '家人' : '林阿姨', phoneMasked: maskPhone(this.data.phone) },
-        familyId: 'f1',
+        token: result.token,
+        familyId: result.familyId,
+        consentVersion: result.consentVersion || 1,
+        user: result.user,
       });
-      this.setData({ submitting: false });
+      this.setData({ submitting: false, useMock: false });
       wx.reLaunch({ url: role === 'family' ? '/pages/family/index' : '/pages/home/index' });
-    }, 600);
+    } catch (err) {
+      // 后端未启动时不阻断演示：给出明确提示并降级为本地会话
+      this.setData({ submitting: false });
+      console.warn('[login] 后端登录失败', err);
+      wx.showModal({
+        title: '后端未连接',
+        content: `${err.message || '请求失败'}\n\n是否先以本地演示模式进入？（数据不会保存到后端）`,
+        confirmText: '本地进入',
+        cancelText: '重试',
+        success: ({ confirm }) => {
+          if (!confirm) return;
+          store.set({
+            role,
+            token: '',
+            familyId: '',
+            consentVersion: 1,
+            user: { id: 'local', displayName: role === 'family' ? '家人' : '林阿姨', phoneMasked: '' },
+          });
+          this.setData({ useMock: true });
+          wx.reLaunch({ url: role === 'family' ? '/pages/family/index' : '/pages/home/index' });
+        },
+      });
+    }
   },
 
   onSmsLogin() {
@@ -55,6 +84,6 @@ Page({
   },
 
   onRegister() {
-    wx.showToast({ title: '注册流程属于 P1', icon: 'none' });
+    wx.showToast({ title: '首次登录会自动注册，直接登录即可', icon: 'none' });
   },
 });

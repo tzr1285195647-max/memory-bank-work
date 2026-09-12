@@ -1,6 +1,26 @@
+const api = require('../../utils/api');
+const store = require('../../store/index');
+
 Page({
   data: {
-    designNo: '05',
-    title: '主题选择',
+    topics: [],
+  },
+
+  onShow() {
+    this.load();
+  },
+
+  async load() {
+    try {
+      this.setData({ topics: await api.getTopics() });
+    } catch (err) {
+      wx.showToast({ title: err.message || '主题加载失败', icon: 'none' });
+    }
+  },
+
+  onChoose(e) {
+    const topicId = e.currentTarget.dataset.id;
+    store.set({ currentTopic: topicId });
+    wx.navigateTo({ url: `/pages/record/index?topic=${topicId}` });
   },
 });
