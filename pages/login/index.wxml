@@ -48,4 +48,11 @@
       <text class="login__link-normal">还没有账户？ 注册</text>
     </view>
   </view>
+
+  <!-- 演示便利：一键填入演示账号（正式版应移除） -->
+  <view class="login__demo" bindtap="onFillDemo">
+    <text class="login__demo-title">演示账号</text>
+    <text class="login__demo-text">{{demoPhone}} / {{demoPassword}}</text>
+    <text class="login__demo-hint">点击自动填入 · 任意 11 位新手机号也可直接注册登录</text>
+  </view>
 </view>

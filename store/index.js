@@ -38,7 +38,10 @@ function emit() {
 function persist() {
   const data = {};
   persistedKeys.forEach((key) => {
-    data[key] = state[key];
+    // 只存"有意义"的值：undefined 会让 setStorageSync 报
+    // "undefined is not valid JSON"，null 与空串则按需保留
+    const value = state[key];
+    if (value !== undefined) data[key] = value;
   });
   try {
     wx.setStorageSync(STORAGE_KEY, data);

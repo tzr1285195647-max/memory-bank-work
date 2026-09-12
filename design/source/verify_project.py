@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -104,6 +105,31 @@ if misplaced:
         print(f"  ✗ {item}")
 else:
     print("  OK 未发现位置异常或缺少配套的样式/模板文件")
+
+print("\n=== 8. WXML 事件绑定是否都有对应方法（漏写会导致点击无反应并报错）===")
+BIND_PATTERN = re.compile(r'bind:?([a-zA-Z]+)\s*=\s*"([^"{}]+)"')
+MISSING_HANDLERS: list[str] = []
+for wxml in sorted(ROOT.rglob("*.wxml")):
+    if any(part in {".git", "node_modules", "design", "docs"} for part in wxml.parts):
+        continue
+    js_path = wxml.with_suffix(".js")
+    if not js_path.exists():
+        continue
+    js_text = js_path.read_text(encoding="utf-8")
+    for match in BIND_PATTERN.finditer(wxml.read_text(encoding="utf-8")):
+        handler = match.group(2).strip()
+        if not handler or handler.startswith("{{"):
+            continue
+        # 支持 method() {} / method: function / method: (e) => 三种写法
+        if re.search(rf"(^|[\s,{{]){re.escape(handler)}\s*[(:]", js_text, re.MULTILINE):
+            continue
+        MISSING_HANDLERS.append(f"{wxml.relative_to(ROOT)} 绑定了 {handler}，但 {js_path.name} 中未定义")
+if MISSING_HANDLERS:
+    problems.extend(MISSING_HANDLERS)
+    for item in MISSING_HANDLERS:
+        print(f"  ✗ {item}")
+else:
+    print("  OK 所有事件绑定都有对应方法")
 
 print("\n" + "=" * 66)
 print(f"检查项 {checked} 个，问题 {len(problems)} 个")

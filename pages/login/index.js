@@ -7,6 +7,13 @@ Page({
     password: '',
     submitting: false,
     useMock: false,
+    demoPhone: '13800008899',
+    demoPassword: '123456',
+  },
+
+  onFillDemo() {
+    this.setData({ phone: this.data.demoPhone, password: this.data.demoPassword });
+    wx.showToast({ title: '已填入演示账号', icon: 'none' });
   },
 
   onLoad(options) {
