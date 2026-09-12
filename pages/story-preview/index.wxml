@@ -1,9 +1,55 @@
-<nav-bar title="记忆银行" theme="brand" showBack="{{false}}" />
+<nav-bar title="记忆银行" theme="brand" showBack="{{true}}" showMore="{{false}}" />
 
-<view class="page container">
-  <view class="placeholder">
-    <text class="placeholder__no">07</text>
-    <text class="placeholder__title">故事预览</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page preview">
+  <view class="preview__intro">
+    <text class="t-title">故事预览</text>
+    <text class="preview__sub">确认后，这段故事会保存到你的故事书。</text>
+  </view>
+
+  <!-- 设计稿：342×310 白卡，圆角 20，内边距 24 -->
+  <view class="preview__card">
+    <text class="preview__title">{{draft.title}}</text>
+
+    <textarea
+      wx:if="{{editing}}"
+      class="preview__textarea"
+      value="{{body}}"
+      maxlength="{{2000}}"
+      auto-height="{{true}}"
+      bindinput="onInput"
+    />
+    <text wx:else class="preview__body">{{body}}</text>
+
+    <!-- 来源标识：原声时长 + 整理方式（证据可追溯） -->
+    <view class="preview__meta">
+      <evidence-tag durationMs="{{draft.durationMs}}" mode="{{draft.mode}}" />
+    </view>
+
+    <!-- 产品规则要求：AI 生成或整理的内容必须显式标注 -->
+    <view class="preview__ai">
+      <ai-badge />
+    </view>
+  </view>
+
+  <view class="preview__hint">
+    <text>{{editing ? '改好后点下方按钮保存。' : '这段文字来自你的讲述，你可以继续修改或确认。'}}</text>
+  </view>
+
+  <view class="preview__actions">
+    <primary-button
+      wx:if="{{!editing}}"
+      text="修改文字"
+      type="secondary"
+      bind:tap="onEdit"
+    />
+    <primary-button
+      wx:if="{{editing}}"
+      text="保存修改"
+      type="secondary"
+      bind:tap="onSaveEdit"
+    />
+    <view class="preview__confirm">
+      <primary-button text="确认故事" type="primary" bind:tap="onConfirm" />
+    </view>
   </view>
 </view>

@@ -61,6 +61,25 @@ for rel in ("app.js", "app.json", "app.wxss", "sitemap.json", "project.config.js
     require(rel, "工程必需")
     print(f"  {rel:<24} {'OK' if (ROOT / rel).exists() else '缺失'}")
 
+print("\n=== 6. 残留的骨架占位内容（P0-2 完成后不应存在）===")
+PLACEHOLDER_MARKERS = ("placeholder__no", "placeholder__title", "placeholder__hint", "页面骨架已注册")
+leftovers: list[str] = []
+for path in sorted(ROOT.rglob("*")):
+    if not path.is_file() or path.suffix not in {".wxml", ".wxss", ".js"}:
+        continue
+    if any(part in {".git", "design", "docs", "node_modules"} for part in path.parts):
+        continue
+    text = path.read_text(encoding="utf-8")
+    hit = [m for m in PLACEHOLDER_MARKERS if m in text]
+    if hit:
+        leftovers.append(f"{path.relative_to(ROOT)} 含 {hit}")
+if leftovers:
+    problems.extend(leftovers)
+    for item in leftovers:
+        print(f"  ✗ {item}")
+else:
+    print("  OK 未发现占位内容残留")
+
 print("\n" + "=" * 66)
 print(f"检查项 {checked} 个，问题 {len(problems)} 个")
 for item in problems:

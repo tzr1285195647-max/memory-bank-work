@@ -1,9 +1,39 @@
-<nav-bar title="记忆银行" theme="brandLight" showBack="{{false}}" />
+<nav-bar title="记忆银行" theme="brandLight" showBack="{{false}}" showMore="{{true}}" bind:more="onMore" />
 
-<view class="page page--tab container">
-  <view class="placeholder">
-    <text class="placeholder__no">04</text>
-    <text class="placeholder__title">长辈首页</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page page--tab home">
+  <view class="home__intro">
+    <text class="t-hero">今天，想讲点什么？</text>
+    <text class="home__sub">一次只讲一个小故事，不用从出生讲起。</text>
+  </view>
+
+  <!-- 设计稿：342×148 浅陶土卡「今日叙事」 -->
+  <view class="home__today" bindtap="onTodayTap">
+    <text class="home__today-label">今日叙事</text>
+    <text class="home__today-title">{{today.title}}</text>
+    <text class="home__today-sub">{{today.subtitle}}</text>
+  </view>
+
+  <!-- 设计稿：342×82 主按钮，距卡片 34 —— 「按下讲述」 -->
+  <view class="home__cta">
+    <primary-button text="按下讲述" type="primary" bind:tap="onRecord" />
+  </view>
+
+  <text class="t-section home__section">最近的故事</text>
+
+  <view class="home__recent">
+    <view
+      wx:for="{{recent}}"
+      wx:key="id"
+      class="home__story"
+      hover-class="home__story--hover"
+      data-id="{{item.id}}"
+      bindtap="onStoryTap"
+    >
+      <view class="home__story-main">
+        <text class="home__story-title">{{item.title}}</text>
+        <text class="home__story-meta">{{item.dayLabel}} · {{item.durationText}}</text>
+      </view>
+      <text class="home__story-play">▶</text>
+    </view>
   </view>
 </view>

@@ -1,26 +1,132 @@
-.placeholder {
-  padding: 80px 0;
+.family {
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.family__intro {
+  margin-top: 60px;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.placeholder__no {
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--accent);
-  font-family: var(--font-latin);
-}
-
-.placeholder__title {
-  font-size: 25px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-top: 12px;
-}
-
-.placeholder__hint {
+.family__sub {
+  margin-top: 14px;
   font-size: 15px;
   color: var(--text-muted);
-  margin-top: 8px;
+}
+
+/* 设计稿：342×112 圆角 20，左右分列 */
+.family__members {
+  margin-top: 46px;
+  min-height: 112px;
+  border-radius: 20px;
+  background-color: var(--bg-card);
+  padding: 22px 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.family__members-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.family__label {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.family__count {
+  margin-top: 4px;
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.family__invited {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.family__section {
+  margin-top: 36px;
+}
+
+/* 设计稿：342×12 底槽 + 226×12 进度条，圆角 6 */
+.family__progress {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.family__track {
+  height: 12px;
+  border-radius: 6px;
+  background-color: var(--track);
+  overflow: hidden;
+}
+
+.family__bar {
+  height: 12px;
+  border-radius: 6px;
+  background-color: var(--brand-light);
+}
+
+.family__progress-text {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* 设计稿：342×94 白卡，圆角 18 */
+.family__pending {
+  margin-top: 16px;
+}
+
+.family__item {
+  min-height: 94px;
+  border-radius: 18px;
+  background-color: var(--bg-card);
+  padding: 20px 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.family__item--hover {
+  background-color: #fbf9f3;
+}
+
+.family__item-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.family__item-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.family__item-meta {
+  margin-top: 11px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.family__item-arrow {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-left: 12px;
+}
+
+.family__empty {
+  padding: 24px 0;
 }

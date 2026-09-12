@@ -1,26 +1,79 @@
-.placeholder {
-  padding: 80px 0;
+.role {
   display: flex;
   flex-direction: column;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.role__intro {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.role__sub {
+  margin-top: 12px;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+/* 设计稿：卡片区 y=329，标题块底约 275 */
+.role__cards {
+  margin-top: 54px;
+  display: flex;
+  flex-direction: column;
+}
+
+.role__card {
+  height: 118px;
+  border-radius: 20px;
+  background-color: var(--bg-card);
+  display: flex;
   align-items: center;
+  padding: 0 24px;
+  box-sizing: border-box;
+  margin-bottom: 22px;
 }
 
-.placeholder__no {
-  font-size: 34px;
+.role__card--hover {
+  background-color: #fbf9f3;
+}
+
+.role__card-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.role__card-title {
+  font-size: 23px;
   font-weight: 700;
-  color: var(--accent);
-  font-family: var(--font-latin);
+  color: var(--brand);
 }
 
-.placeholder__title {
+.role__card-desc {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.role__card-arrow {
   font-size: 25px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-top: 12px;
+  color: var(--accent);
+  margin-left: 12px;
 }
 
-.placeholder__hint {
-  font-size: 15px;
-  color: var(--text-muted);
-  margin-top: 8px;
+/* 设计稿：「已有账户？登录」y=679，居中 */
+.role__login {
+  margin: auto 0 90px;
+  display: flex;
+  justify-content: center;
+}
+
+.role__login-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand);
 }

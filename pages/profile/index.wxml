@@ -1,9 +1,48 @@
-<nav-bar title="记忆银行" theme="brand" showBack="{{false}}" />
+<nav-bar title="记忆银行" theme="brand" showBack="{{true}}" showMore="{{false}}" />
 
-<view class="page page--tab container">
-  <view class="placeholder">
-    <text class="placeholder__no">10</text>
-    <text class="placeholder__title">个人中心</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page page--tab profile">
+  <view class="profile__intro">
+    <text class="t-title">我的账户</text>
+    <text class="profile__sub">这些故事，属于你，也属于家人。</text>
+  </view>
+
+  <!-- 设计稿：342×108 白卡；头像 60 圆 -->
+  <view class="profile__user">
+    <view class="profile__avatar">
+      <text class="profile__avatar-text">{{profile.avatarText}}</text>
+    </view>
+    <view class="profile__user-main">
+      <text class="profile__name">{{profile.displayName}}</text>
+      <text class="profile__meta">{{profile.roleLabel}} · {{profile.phoneMasked}}</text>
+    </view>
+  </view>
+
+  <text class="t-section profile__section">我的记录</text>
+
+  <!-- 设计稿：三个 100×82 小卡，圆角 16 -->
+  <view class="profile__stats">
+    <view wx:for="{{profile.stats}}" wx:key="label" class="profile__stat">
+      <text class="profile__stat-value">{{item.value}}</text>
+      <text class="profile__stat-label">{{item.label}}</text>
+    </view>
+  </view>
+
+  <text class="t-section profile__section">账户与家庭</text>
+
+  <view class="profile__rows">
+    <view class="profile__row" hover-class="profile__row--hover" bindtap="onFamily">
+      <text class="profile__row-title">家庭与协作</text>
+      <text class="profile__row-arrow">›</text>
+    </view>
+
+    <!-- 产品规则要求：授权撤回必须可达（设计稿未画，此处补齐） -->
+    <view class="profile__row" hover-class="profile__row--hover" bindtap="onRevoke">
+      <text class="profile__row-title">撤回授权并删除内容</text>
+      <text class="profile__row-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="profile__logout">
+    <primary-button text="退出登录" type="danger" bind:tap="onLogout" />
   </view>
 </view>

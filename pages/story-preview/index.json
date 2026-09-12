@@ -1,6 +1,9 @@
 {
   "usingComponents": {
-    "nav-bar": "../../components/nav-bar/index"
+    "nav-bar": "../../components/nav-bar/index",
+    "primary-button": "../../components/primary-button/index",
+    "ai-badge": "../../components/ai-badge/index",
+    "evidence-tag": "../../components/evidence-tag/index"
   },
   "navigationStyle": "custom"
 }

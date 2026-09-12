@@ -1,9 +1,35 @@
-<nav-bar title="记忆银行" theme="brand" showBack="{{false}}" />
+<nav-bar title="记忆银行" theme="brand" showBack="{{true}}" showMore="{{false}}" />
 
-<view class="page page--tab container">
-  <view class="placeholder">
-    <text class="placeholder__no">09</text>
-    <text class="placeholder__title">故事书</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page page--tab stories">
+  <view class="stories__intro">
+    <text class="t-title">我们的故事书</text>
+    <text class="stories__sub">已经保存的每一段声音，都值得被记住。</text>
+  </view>
+
+  <view class="stories__bar">
+    <text class="stories__count">{{list.length}} 个故事</text>
+    <text class="stories__sort" bindtap="onSort">按时间排序 ⌄</text>
+  </view>
+
+  <view wx:if="{{list.length}}" class="stories__list">
+    <list-item
+      wx:for="{{list}}"
+      wx:key="id"
+      variant="story"
+      index="{{item.index}}"
+      title="{{item.title}}"
+      subtitle="{{item.durationText}} · {{item.mode}}"
+      arrow="›"
+      data-id="{{item.id}}"
+      bind:tap="onOpen"
+    />
+  </view>
+
+  <view wx:else class="stories__empty">
+    <text class="t-section">还没有故事</text>
+    <text class="t-note mt-8">按下「讲述」，从一个具体的小片段开始。</text>
+    <view class="stories__empty-cta">
+      <primary-button text="开始讲述" type="primary" bind:tap="onStart" />
+    </view>
   </view>
 </view>

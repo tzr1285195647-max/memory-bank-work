@@ -1,26 +1,124 @@
-.placeholder {
-  padding: 80px 0;
+.record {
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.record__intro {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+}
+
+.record__sub {
+  margin-top: 14px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+/* 设计稿：342×250 圆角 28 浅绿，内容居中 */
+.record__panel {
+  margin-top: 44px;
+  height: 250px;
+  border-radius: 28px;
+  background-color: var(--surface-green);
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 34px 0 0;
+  box-sizing: border-box;
+  position: relative;
 }
 
-.placeholder__no {
+.record__timer {
   font-size: 34px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--brand);
   font-family: var(--font-latin);
+  letter-spacing: 1px;
 }
 
-.placeholder__title {
-  font-size: 25px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-top: 12px;
+.record__status {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
 }
 
-.placeholder__hint {
+.record__dot {
+  font-size: 13px;
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+.record__status-text {
   font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* 设计稿：106×106 圆，圆心 y≈556，圆形底边压住面板底边 */
+.record__button {
+  position: absolute;
+  bottom: -53px;
+  width: 106px;
+  height: 106px;
+  border-radius: 53px;
+  background-color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.record__button--hover {
+  opacity: 0.88;
+}
+
+.record__button-icon {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1;
+}
+
+.record__modes {
+  margin-top: 90px;
+  display: flex;
+  justify-content: center;
+}
+
+.record__mode + .record__mode {
+  margin-left: 26px;
+}
+
+.record__mode {
+  font-size: 14px;
   color: var(--text-muted);
-  margin-top: 8px;
+}
+
+.record__mode--active {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* 设计稿：按钮 y=709 */
+.record__actions {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+}
+
+.record__actions > * {
+  margin-bottom: 16px;
+}
+
+.record__finish {
+  margin-top: 0;
+}
+
+/* 未选主题时的空态 */
+.record--empty .record__intro {
+  margin-top: 60px;
+}
+
+.record__pick {
+  margin-top: 48px;
 }

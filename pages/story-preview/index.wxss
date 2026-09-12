@@ -1,26 +1,89 @@
-.placeholder {
-  padding: 80px 0;
+.preview {
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.preview__intro {
+  margin-top: 60px;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.placeholder__no {
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--accent);
-  font-family: var(--font-latin);
+.preview__sub {
+  margin-top: 14px;
+  font-size: 15px;
+  color: var(--text-muted);
 }
 
-.placeholder__title {
+/* 设计稿：342×310 圆角 20 */
+.preview__card {
+  margin-top: 32px;
+  border-radius: 20px;
+  background-color: var(--bg-card);
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview__title {
   font-size: 25px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-top: 12px;
+  font-family: var(--font-latin);
 }
 
-.placeholder__hint {
-  font-size: 15px;
+.preview__body {
+  margin-top: 22px;
+  font-size: 17px;
+  line-height: 1.75;
   color: var(--text-muted);
-  margin-top: 8px;
+  white-space: pre-wrap;
+}
+
+.preview__textarea {
+  margin-top: 18px;
+  width: 100%;
+  min-height: 180px;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  background-color: #fbf9f3;
+  border-radius: 12px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+/* 设计稿：来源标识 y=561，正文底约 481 */
+.preview__meta {
+  margin-top: 36px;
+  display: flex;
+}
+
+.preview__ai {
+  margin-top: 10px;
+  display: flex;
+}
+
+.preview__hint {
+  margin-top: 28px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.preview__actions {
+  margin-top: 32px;
+  padding-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview__actions > * {
+  margin-bottom: 14px;
+}
+
+.preview__confirm {
+  margin-top: 0;
 }

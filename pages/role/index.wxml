@@ -1,9 +1,30 @@
 <nav-bar title="记忆银行" theme="accent" showBack="{{false}}" />
 
-<view class="page container">
-  <view class="placeholder">
-    <text class="placeholder__no">02</text>
-    <text class="placeholder__title">身份选择</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page role">
+  <view class="role__intro">
+    <text class="t-hero">欢迎来到记忆银行</text>
+    <text class="role__sub">你想以什么身份使用？</text>
+  </view>
+
+  <!-- 设计稿：两张 342×118 白卡，圆角 20，间距 22 -->
+  <view class="role__cards">
+    <view
+      wx:for="{{roles}}"
+      wx:key="id"
+      class="role__card"
+      hover-class="role__card--hover"
+      data-role="{{item.id}}"
+      bindtap="onChoose"
+    >
+      <view class="role__card-main">
+        <text class="role__card-title">{{item.title}}</text>
+        <text class="role__card-desc">{{item.desc}}</text>
+      </view>
+      <text class="role__card-arrow">→</text>
+    </view>
+  </view>
+
+  <view class="role__login" bindtap="onLogin">
+    <text class="role__login-text">已有账户？ 登录</text>
   </view>
 </view>

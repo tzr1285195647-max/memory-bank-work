@@ -1,9 +1,51 @@
-<nav-bar title="记忆银行" theme="brand" showBack="{{false}}" />
+<nav-bar title="记忆银行" theme="brand" showBack="{{true}}" showMore="{{false}}" />
 
-<view class="page container">
-  <view class="placeholder">
-    <text class="placeholder__no">03</text>
-    <text class="placeholder__title">登录</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page login">
+  <view class="login__intro">
+    <text class="t-hero">登录记忆银行</text>
+    <text class="login__sub">登录后，继续保存珍贵的声音</text>
+  </view>
+
+  <view class="login__form">
+    <text class="login__label">手机号</text>
+    <input
+      class="login__input"
+      type="number"
+      maxlength="11"
+      placeholder="请输入手机号"
+      placeholder-class="login__placeholder"
+      value="{{phone}}"
+      bindinput="onPhoneInput"
+    />
+
+    <text class="login__label login__label--second">密码</text>
+    <input
+      class="login__input"
+      password="{{true}}"
+      maxlength="32"
+      placeholder="请输入密码"
+      placeholder-class="login__placeholder"
+      value="{{password}}"
+      bindinput="onPasswordInput"
+    />
+  </view>
+
+  <view class="login__submit">
+    <primary-button
+      text="登录"
+      type="primary"
+      loading="{{submitting}}"
+      loadingText="登录中"
+      bind:tap="onLogin"
+    />
+  </view>
+
+  <view class="login__links">
+    <view class="login__link" bindtap="onSmsLogin">
+      <text class="login__link-strong">验证码登录</text>
+    </view>
+    <view class="login__link" bindtap="onRegister">
+      <text class="login__link-normal">还没有账户？ 注册</text>
+    </view>
   </view>
 </view>

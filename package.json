@@ -1,0 +1,1 @@
+{"name":"memory-bank-tools","private":true,"version":"1.0.0","description":"Memory Bank 小程序仓库（依赖仅用于 Figma 设计稿解析）","type":"module","dependencies":{"kiwi-schema":"^0.5.0"}}

@@ -1,26 +1,57 @@
-.placeholder {
-  padding: 80px 0;
+.stories {
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.stories__intro {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stories__sub {
+  margin-top: 14px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+/* 设计稿：8 个故事 y=311，排序在右 */
+.stories__bar {
+  margin-top: 42px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.stories__count {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stories__sort {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.stories__list {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stories__list > * {
+  margin-bottom: 24px;
+}
+
+.stories__empty {
+  margin-top: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.placeholder__no {
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--accent);
-  font-family: var(--font-latin);
-}
-
-.placeholder__title {
-  font-size: 25px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-top: 12px;
-}
-
-.placeholder__hint {
-  font-size: 15px;
-  color: var(--text-muted);
-  margin-top: 8px;
+.stories__empty-cta {
+  margin-top: 24px;
+  width: 200px;
 }

@@ -1,0 +1,3391 @@
+{
+ "prelude": "fig-kiwi",
+ "screens": [
+  {
+   "name": "01｜欢迎页",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#4E6657"
+    },
+    {
+     "x": 24,
+     "y": 250,
+     "w": 342,
+     "h": 220,
+     "radius": 28,
+     "fill": "#E0E8D8"
+    },
+    {
+     "x": 24,
+     "y": 650,
+     "w": 342,
+     "h": 52,
+     "radius": 16,
+     "fill": "#4E6657"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "⋯",
+     "x": 345,
+     "y": 22,
+     "w": 28,
+     "h": 32,
+     "size": 25,
+     "bold": false,
+     "color": "#FFFFFF",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "把家里的故事，慢慢留下来",
+     "x": 24,
+     "y": 122,
+     "w": 342,
+     "h": 76,
+     "size": 30,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      },
+      {
+       "y": 68,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "每一次讲述，都是给家人留的一盏灯。",
+     "x": 24,
+     "y": 166,
+     "w": 342,
+     "h": 20,
+     "size": 16,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "“",
+     "x": 54,
+     "y": 274,
+     "w": 80,
+     "h": 92,
+     "size": 72,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 72.4,
+       "x": 0,
+       "lineHeight": 92.2
+      }
+     ]
+    },
+    {
+     "text": "那些被时间\n温柔保存的声音",
+     "x": 54,
+     "y": 354,
+     "w": 270,
+     "h": 76,
+     "size": 30,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      },
+      {
+       "y": 68,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 530,
+     "w": 260,
+     "h": 33,
+     "size": 26,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 26,
+       "x": 0,
+       "lineHeight": 33.3
+      }
+     ]
+    },
+    {
+     "text": "让长辈轻松讲，让家人一起听。",
+     "x": 24,
+     "y": 572,
+     "w": 320,
+     "h": 20,
+     "size": 16,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "我是长辈，开始讲述",
+     "x": 62,
+     "y": 664,
+     "w": 260,
+     "h": 22,
+     "size": 17,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 17.2,
+       "x": 0,
+       "lineHeight": 22
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "02｜身份选择",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#C98362"
+    },
+    {
+     "x": 24,
+     "y": 240,
+     "w": 342,
+     "h": 118,
+     "radius": 20,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 380,
+     "w": 342,
+     "h": 118,
+     "radius": 20,
+     "fill": "#FFFFFF"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "⋯",
+     "x": 345,
+     "y": 22,
+     "w": 28,
+     "h": 32,
+     "size": 25,
+     "bold": false,
+     "color": "#FFFFFF",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "欢迎来到记忆银行",
+     "x": 24,
+     "y": 122,
+     "w": 342,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "你想以什么身份使用？",
+     "x": 24,
+     "y": 166,
+     "w": 342,
+     "h": 20,
+     "size": 16,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "长辈",
+     "x": 48,
+     "y": 264,
+     "w": 120,
+     "h": 29,
+     "size": 23,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.9,
+       "x": 0,
+       "lineHeight": 29.4
+      }
+     ]
+    },
+    {
+     "text": "讲述自己的故事，留下原声记忆",
+     "x": 48,
+     "y": 302,
+     "w": 250,
+     "h": 18,
+     "size": 14,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "→",
+     "x": 320,
+     "y": 275,
+     "w": 25,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "家人",
+     "x": 48,
+     "y": 404,
+     "w": 120,
+     "h": 29,
+     "size": 23,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.9,
+       "x": 0,
+       "lineHeight": 29.4
+      }
+     ]
+    },
+    {
+     "text": "陪伴讲述，整理并分享家庭故事",
+     "x": 48,
+     "y": 442,
+     "w": 260,
+     "h": 18,
+     "size": 14,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "→",
+     "x": 320,
+     "y": 415,
+     "w": 25,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "已有账户？ 登录",
+     "x": 112,
+     "y": 590,
+     "w": 190,
+     "h": 20,
+     "size": 16,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "03｜登录",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#4E6657"
+    },
+    {
+     "x": 24,
+     "y": 266,
+     "w": 342,
+     "h": 52,
+     "radius": 12,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 366,
+     "w": 342,
+     "h": 52,
+     "radius": 12,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 456,
+     "w": 342,
+     "h": 52,
+     "radius": 16,
+     "fill": "#4E6657"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "⋯",
+     "x": 345,
+     "y": 22,
+     "w": 28,
+     "h": 32,
+     "size": 25,
+     "bold": false,
+     "color": "#FFFFFF",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "登录记忆银行",
+     "x": 24,
+     "y": 122,
+     "w": 342,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "登录后，继续保存珍贵的声音",
+     "x": 24,
+     "y": 166,
+     "w": 342,
+     "h": 20,
+     "size": 16,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "手机号",
+     "x": 28,
+     "y": 240,
+     "w": 90,
+     "h": 18,
+     "size": 14,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "请输入手机号",
+     "x": 42,
+     "y": 282,
+     "w": 280,
+     "h": 20,
+     "size": 16,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "密码",
+     "x": 28,
+     "y": 340,
+     "w": 90,
+     "h": 18,
+     "size": 14,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "请输入密码",
+     "x": 42,
+     "y": 382,
+     "w": 280,
+     "h": 20,
+     "size": 16,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "登录",
+     "x": 168,
+     "y": 470,
+     "w": 70,
+     "h": 22,
+     "size": 17,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 17.2,
+       "x": 0,
+       "lineHeight": 22
+      }
+     ]
+    },
+    {
+     "text": "验证码登录",
+     "x": 142,
+     "y": 540,
+     "w": 120,
+     "h": 19,
+     "size": 15,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "还没有账户？ 注册",
+     "x": 118,
+     "y": 600,
+     "w": 160,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "04｜长辈首页",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#819276"
+    },
+    {
+     "x": 24,
+     "y": 236,
+     "w": 342,
+     "h": 148,
+     "radius": 24,
+     "fill": "#F6DACA"
+    },
+    {
+     "x": 24,
+     "y": 418,
+     "w": 342,
+     "h": 82,
+     "radius": 20,
+     "fill": "#4E6657"
+    },
+    {
+     "x": 24,
+     "y": 584,
+     "w": 342,
+     "h": 104,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 0,
+     "y": 768,
+     "w": 390,
+     "h": 76,
+     "radius": 0,
+     "fill": "#FFFFFF"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "⋯",
+     "x": 345,
+     "y": 22,
+     "w": 28,
+     "h": 32,
+     "size": 25,
+     "bold": false,
+     "color": "#FFFFFF",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "今天，想讲点什么？",
+     "x": 24,
+     "y": 122,
+     "w": 342,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "一次只讲一个小故事，不用从出生讲起。",
+     "x": 24,
+     "y": 166,
+     "w": 342,
+     "h": 20,
+     "size": 16,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "今日叙事",
+     "x": 48,
+     "y": 260,
+     "w": 150,
+     "h": 19,
+     "size": 15,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "我的家乡",
+     "x": 48,
+     "y": 292,
+     "w": 220,
+     "h": 36,
+     "size": 28,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 28.2,
+       "x": 0,
+       "lineHeight": 36
+      }
+     ]
+    },
+    {
+     "text": "老街、河流、赶集与邻里",
+     "x": 48,
+     "y": 334,
+     "w": 250,
+     "h": 18,
+     "size": 14,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "按下讲述",
+     "x": 144,
+     "y": 444,
+     "w": 120,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "最近的故事",
+     "x": 24,
+     "y": 548,
+     "w": 180,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "外婆的桂花树",
+     "x": 44,
+     "y": 604,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "上周 · 03:42",
+     "x": 44,
+     "y": 638,
+     "w": 160,
+     "h": 17,
+     "size": 13,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "▶",
+     "x": 320,
+     "y": 618,
+     "w": 24,
+     "h": 22,
+     "size": 22,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.5,
+       "x": 0,
+       "lineHeight": 22
+      }
+     ]
+    },
+    {
+     "text": "⌂",
+     "x": 42,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "首页",
+     "x": 37,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#4E6657",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◉",
+     "x": 140,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "讲述",
+     "x": 135,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "▤",
+     "x": 238,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "故事",
+     "x": 233,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◎",
+     "x": 336,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "我的",
+     "x": 331,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "05｜主题选择",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#819276"
+    },
+    {
+     "x": 24,
+     "y": 230,
+     "w": 342,
+     "h": 82,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 335,
+     "w": 342,
+     "h": 82,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 440,
+     "w": 342,
+     "h": 82,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 545,
+     "w": 342,
+     "h": 82,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "‹",
+     "x": 24,
+     "y": 102,
+     "w": 30,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "今天，想讲哪一段？",
+     "x": 58,
+     "y": 110,
+     "w": 290,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "选一个最容易想起的入口。",
+     "x": 24,
+     "y": 164,
+     "w": 342,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "乡",
+     "x": 44,
+     "y": 252,
+     "w": 34,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "我的家乡",
+     "x": 92,
+     "y": 246,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "老街、河流、赶集与邻里",
+     "x": 92,
+     "y": 276,
+     "w": 240,
+     "h": 15,
+     "size": 12,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11.9,
+       "x": 0,
+       "lineHeight": 15.4
+      }
+     ]
+    },
+    {
+     "text": "→",
+     "x": 330,
+     "y": 258,
+     "w": 20,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "校",
+     "x": 44,
+     "y": 357,
+     "w": 34,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "上学的日子",
+     "x": 92,
+     "y": 351,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "老师、同学与第一次离家",
+     "x": 92,
+     "y": 381,
+     "w": 240,
+     "h": 15,
+     "size": 12,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11.9,
+       "x": 0,
+       "lineHeight": 15.4
+      }
+     ]
+    },
+    {
+     "text": "→",
+     "x": 330,
+     "y": 363,
+     "w": 20,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "业",
+     "x": 44,
+     "y": 462,
+     "w": 34,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "工作与手艺",
+     "x": 92,
+     "y": 456,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "第一份工作和难忘的师傅",
+     "x": 92,
+     "y": 486,
+     "w": 240,
+     "h": 15,
+     "size": 12,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11.9,
+       "x": 0,
+       "lineHeight": 15.4
+      }
+     ]
+    },
+    {
+     "text": "→",
+     "x": 330,
+     "y": 468,
+     "w": 20,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "家",
+     "x": 44,
+     "y": 567,
+     "w": 34,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "爱情与家庭",
+     "x": 92,
+     "y": 561,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "相识、婚礼和成为父母",
+     "x": 92,
+     "y": 591,
+     "w": 240,
+     "h": 15,
+     "size": 12,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11.9,
+       "x": 0,
+       "lineHeight": 15.4
+      }
+     ]
+    },
+    {
+     "text": "→",
+     "x": 330,
+     "y": 573,
+     "w": 20,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "06｜录音讲述",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#C98362"
+    },
+    {
+     "x": 24,
+     "y": 228,
+     "w": 342,
+     "h": 250,
+     "radius": 28,
+     "fill": "#E0E8D8"
+    },
+    {
+     "x": 142,
+     "y": 414,
+     "w": 106,
+     "h": 106,
+     "radius": 53,
+     "fill": "#4E6657"
+    },
+    {
+     "x": 24,
+     "y": 620,
+     "w": 342,
+     "h": 52,
+     "radius": 16,
+     "fill": "#4E6657"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "‹",
+     "x": 24,
+     "y": 102,
+     "w": 30,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "慢慢讲，我在听",
+     "x": 58,
+     "y": 110,
+     "w": 290,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "不用准备稿，想到哪里说到哪里。",
+     "x": 24,
+     "y": 164,
+     "w": 342,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "01:24",
+     "x": 135,
+     "y": 286,
+     "w": 120,
+     "h": 44,
+     "size": 34,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 34.4,
+       "x": 0,
+       "lineHeight": 44
+      }
+     ]
+    },
+    {
+     "text": "●  正在录音",
+     "x": 135,
+     "y": 348,
+     "w": 130,
+     "h": 19,
+     "size": 15,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "Ⅱ",
+     "x": 181,
+     "y": 443,
+     "w": 35,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "独自讲述     双人访谈",
+     "x": 92,
+     "y": 560,
+     "w": 210,
+     "h": 18,
+     "size": 14,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "暂停一下",
+     "x": 154,
+     "y": 634,
+     "w": 100,
+     "h": 22,
+     "size": 17,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 17.2,
+       "x": 0,
+       "lineHeight": 22
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "07｜故事预览",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#4E6657"
+    },
+    {
+     "x": 24,
+     "y": 220,
+     "w": 342,
+     "h": 310,
+     "radius": 20,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 660,
+     "w": 342,
+     "h": 52,
+     "radius": 16,
+     "fill": "#4E6657"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "‹",
+     "x": 24,
+     "y": 102,
+     "w": 30,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "故事预览",
+     "x": 58,
+     "y": 110,
+     "w": 290,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "确认后，这段故事会保存到你的故事书。",
+     "x": 24,
+     "y": 164,
+     "w": 342,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "外婆的桂花树",
+     "x": 48,
+     "y": 250,
+     "w": 270,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "那年秋天，院子里的桂花开得很早。\n我和妹妹每天放学，都要绕路去看一眼。\n风一吹，整条巷子都是甜的。",
+     "x": 48,
+     "y": 304,
+     "w": 274,
+     "h": 88,
+     "size": 17,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 17.2,
+       "x": 0,
+       "lineHeight": 22
+      },
+      {
+       "y": 39.2,
+       "x": 0,
+       "lineHeight": 22
+      },
+      {
+       "y": 61.2,
+       "x": 0,
+       "lineHeight": 22
+      },
+      {
+       "y": 83.2,
+       "x": 0,
+       "lineHeight": 22
+      }
+     ]
+    },
+    {
+     "text": "原声 03:42     自然整理",
+     "x": 48,
+     "y": 472,
+     "w": 250,
+     "h": 17,
+     "size": 13,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "这段文字来自你的讲述，\n你可以继续修改或确认。",
+     "x": 24,
+     "y": 572,
+     "w": 320,
+     "h": 38,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      },
+      {
+       "y": 34,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "确认故事",
+     "x": 158,
+     "y": 674,
+     "w": 100,
+     "h": 22,
+     "size": 17,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 17.2,
+       "x": 0,
+       "lineHeight": 22
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "08｜家庭看板",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#819276"
+    },
+    {
+     "x": 24,
+     "y": 226,
+     "w": 342,
+     "h": 112,
+     "radius": 20,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 428,
+     "w": 342,
+     "h": 12,
+     "radius": 6,
+     "fill": "#E9E0CF"
+    },
+    {
+     "x": 24,
+     "y": 428,
+     "w": 226,
+     "h": 12,
+     "radius": 6,
+     "fill": "#819276"
+    },
+    {
+     "x": 24,
+     "y": 520,
+     "w": 342,
+     "h": 94,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 0,
+     "y": 768,
+     "w": 390,
+     "h": 76,
+     "radius": 0,
+     "fill": "#FFFFFF"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "‹",
+     "x": 24,
+     "y": 102,
+     "w": 30,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "家庭看板",
+     "x": 58,
+     "y": 110,
+     "w": 290,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "和家人一起，把记忆整理成家族故事。",
+     "x": 24,
+     "y": 164,
+     "w": 342,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "家庭成员",
+     "x": 48,
+     "y": 248,
+     "w": 120,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "4 位",
+     "x": 48,
+     "y": 274,
+     "w": 100,
+     "h": 35,
+     "size": 27,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 27.4,
+       "x": 0,
+       "lineHeight": 35
+      }
+     ]
+    },
+    {
+     "text": "已邀请 3 人",
+     "x": 230,
+     "y": 280,
+     "w": 110,
+     "h": 18,
+     "size": 14,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "整理进度",
+     "x": 24,
+     "y": 386,
+     "w": 140,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "8 / 12 个故事",
+     "x": 24,
+     "y": 458,
+     "w": 180,
+     "h": 18,
+     "size": 14,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 14.1,
+       "x": 0,
+       "lineHeight": 18
+      }
+     ]
+    },
+    {
+     "text": "林阿姨的故事",
+     "x": 44,
+     "y": 540,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "待家人确认 · 昨天",
+     "x": 44,
+     "y": 574,
+     "w": 200,
+     "h": 17,
+     "size": 13,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "⌂",
+     "x": 42,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "首页",
+     "x": 37,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◉",
+     "x": 140,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "讲述",
+     "x": 135,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "▤",
+     "x": 238,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "故事",
+     "x": 233,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#4E6657",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◎",
+     "x": 336,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "我的",
+     "x": 331,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "09｜故事书",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#C98362"
+    },
+    {
+     "x": 24,
+     "y": 278,
+     "w": 342,
+     "h": 88,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 390,
+     "w": 342,
+     "h": 88,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 502,
+     "w": 342,
+     "h": 88,
+     "radius": 18,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 0,
+     "y": 768,
+     "w": 390,
+     "h": 76,
+     "radius": 0,
+     "fill": "#FFFFFF"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "‹",
+     "x": 24,
+     "y": 102,
+     "w": 30,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "我们的故事书",
+     "x": 58,
+     "y": 110,
+     "w": 290,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "已经保存的每一段声音，都值得被记住。",
+     "x": 24,
+     "y": 164,
+     "w": 342,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "8 个故事",
+     "x": 24,
+     "y": 222,
+     "w": 150,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "按时间排序  ⌄",
+     "x": 258,
+     "y": 228,
+     "w": 110,
+     "h": 17,
+     "size": 13,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "01",
+     "x": 44,
+     "y": 298,
+     "w": 30,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "外婆的桂花树",
+     "x": 88,
+     "y": 293,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "03:42 · 自然整理",
+     "x": 88,
+     "y": 326,
+     "w": 200,
+     "h": 17,
+     "size": 13,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "›",
+     "x": 330,
+     "y": 306,
+     "w": 20,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "02",
+     "x": 44,
+     "y": 410,
+     "w": 30,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "第一次离开家",
+     "x": 88,
+     "y": 405,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "05:18 · 原味口述",
+     "x": 88,
+     "y": 438,
+     "w": 200,
+     "h": 17,
+     "size": 13,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "›",
+     "x": 330,
+     "y": 418,
+     "w": 20,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "03",
+     "x": 44,
+     "y": 522,
+     "w": 30,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "院子里的夏天",
+     "x": 88,
+     "y": 517,
+     "w": 220,
+     "h": 23,
+     "size": 18,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 18.1,
+       "x": 0,
+       "lineHeight": 23
+      }
+     ]
+    },
+    {
+     "text": "02:56 · 适合成书",
+     "x": 88,
+     "y": 550,
+     "w": 200,
+     "h": 17,
+     "size": 13,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "›",
+     "x": 330,
+     "y": 530,
+     "w": 20,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "⌂",
+     "x": 42,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "首页",
+     "x": 37,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◉",
+     "x": 140,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "讲述",
+     "x": 135,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "▤",
+     "x": 238,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "故事",
+     "x": 233,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#4E6657",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◎",
+     "x": 336,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "我的",
+     "x": 331,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "10｜个人中心",
+   "width": 390,
+   "height": 844,
+   "background": "#F6F2E9",
+   "shapes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 92,
+     "radius": 0,
+     "fill": "#4E6657"
+    },
+    {
+     "x": 24,
+     "y": 222,
+     "w": 342,
+     "h": 108,
+     "radius": 20,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 48,
+     "y": 244,
+     "w": 60,
+     "h": 60,
+     "radius": 30,
+     "fill": "#819276"
+    },
+    {
+     "x": 24,
+     "y": 424,
+     "w": 100,
+     "h": 82,
+     "radius": 16,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 140,
+     "y": 424,
+     "w": 100,
+     "h": 82,
+     "radius": 16,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 256,
+     "y": 424,
+     "w": 100,
+     "h": 82,
+     "radius": 16,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 596,
+     "w": 342,
+     "h": 52,
+     "radius": 14,
+     "fill": "#FFFFFF"
+    },
+    {
+     "x": 24,
+     "y": 662,
+     "w": 342,
+     "h": 52,
+     "radius": 14,
+     "fill": "#F5E0D6"
+    },
+    {
+     "x": 0,
+     "y": 768,
+     "w": 390,
+     "h": 76,
+     "radius": 0,
+     "fill": "#FFFFFF"
+    }
+   ],
+   "texts": [
+    {
+     "text": "记忆银行",
+     "x": 24,
+     "y": 24,
+     "w": 220,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "‹",
+     "x": 24,
+     "y": 102,
+     "w": 30,
+     "h": 38,
+     "size": 30,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 30,
+       "x": 0,
+       "lineHeight": 38.4
+      }
+     ]
+    },
+    {
+     "text": "我的账户",
+     "x": 58,
+     "y": 110,
+     "w": 290,
+     "h": 32,
+     "size": 25,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 25.1,
+       "x": 0,
+       "lineHeight": 32
+      }
+     ]
+    },
+    {
+     "text": "这些故事，属于你，也属于家人。",
+     "x": 24,
+     "y": 164,
+     "w": 342,
+     "h": 19,
+     "size": 15,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 15,
+       "x": 0,
+       "lineHeight": 19.2
+      }
+     ]
+    },
+    {
+     "text": "林",
+     "x": 66,
+     "y": 260,
+     "w": 28,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#FFFFFF",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "林阿姨",
+     "x": 132,
+     "y": 248,
+     "w": 160,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "长辈账号 · 138****8899",
+     "x": 132,
+     "y": 280,
+     "w": 190,
+     "h": 17,
+     "size": 13,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 13.3,
+       "x": 0,
+       "lineHeight": 17
+      }
+     ]
+    },
+    {
+     "text": "我的记录",
+     "x": 24,
+     "y": 382,
+     "w": 140,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "8",
+     "x": 44,
+     "y": 440,
+     "w": 60,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "故事",
+     "x": 44,
+     "y": 474,
+     "w": 70,
+     "h": 15,
+     "size": 12,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11.9,
+       "x": 0,
+       "lineHeight": 15.4
+      }
+     ]
+    },
+    {
+     "text": "42",
+     "x": 160,
+     "y": 440,
+     "w": 60,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "分钟原声",
+     "x": 160,
+     "y": 474,
+     "w": 70,
+     "h": 15,
+     "size": 12,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11.9,
+       "x": 0,
+       "lineHeight": 15.4
+      }
+     ]
+    },
+    {
+     "text": "4",
+     "x": 276,
+     "y": 440,
+     "w": 60,
+     "h": 31,
+     "size": 24,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 24.3,
+       "x": 0,
+       "lineHeight": 31
+      }
+     ]
+    },
+    {
+     "text": "位家人",
+     "x": 276,
+     "y": 474,
+     "w": 70,
+     "h": 15,
+     "size": 12,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11.9,
+       "x": 0,
+       "lineHeight": 15.4
+      }
+     ]
+    },
+    {
+     "text": "账户与家庭",
+     "x": 24,
+     "y": 554,
+     "w": 170,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "家庭与协作",
+     "x": 48,
+     "y": 612,
+     "w": 180,
+     "h": 20,
+     "size": 16,
+     "bold": true,
+     "color": "#26312B",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "›",
+     "x": 330,
+     "y": 610,
+     "w": 20,
+     "h": 28,
+     "size": 22,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 22.1,
+       "x": 0,
+       "lineHeight": 28.2
+      }
+     ]
+    },
+    {
+     "text": "退出登录",
+     "x": 154,
+     "y": 676,
+     "w": 100,
+     "h": 20,
+     "size": 16,
+     "bold": true,
+     "color": "#C98362",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 15.9,
+       "x": 0,
+       "lineHeight": 20.5
+      }
+     ]
+    },
+    {
+     "text": "⌂",
+     "x": 42,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "首页",
+     "x": 37,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◉",
+     "x": 140,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "讲述",
+     "x": 135,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "▤",
+     "x": 238,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#747A73",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "故事",
+     "x": 233,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#747A73",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    },
+    {
+     "text": "◎",
+     "x": 336,
+     "y": 781,
+     "w": 30,
+     "h": 26,
+     "size": 20,
+     "bold": true,
+     "color": "#4E6657",
+     "font": "Lora Bold",
+     "baselines": [
+      {
+       "y": 20.3,
+       "x": 0,
+       "lineHeight": 26
+      }
+     ]
+    },
+    {
+     "text": "我的",
+     "x": 331,
+     "y": 812,
+     "w": 42,
+     "h": 14,
+     "size": 11,
+     "bold": false,
+     "color": "#4E6657",
+     "font": "Lora Regular",
+     "baselines": [
+      {
+       "y": 11,
+       "x": 0,
+       "lineHeight": 14.1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

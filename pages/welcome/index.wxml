@@ -1,9 +1,32 @@
 <nav-bar title="记忆银行" theme="brand" showBack="{{false}}" />
 
-<view class="page container">
-  <view class="placeholder">
-    <text class="placeholder__no">01</text>
-    <text class="placeholder__title">欢迎页</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page welcome">
+  <!-- 设计稿：标题 y=122（顶栏 92 之下），左 24 -->
+  <view class="welcome__intro">
+    <text class="t-hero">把家里的故事，慢慢留下来</text>
+    <text class="welcome__sub">每一次讲述，都是给家人留的一盏灯。</text>
+  </view>
+
+  <!-- 设计稿：342×220 圆角 28 浅绿卡，内边距 30 -->
+  <view class="welcome__card-wrap">
+    <app-card tone="green" radius="{{28}}">
+      <view class="welcome__card">
+        <text class="welcome__quote">“</text>
+        <view class="welcome__poem">
+          <text>那些被时间</text>
+          <text>温柔保存的声音</text>
+        </view>
+      </view>
+    </app-card>
+  </view>
+
+  <!-- 设计稿：品牌名 y=619，按钮 342×52 圆角 16 @ y=650 -->
+  <view class="welcome__bottom">
+    <text class="welcome__brand">记忆银行</text>
+    <text class="welcome__slogan">让长辈轻松讲，让家人一起听。</text>
+  </view>
+
+  <view class="welcome__cta">
+    <primary-button text="我是长辈，开始讲述" type="primary" bind:tap="onStart" />
   </view>
 </view>

@@ -1,26 +1,75 @@
-.placeholder {
-  padding: 80px 0;
+.welcome {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  padding: 0 24px;
+  box-sizing: border-box;
 }
 
-.placeholder__no {
-  font-size: 34px;
+/* 顶栏 92 之下，标题距顶栏 30px（设计稿 y=122） */
+.welcome__intro {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome__sub {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* 设计稿 y=250，距标题块底约 44px */
+.welcome__card-wrap {
+  margin-top: 44px;
+}
+
+.welcome__card {
+  height: 220px;
+  padding: 24px 30px 30px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome__quote {
+  font-size: 72px;
   font-weight: 700;
+  line-height: 1;
   color: var(--accent);
   font-family: var(--font-latin);
 }
 
-.placeholder__title {
-  font-size: 25px;
+.welcome__poem {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  font-size: 30px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-top: 12px;
+  line-height: 1.27;
+  color: var(--brand);
 }
 
-.placeholder__hint {
-  font-size: 15px;
+/* 设计稿：品牌名 y=619、按钮 y=650，都在下方靠底 */
+.welcome__bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome__brand {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--brand);
+  font-family: var(--font-latin);
+}
+
+.welcome__slogan {
+  margin-top: 10px;
+  font-size: 16px;
   color: var(--text-muted);
-  margin-top: 8px;
+}
+
+.welcome__cta {
+  margin: 27px 0 40px;
 }

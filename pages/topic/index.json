@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "nav-bar": "../../components/nav-bar/index"
+    "nav-bar": "../../components/nav-bar/index",
+    "list-item": "../../components/list-item/index"
   },
   "navigationStyle": "custom"
 }

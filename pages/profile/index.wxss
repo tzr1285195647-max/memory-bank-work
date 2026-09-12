@@ -1,26 +1,143 @@
-.placeholder {
-  padding: 80px 0;
+.profile {
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.profile__intro {
+  margin-top: 60px;
   display: flex;
   flex-direction: column;
+}
+
+.profile__sub {
+  margin-top: 14px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+/* 设计稿：342×108 圆角 20 */
+.profile__user {
+  margin-top: 44px;
+  min-height: 108px;
+  border-radius: 20px;
+  background-color: var(--bg-card);
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
   align-items: center;
 }
 
-.placeholder__no {
-  font-size: 34px;
+.profile__avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background-color: var(--brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile__avatar-text {
+  font-size: 24px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--white);
+}
+
+.profile__user-main {
+  margin-left: 24px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile__name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile__meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.profile__section {
+  margin-top: 44px;
+}
+
+/* 设计稿：三列 100×82 */
+.profile__stats {
+  margin-top: 16px;
+  display: flex;
+}
+
+.profile__stat + .profile__stat {
+  margin-left: 16px;
+}
+
+.profile__stat {
+  flex: 1;
+  min-height: 82px;
+  border-radius: 16px;
+  background-color: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile__stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--brand);
   font-family: var(--font-latin);
 }
 
-.placeholder__title {
-  font-size: 25px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-top: 12px;
+.profile__stat-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
-.placeholder__hint {
-  font-size: 15px;
-  color: var(--text-muted);
-  margin-top: 8px;
+.profile__rows {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile__rows > * {
+  margin-bottom: 14px;
+}
+
+.profile__row {
+  min-height: 52px;
+  border-radius: 14px;
+  background-color: var(--bg-card);
+  padding: 0 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile__row--hover {
+  background-color: #fbf9f3;
+}
+
+.profile__row-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile__row-arrow {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.profile__logout {
+  margin: 42px 0 40px;
 }

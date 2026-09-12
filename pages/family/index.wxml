@@ -1,9 +1,48 @@
-<nav-bar title="记忆银行" theme="brandLight" showBack="{{false}}" />
+<nav-bar title="记忆银行" theme="brandLight" showBack="{{true}}" showMore="{{false}}" />
 
-<view class="page container">
-  <view class="placeholder">
-    <text class="placeholder__no">08</text>
-    <text class="placeholder__title">家庭看板</text>
-    <text class="placeholder__hint">页面骨架已注册，完整实现属于 P0-2</text>
+<view class="page page--tab family">
+  <view class="family__intro">
+    <text class="t-title">家庭看板</text>
+    <text class="family__sub">和家人一起，把记忆整理成家族故事。</text>
+  </view>
+
+  <!-- 设计稿：342×112 白卡，圆角 20 -->
+  <view class="family__members">
+    <view class="family__members-left">
+      <text class="family__label">家庭成员</text>
+      <text class="family__count">{{family.memberCount}} 位</text>
+    </view>
+    <text class="family__invited">已邀请 {{family.invitedCount}} 人</text>
+  </view>
+
+  <text class="t-section family__section">整理进度</text>
+
+  <view class="family__progress">
+    <view class="family__track">
+      <view class="family__bar" style="width: {{percent}}%;"></view>
+    </view>
+    <text class="family__progress-text">{{family.doneStories}} / {{family.totalStories}} 个故事</text>
+  </view>
+
+  <text class="t-section family__section">待确认</text>
+
+  <view class="family__pending">
+    <view
+      wx:for="{{family.pending}}"
+      wx:key="id"
+      class="family__item"
+      hover-class="family__item--hover"
+      data-id="{{item.id}}"
+      bindtap="onReview"
+    >
+      <view class="family__item-main">
+        <text class="family__item-title">{{item.title}}</text>
+        <text class="family__item-meta">{{item.mode}} · {{item.dayLabel}}</text>
+      </view>
+      <text class="family__item-arrow">›</text>
+    </view>
+    <view wx:if="{{!family.pending.length}}" class="family__empty">
+      <text class="t-caption">暂时没有待确认的故事。</text>
+    </view>
   </view>
 </view>
