@@ -43,3 +43,6 @@ node_modules/
 
 # 后端本地数据（数据库与录音文件）
 backend/.data/
+
+# pytest 临时目录（沙箱下系统临时目录不可写）
+.pytest-tmp/
