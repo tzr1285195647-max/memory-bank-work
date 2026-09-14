@@ -2,6 +2,12 @@
   box-sizing: border-box;
   width: 100%;
   overflow: hidden;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.card--pressed {
+  opacity: 0.78;
+  transform: scale(0.992);
 }
 
 /* 底色：对应设计稿里的四种卡片 */

@@ -20,7 +20,10 @@ Page({
 
   onChoose(e) {
     const topicId = e.currentTarget.dataset.id;
-    store.set({ currentTopic: topicId });
-    wx.navigateTo({ url: `/pages/record/index?topic=${topicId}` });
+    store.set({
+      currentTopic: topicId,
+      recordEntry: { topicId, resume: false, nonce: Date.now() },
+    });
+    wx.switchTab({ url: '/pages/record/index' });
   },
 });

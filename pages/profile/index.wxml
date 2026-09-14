@@ -17,6 +17,18 @@
     </view>
   </view>
 
+  <view class="profile__environment">
+    <view class="profile__environment-head">
+      <text class="profile__environment-dot {{environment.online ? 'profile__environment-dot--online' : ''}}">●</text>
+      <text class="profile__environment-title">{{environment.title}}</text>
+    </view>
+    <text class="profile__environment-detail">{{environment.detail}}</text>
+    <text class="profile__environment-note">真实执行采访、证据抽取、写作审计和人工确认流程</text>
+    <view class="profile__environment-check" bindtap="onDemoCheck">
+      <text>{{checking ? '正在检查…' : '一键演示自检'}}</text>
+    </view>
+  </view>
+
   <text class="t-section profile__section">我的记录</text>
 
   <!-- 设计稿：三个 100×82 小卡，圆角 16 -->
@@ -37,6 +49,11 @@
 
     <view class="profile__row" hover-class="profile__row--hover" bindtap="onFamilyBoard">
       <text class="profile__row-title">家庭看板</text>
+      <text class="profile__row-arrow">›</text>
+    </view>
+
+    <view class="profile__row" hover-class="profile__row--hover" bindtap="onPrivacyCenter">
+      <text class="profile__row-title">隐私与操作记录</text>
       <text class="profile__row-arrow">›</text>
     </view>
 

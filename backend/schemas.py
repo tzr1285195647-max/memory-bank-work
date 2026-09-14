@@ -58,6 +58,7 @@ class ProfileOut(BaseModel):
 
 class StoryOut(BaseModel):
     id: str
+    topicId: str = ""
     index: str
     title: str
     body: str
@@ -68,6 +69,16 @@ class StoryOut(BaseModel):
     dayLabel: str
     audioUrl: str | None = None
     hasAudio: bool = False
+    auditPassed: bool = True
+    claims: list[dict] = Field(default_factory=list)
+    missingFields: list[str] = Field(default_factory=list)
+    findings: list[dict] = Field(default_factory=list)
+    conflicts: list[dict] = Field(default_factory=list)
+    sessionId: str = ""
+    recordings: list[dict] = Field(default_factory=list)
+    familyNoteCount: int = 0
+    memoryYear: int | None = None
+    lifeStage: str = "未分类"
 
 
 class StoryListOut(BaseModel):
@@ -77,11 +88,57 @@ class StoryListOut(BaseModel):
 
 class StoryPatchRequest(RequestModel):
     body: str = Field(min_length=1, max_length=4000)
+    mode: str | None = Field(
+        default=None, pattern=r"^(原味口述|自然整理|适合成书)$"
+    )
     consentVersion: int = Field(ge=1)
+    memoryYear: int | None = Field(default=None, ge=1900, le=2100)
+    lifeStage: str | None = Field(
+        default=None, pattern=r"^(童年|求学|工作|家庭|晚年|未分类)$"
+    )
 
 
 class StoryActionRequest(RequestModel):
     consentVersion: int = Field(ge=1)
+
+
+class StoryAuditRequest(RequestModel):
+    body: str = Field(min_length=1, max_length=4000)
+    consentVersion: int = Field(ge=1)
+
+
+class StoryAuditOut(BaseModel):
+    auditPassed: bool
+    findings: list[dict] = Field(default_factory=list)
+
+
+class StoryDiscardOut(BaseModel):
+    discardedStoryId: str
+    deletedRecordings: int
+    message: str
+
+
+class FamilyNoteCreateRequest(RequestModel):
+    kind: str = Field(pattern=r"^(supplement|correction)$")
+    content: str = Field(min_length=2, max_length=500)
+    consentVersion: int = Field(ge=1)
+
+
+class FamilyNoteActionRequest(RequestModel):
+    action: str = Field(pattern=r"^(accept|ignore)$")
+    consentVersion: int = Field(ge=1)
+
+
+class FamilyNoteOut(BaseModel):
+    id: str
+    storyId: str
+    authorName: str
+    kind: str
+    kindLabel: str
+    content: str
+    status: str
+    statusLabel: str
+    dayLabel: str
 
 
 class RecordingOut(BaseModel):
@@ -90,6 +147,19 @@ class RecordingOut(BaseModel):
     audioUrl: str
     transcript: str
     consentVersion: int
+
+
+class TranscriptionOut(BaseModel):
+    recordingId: str
+    status: str
+    transcript: str = ""
+    error: str = ""
+    provider: str = "tencent"
+
+
+class MemoryFragmentConfirmRequest(RequestModel):
+    transcript: str = Field(min_length=1, max_length=6000)
+    consentVersion: int = Field(ge=1)
 
 
 class FamilyOut(BaseModel):
@@ -105,6 +175,22 @@ class RevokeOut(BaseModel):
     deletedStories: int
     deletedRecordings: int
     message: str
+
+
+class AuditEventOut(BaseModel):
+    id: str
+    action: str
+    category: str
+    categoryLabel: str
+    summary: str
+    actorName: str
+    timeLabel: str
+    createdAt: str
+
+
+class AuditListOut(BaseModel):
+    items: list[AuditEventOut]
+    total: int
 
 
 class HealthOut(BaseModel):

@@ -5,36 +5,141 @@
  * （可用 config.fallbackToMock 关闭）。
  */
 
-const { request, uploadRecording, createDraft, absoluteUrl } = require('./request');
+const {
+  request,
+  uploadRecording,
+  createDraft,
+  absoluteUrl,
+  markBackendUnavailable,
+  clearBackendUnavailable,
+} = require('./request');
 const runtime = require('../config');
 const mock = require('../mock/index');
+const store = require('../store/index');
 
 function withFallback(remote, fallback) {
-  return remote().catch((err) => {
-    if (!runtime.fallbackToMock) throw err;
-    console.warn('[api] 后端不可用，降级到本地数据:', err && err.message);
-    return fallback();
+  if (!runtime.fallbackToMock) return remote();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      markBackendUnavailable();
+      console.warn('[api] 后端响应较慢，先使用本地数据');
+      try {
+        resolve(fallback());
+      } catch (error) {
+        reject(error);
+      }
+    }, 350);
+
+    remote()
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        clearBackendUnavailable();
+        resolve(value);
+      })
+      .catch((err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        console.warn('[api] 后端不可用，降级到本地数据:', err && err.message);
+        try {
+          resolve(fallback());
+        } catch (error) {
+          reject(error);
+        }
+      });
   });
 }
 
 /** 把后端返回的故事补上本地字段（绝对音频地址、时长文本） */
 function normalizeStory(story) {
   const { formatDuration } = require('./format');
-  return {
+  const { decorateStory } = require('./timeline');
+  const recordings = (story.recordings || []).map((item) => ({
+    ...item,
+    audioUrl: absoluteUrl(item.audioUrl),
+    durationText: formatDuration(item.durationMs || 0),
+  }));
+  return decorateStory({
     ...story,
     durationText: story.durationText || formatDuration(story.durationMs || 0),
     audioUrl: absoluteUrl(story.audioUrl),
-  };
+    recordings,
+    fragmentCount: recordings.filter((item) => String(item.transcript || '').trim()).length,
+  });
 }
 
 module.exports = {
-  login({ phone, password, role }) {
+  getHealth() {
+    return request({ path: '/api/health', auth: false, timeout: 3000 });
+  },
+
+  getAsrStatus() {
+    return withFallback(
+      () => request({ path: '/api/asr/status', auth: false, timeout: 3000 }),
+      () => ({ provider: 'local-demo', configured: false, engine: null })
+    );
+  },
+
+  /** 转写前使用严格检查，不能被本地演示数据掩盖真实后端故障。 */
+  getAsrStatusStrict() {
+    return request({ path: '/api/asr/status', auth: false, timeout: 5000 });
+  },
+
+  getBackendUrl() {
+    return runtime.baseUrl;
+  },
+
+  startTranscription(recordingId) {
     return request({
-      path: '/api/auth/login',
+      path: `/api/recordings/${recordingId}/transcription`,
       method: 'POST',
-      data: { phone, password, role },
-      auth: false,
+      data: { consentVersion: store.snapshot().consentVersion || 1 },
+      timeout: 35000,
     });
+  },
+
+  getTranscription(recordingId) {
+    return request({
+      path: `/api/recordings/${recordingId}/transcription`,
+      timeout: 35000,
+    });
+  },
+
+  confirmMemoryFragment(recordingId, transcript) {
+    return request({
+      path: `/api/recordings/${recordingId}/fragment`,
+      method: 'PUT',
+      data: {
+        transcript,
+        consentVersion: store.snapshot().consentVersion || 1,
+      },
+    });
+  },
+
+  login({ phone, password, role }) {
+    return withFallback(
+      () => request({
+        path: '/api/auth/login',
+        method: 'POST',
+        data: { phone, password, role },
+        auth: false,
+      }),
+      () => ({
+        token: 'local-device-demo',
+        familyId: 'local-family',
+        consentVersion: 1,
+        user: {
+          id: 'local',
+          displayName: role === 'family' ? '家人' : '林阿姨',
+          phoneMasked: phone ? `${phone.slice(0, 3)}****${phone.slice(-4)}` : '',
+        },
+      })
+    );
   },
 
   getTopics() {
@@ -52,7 +157,7 @@ module.exports = {
       })),
       () => ({
         today: mock.todayTopic,
-        recent: mock.stories
+        recent: mock.allStories()
           .filter((item) => item.status === 'confirmed')
           .slice(0, 2)
           .map(normalizeStory),
@@ -62,12 +167,12 @@ module.exports = {
 
   getStories() {
     return withFallback(
-      () => request({ path: '/api/stories' }).then((data) => ({
+      () => request({ path: '/api/stories?status_filter=confirmed' }).then((data) => ({
         total: data.total,
         items: (data.items || []).map(normalizeStory),
       })),
       () => {
-        const items = mock.stories
+        const items = mock.allStories()
           .filter((item) => item.status === 'confirmed')
           .map((item, i) => normalizeStory({ ...item, index: String(i + 1).padStart(2, '0') }));
         return { total: items.length, items };
@@ -78,16 +183,31 @@ module.exports = {
   getStory(storyId) {
     return withFallback(
       () => request({ path: `/api/stories/${storyId}` }).then(normalizeStory),
-      () => normalizeStory(mock.stories.find((item) => item.id === storyId) || mock.stories[0])
+      () => normalizeStory(mock.allStories().find((item) => item.id === storyId) || mock.stories[0])
     );
   },
 
-  updateStory(storyId, { body, consentVersion }) {
-    return request({
-      path: `/api/stories/${storyId}`,
-      method: 'PATCH',
-      data: { body, consentVersion },
-    }).then(normalizeStory);
+  updateStory(storyId, { body, mode, memoryYear, lifeStage, consentVersion }) {
+    return withFallback(
+      () => request({
+        path: `/api/stories/${storyId}`,
+        method: 'PATCH',
+        data: {
+          body,
+          ...(mode ? { mode } : {}),
+          ...(memoryYear ? { memoryYear } : {}),
+          ...(lifeStage ? { lifeStage } : {}),
+          consentVersion,
+        },
+      }).then(normalizeStory),
+      () => normalizeStory(mock.updateLocalStory(storyId, {
+        body,
+        ...(mode ? { mode } : {}),
+        ...(memoryYear ? { memoryYear } : {}),
+        ...(lifeStage ? { lifeStage } : {}),
+        status: 'pending_review',
+      }))
+    );
   },
 
   confirmStory(storyId, { consentVersion }) {
@@ -98,13 +218,88 @@ module.exports = {
     }).then(normalizeStory);
   },
 
+  auditStory(storyId, { body, consentVersion }) {
+    return withFallback(
+      () => request({
+        path: `/api/stories/${storyId}/audit`,
+        method: 'POST',
+        data: { body, consentVersion },
+      }),
+      () => ({ auditPassed: Boolean(body.trim()), findings: [] })
+    );
+  },
+
+  discardStory(storyId, { consentVersion }) {
+    if (/^local-/.test(storyId)) {
+      mock.discardLocalStory(storyId);
+      return Promise.resolve({ discardedStoryId: storyId, deletedRecordings: 0 });
+    }
+    return request({
+      path: `/api/stories/${storyId}/discard`,
+      method: 'POST',
+      data: { consentVersion },
+    });
+  },
+
   getFamily() {
     return withFallback(
       () => request({ path: '/api/family' }).then((data) => ({
         ...data,
         pending: (data.pending || []).map(normalizeStory),
       })),
-      () => mock.family
+      () => {
+        const all = mock.allStories();
+        const confirmed = all.filter((item) => item.status === 'confirmed');
+        return {
+          ...mock.family,
+          doneStories: confirmed.length,
+          totalStories: Math.max(mock.family.totalStories, all.length),
+          pending: all
+            .filter((item) => item.status === 'pending_review')
+            .map((item) => normalizeStory({
+              ...item,
+              familyNoteCount: mock.notesForStory(item.id).length,
+            })),
+        };
+      }
+    );
+  },
+
+  getFamilyNotes(storyId) {
+    return withFallback(
+      () => request({ path: `/api/stories/${storyId}/family-notes` }),
+      () => mock.notesForStory(storyId)
+    );
+  },
+
+  addFamilyNote(storyId, { kind, content, consentVersion }) {
+    const snapshot = store.snapshot();
+    if (snapshot.role !== 'family') return Promise.reject(new Error('只有家人账号可以提交建议'));
+    return withFallback(
+      () => request({
+        path: `/api/stories/${storyId}/family-notes`,
+        method: 'POST',
+        data: { kind, content, consentVersion },
+      }),
+      () => mock.addFamilyNote(storyId, {
+        kind,
+        content,
+        authorName: (snapshot.user && snapshot.user.displayName) || '家人',
+      })
+    );
+  },
+
+  resolveFamilyNote(storyId, noteId, { action, consentVersion }) {
+    if (store.snapshot().role !== 'elder') {
+      return Promise.reject(new Error('只有长辈账号可以处理建议'));
+    }
+    return withFallback(
+      () => request({
+        path: `/api/stories/${storyId}/family-notes/${noteId}/resolve`,
+        method: 'POST',
+        data: { action, consentVersion },
+      }),
+      () => mock.resolveFamilyNote(storyId, noteId, action)
     );
   },
 
@@ -125,8 +320,50 @@ module.exports = {
     );
   },
 
+  getAuditEvents() {
+    return withFallback(
+      () => request({ path: '/api/audit-events?limit=50' }),
+      () => {
+        const items = mock.auditEvents();
+        return { items, total: items.length };
+      }
+    );
+  },
+
+  getAgentStatus() {
+    return withFallback(
+      () => request({ path: '/api/agent/status' }),
+      () => ({ provider: 'local-demo', configuredMode: 'mock', llmEnabled: false })
+    );
+  },
+
   revokeConsent() {
     return request({ path: '/api/consent/revoke', method: 'POST', data: {} });
+  },
+
+  saveLocalStory(draft) {
+    return normalizeStory(mock.saveLocalStory(draft));
+  },
+
+  clearLocalDemo() {
+    mock.clearLocalStories();
+    try { wx.removeStorageSync('memoryBank.captureConsent.v1'); } catch (err) { console.warn(err); }
+  },
+
+  recordLocalRevocation(summary) {
+    return mock.recordAudit({
+      action: 'consent_revoked',
+      category: 'privacy',
+      summary: summary || '撤回授权并删除了本机故事与原声',
+    });
+  },
+
+  recordLocalConsent() {
+    return mock.recordAudit({
+      action: 'consent_granted',
+      category: 'privacy',
+      summary: '同意使用本轮原声整理家庭故事',
+    });
   },
 
   // ---------------------------------------------------------------- 多智能体流程
@@ -148,7 +385,7 @@ module.exports = {
   },
 
   /** 提交一轮讲述；finish=true 时触发写作与审计，产出待确认草稿 */
-  answerInterview({ sessionId, answer, finish = false, topicId = '', recordingId = '', durationMs = 0 }) {
+  answerInterview({ sessionId, answer, finish = false, topicId = '', recordingId = '', durationMs = 0, speakerLabel = '长辈' }) {
     return request({
       path: '/api/agent/interviews/answers',
       method: 'POST',
@@ -159,18 +396,35 @@ module.exports = {
         topicId,
         recordingId: recordingId || null,
         durationMs,
+        speakerLabel,
         consentVersion: store.snapshot().consentVersion || 1,
       },
     });
   },
 
   /** 尊重停止意愿 */
-  stopInterview({ sessionId }) {
+  stopInterview({ sessionId, topicId = '' }) {
     return request({
       path: '/api/agent/interviews/stop',
       method: 'POST',
-      data: { sessionId, consentVersion: store.snapshot().consentVersion || 1 },
+      data: { sessionId, topicId, consentVersion: store.snapshot().consentVersion || 1 },
     });
+  },
+
+  /** 只用用户勾选的多段记忆碎片生成故事。 */
+  generateStoryFromFragments({ recordingIds, topicId, subjectName = '讲述者', style = 'natural' }) {
+    return request({
+      path: '/api/agent/fragments/generate',
+      method: 'POST',
+      data: {
+        recordingIds,
+        topicId,
+        subjectName,
+        style,
+        consentVersion: store.snapshot().consentVersion || 1,
+      },
+      timeout: 65000,
+    }).then(normalizeStory);
   },
 
   /** 人工确认：approve | edit | request_more | reject */
@@ -189,11 +443,17 @@ module.exports = {
 
   /** 故事书里的确认：会先按证据核对正文 */
   reviewStory({ storyId, body }) {
-    return request({
-      path: `/api/agent/stories/${storyId}/review`,
-      method: 'POST',
-      data: { body, consentVersion: store.snapshot().consentVersion || 1 },
-    }).then(normalizeStory);
+    if (store.snapshot().role !== 'elder') {
+      return Promise.reject(new Error('只有长辈账号可以确认故事'));
+    }
+    return withFallback(
+      () => request({
+        path: `/api/agent/stories/${storyId}/review`,
+        method: 'POST',
+        data: { body, consentVersion: store.snapshot().consentVersion || 1 },
+      }).then(normalizeStory),
+      () => normalizeStory(mock.confirmLocalStory(storyId, body))
+    );
   },
 
   uploadRecording,

@@ -53,7 +53,17 @@ def start_session(client, auth, topic: str = "hometown", rounds: int = 1) -> dic
     return resp.json()
 
 
-def answer(client, auth, session_id: str, text: str, finish: bool = False, topic: str = "hometown") -> dict:
+def answer(
+    client,
+    auth,
+    session_id: str,
+    text: str,
+    finish: bool = False,
+    topic: str = "hometown",
+    duration_ms: int = 0,
+    recording_id: str | None = None,
+    speaker_label: str = "长辈",
+) -> dict:
     resp = client.post(
         "/api/agent/interviews/answers",
         headers=auth["headers"],
@@ -62,10 +72,28 @@ def answer(client, auth, session_id: str, text: str, finish: bool = False, topic
             "answer": text,
             "finish": finish,
             "topicId": topic,
+            "durationMs": duration_ms,
+            "recordingId": recording_id,
+            "speakerLabel": speaker_label,
             "consentVersion": auth["consent"],
         },
     )
     assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def upload_recording(client, auth, topic: str, duration_ms: int, name: str) -> dict:
+    resp = client.post(
+        "/api/recordings",
+        headers=auth["headers"],
+        data={
+            "topicId": topic,
+            "durationMs": str(duration_ms),
+            "consentVersion": str(auth["consent"]),
+        },
+        files={"file": (name, b"ID3-demo-audio", "audio/mpeg")},
+    )
+    assert resp.status_code == 201, resp.text
     return resp.json()
 
 
@@ -83,6 +111,137 @@ def test_answer_produces_evidence_with_traceable_quotes(client, auth):
     turns = {turn["id"]: turn["answer"] for turn in view["turns"]}
     for claim in view["claims"]:
         assert claim["quote"] in turns[claim["turn_id"]]
+
+
+def test_story_detail_keeps_evidence_and_recording_duration(client, auth):
+    view = start_session(client, auth, topic="hometown")
+    view = answer(
+        client,
+        auth,
+        view["session_id"],
+        "那年秋天，院子里的桂花开得很早。",
+        finish=True,
+        duration_ms=42000,
+    )
+    story = client.get(f"/api/stories/{view['storyId']}", headers=auth["headers"])
+    assert story.status_code == 200, story.text
+    body = story.json()
+    assert body["durationMs"] == 42000
+    assert body["claims"]
+    assert body["sessionId"] == view["session_id"]
+    assert body["missingFields"] == view["missing_fields"]
+
+
+def test_multi_round_story_keeps_each_recording_and_total_duration(client, auth):
+    view = start_session(client, auth, topic="hometown", rounds=3)
+    first_audio = upload_recording(client, auth, "hometown", 12000, "round-1.mp3")
+    view = answer(
+        client,
+        auth,
+        view["session_id"],
+        "那年秋天，我回到了老家的院子。",
+        topic="hometown",
+        duration_ms=12000,
+        recording_id=first_audio["assetId"],
+    )
+    assert view["stage"] == "interview"
+
+    second_audio = upload_recording(client, auth, "hometown", 18000, "round-2.mp3")
+    view = answer(
+        client,
+        auth,
+        view["session_id"],
+        "妹妹也在，她说桂花香让她想起小时候。",
+        finish=True,
+        topic="hometown",
+        duration_ms=18000,
+        recording_id=second_audio["assetId"],
+        speaker_label="家人",
+    )
+    story = client.get(f"/api/stories/{view['storyId']}", headers=auth["headers"])
+    assert story.status_code == 200, story.text
+    body = story.json()
+    assert body["durationMs"] == 30000
+    assert len(body["recordings"]) == 2
+    assert [item["roundIndex"] for item in body["recordings"]] == [0, 1]
+    assert [item["speakerLabel"] for item in body["recordings"]] == ["长辈", "家人"]
+    assert [item["transcript"] for item in body["recordings"]] == [
+        "那年秋天，我回到了老家的院子。",
+        "妹妹也在，她说桂花香让她想起小时候。",
+    ]
+    assert all(item["timeLabel"] for item in body["recordings"])
+    assert {item["recordingId"] for item in body["recordings"]} == {
+        first_audio["assetId"],
+        second_audio["assetId"],
+    }
+    claim_turns = {claim["turn_id"] for claim in body["claims"]}
+    assert {item["turnId"] for item in body["recordings"]}.issubset(claim_turns)
+
+
+def test_selected_memory_fragments_generate_one_story(client, auth):
+    first = upload_recording(client, auth, "work", 9000, "fragment-1.mp3")
+    second = upload_recording(client, auth, "work", 8000, "fragment-2.mp3")
+    third = upload_recording(client, auth, "work", 7000, "fragment-3.mp3")
+    texts = {
+        first["assetId"]: "第一天上班时，师傅带我熟悉了车间。",
+        second["assetId"]: "中午食堂做了红烧肉。",
+        third["assetId"]: "后来我学会了独立操作机器。",
+    }
+    for recording_id, transcript in texts.items():
+        response = client.put(
+            f"/api/recordings/{recording_id}/fragment",
+            headers=auth["headers"],
+            json={"transcript": transcript, "consentVersion": auth["consent"]},
+        )
+        assert response.status_code == 200, response.text
+
+    generated = client.post(
+        "/api/agent/fragments/generate",
+        headers=auth["headers"],
+        json={
+            "recordingIds": [first["assetId"], third["assetId"]],
+            "topicId": "work",
+            "subjectName": "林阿姨",
+            "style": "book",
+            "consentVersion": auth["consent"],
+        },
+    )
+    assert generated.status_code == 201, generated.text
+    story = generated.json()
+    assert story["mode"] == "适合成书"
+    assert story["durationMs"] == 16000
+    assert {item["recordingId"] for item in story["recordings"]} == {
+        first["assetId"],
+        third["assetId"],
+    }
+    assert second["assetId"] not in {item["recordingId"] for item in story["recordings"]}
+    assert "红烧肉" not in story["body"]
+
+
+def test_stop_interview_keeps_topic_for_fragment_generation(client, auth):
+    view = start_session(client, auth, topic="school", rounds=3)
+    view = answer(
+        client,
+        auth,
+        view["session_id"],
+        "第一次上学那天，是妈妈送我到学校门口的。",
+        topic="school",
+    )
+    stopped = client.post(
+        "/api/agent/interviews/stop",
+        headers=auth["headers"],
+        json={
+            "sessionId": view["session_id"],
+            "topicId": "school",
+            "consentVersion": auth["consent"],
+        },
+    )
+    assert stopped.status_code == 200, stopped.text
+    story = client.get(
+        f"/api/stories/{stopped.json()['storyId']}", headers=auth["headers"]
+    )
+    assert story.status_code == 200, story.text
+    assert story.json()["topicId"] == "school"
 
 
 def test_unauthenticated_is_rejected(client):
@@ -187,6 +346,102 @@ def test_story_review_rejects_invented_text(client, auth):
     )
     assert good.status_code == 200, good.text
     assert good.json()["status"] == "confirmed"
+
+
+def test_preview_audit_reports_unsupported_edit_without_publishing(client, auth):
+    view = start_session(client, auth, topic="work")
+    view = answer(
+        client,
+        auth,
+        view["session_id"],
+        "那年秋天，我在镇上的木工坊跟着师傅学手艺。",
+        finish=True,
+        topic="work",
+    )
+    story_id = view["storyId"]
+    audited = client.post(
+        f"/api/stories/{story_id}/audit",
+        headers=auth["headers"],
+        json={"body": "后来我去了北京开了一家公司。", "consentVersion": auth["consent"]},
+    )
+    assert audited.status_code == 200, audited.text
+    assert audited.json()["auditPassed"] is False
+    assert audited.json()["findings"]
+    story = client.get(f"/api/stories/{story_id}", headers=auth["headers"]).json()
+    assert story["status"] == "pending_review"
+
+
+def test_discard_pending_story_removes_its_audio_only(client, auth):
+    view = start_session(client, auth, topic="school")
+    audio = upload_recording(client, auth, "school", 9000, "discard-me.mp3")
+    view = answer(
+        client,
+        auth,
+        view["session_id"],
+        "十八岁那年，我第一次坐火车离开家去上学。",
+        finish=True,
+        topic="school",
+        duration_ms=9000,
+        recording_id=audio["assetId"],
+    )
+    story_id = view["storyId"]
+    assert client.get(audio["audioUrl"]).status_code == 200
+
+    discarded = client.post(
+        f"/api/stories/{story_id}/discard",
+        headers=auth["headers"],
+        json={"consentVersion": auth["consent"]},
+    )
+    assert discarded.status_code == 200, discarded.text
+    assert discarded.json()["deletedRecordings"] == 1
+    assert client.get(f"/api/stories/{story_id}", headers=auth["headers"]).status_code == 404
+    assert client.get(audio["audioUrl"]).status_code == 404
+
+
+def test_request_more_resumes_same_story_and_appends_evidence(client, auth):
+    view = start_session(client, auth, topic="family", rounds=3)
+    first_audio = upload_recording(client, auth, "family", 7000, "before-review.mp3")
+    view = answer(
+        client,
+        auth,
+        view["session_id"],
+        "结婚那天，家里来了很多亲戚。",
+        finish=True,
+        topic="family",
+        duration_ms=7000,
+        recording_id=first_audio["assetId"],
+    )
+    original_story_id = view["storyId"]
+
+    resumed = client.post(
+        "/api/agent/interviews/review",
+        headers=auth["headers"],
+        json={
+            "sessionId": view["session_id"],
+            "action": "request_more",
+            "consentVersion": auth["consent"],
+        },
+    )
+    assert resumed.status_code == 200, resumed.text
+    assert resumed.json()["stage"] == "interview"
+    assert resumed.json()["question"]
+
+    second_audio = upload_recording(client, auth, "family", 8000, "after-review.mp3")
+    finished = answer(
+        client,
+        auth,
+        view["session_id"],
+        "那是在老家的院子里，我既紧张又高兴。",
+        finish=True,
+        topic="family",
+        duration_ms=8000,
+        recording_id=second_audio["assetId"],
+    )
+    assert finished["storyId"] == original_story_id
+    story = client.get(f"/api/stories/{original_story_id}", headers=auth["headers"]).json()
+    assert story["topicId"] == "family"
+    assert story["durationMs"] == 15000
+    assert len(story["recordings"]) == 2
 
 
 def test_stop_intent_ends_interview(client, auth):

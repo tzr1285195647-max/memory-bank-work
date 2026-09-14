@@ -1,4 +1,9 @@
 <!-- 通用卡片：设计稿 342 宽，圆角随内容高度分档（18/20/24/28） -->
-<view class="card card--{{tone}} card--r{{radius}} {{shadow ? 'card--shadow' : ''}} {{padded ? 'card--padded' : ''}}" bindtap="onTap">
+<view
+  class="card card--{{tone}} card--r{{radius}} {{shadow ? 'card--shadow' : ''}} {{padded ? 'card--padded' : ''}}"
+  hover-class="{{tappable ? 'card--pressed' : 'none'}}"
+  hover-stay-time="80"
+  bindtap="onTap"
+>
   <slot></slot>
 </view>

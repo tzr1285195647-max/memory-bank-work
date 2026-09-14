@@ -1,23 +1,25 @@
 .login {
   padding: 0 24px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .login__intro {
-  margin-top: 30px;
+  margin-top: 22px;
   display: flex;
   flex-direction: column;
 }
 
 .login__sub {
-  margin-top: 12px;
+  margin-top: 8px;
   font-size: 16px;
   color: var(--text-muted);
 }
 
-/* 设计稿：手机号标签 y=329（标题块底约 275） */
 .login__form {
-  margin-top: 54px;
+  margin-top: 28px;
   display: flex;
   flex-direction: column;
 }
@@ -29,12 +31,12 @@
 }
 
 .login__label--second {
-  margin-top: 40px;
+  margin-top: 20px;
 }
 
 .login__input {
   margin-top: 8px;
-  height: 52px;
+  height: 48px;
   border-radius: 14px;
   background-color: var(--bg-card);
   padding: 0 18px;
@@ -47,20 +49,21 @@
   color: var(--text-muted);
 }
 
-/* 设计稿：按钮 y=545，密码框底 507 */
 .login__submit {
-  margin-top: 38px;
+  margin-top: 24px;
 }
 
 .login__links {
-  margin-top: 32px;
+  margin-top: 20px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
 }
 
 .login__link + .login__link {
-  margin-top: 28px;
+  margin-top: 0;
+  margin-left: 16px;
 }
 
 .login__link-strong {
@@ -76,13 +79,20 @@
 
 /* 演示账号提示块（正式版移除） */
 .login__demo {
-  margin-top: 40px;
-  padding: 16px 18px;
+  margin-top: auto;
+  margin-bottom: 20px;
+  padding: 12px 16px;
   border-radius: 14px;
   background-color: var(--surface-green);
   display: flex;
   flex-direction: column;
 }
+
+.login__code-row { display: flex; align-items: center; }
+.login__code-input { flex: 1; min-width: 0; }
+.login__code-send { width: 104px; height: 48px; margin: 8px 0 0 10px; border-radius: 14px; background: var(--surface-green); color: var(--brand); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.login__code-send--disabled { color: var(--text-muted); opacity: 0.7; }
+.login__error { margin-top: 8px; color: var(--accent); font-size: 12px; }
 
 .login__demo-title {
   font-size: 13px;
@@ -102,4 +112,20 @@
   margin-top: 6px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* 小屏真机进一步收紧间距，保证无需上下拖动也能看到全部内容。 */
+@media (max-height: 720px) {
+  .login__intro { margin-top: 12px; }
+  .login .t-hero { font-size: 27px; }
+  .login__sub { margin-top: 4px; font-size: 14px; }
+  .login__form { margin-top: 16px; }
+  .login__label--second { margin-top: 12px; }
+  .login__input { height: 44px; }
+  .login__code-send { height: 44px; }
+  .login__submit { margin-top: 16px; }
+  .login__links { margin-top: 12px; }
+  .login__demo { margin-bottom: 10px; padding: 9px 14px; }
+  .login__demo-text,
+  .login__demo-hint { margin-top: 3px; }
 }

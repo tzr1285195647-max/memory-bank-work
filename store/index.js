@@ -15,6 +15,7 @@ const state = {
   consentVersion: 1, // 写请求必须携带；撤回或版本变化后旧请求一律作废
   currentTopic: null, // 05 选中的主题
   currentDraft: null, // 07 待确认草稿，仅内存，避免未确认内容被误恢复
+  recordEntry: null, // 跳转到 tabBar 录音页时传递主题/续讲意图
   recording: { active: false, seconds: 0, tempFilePath: null, durationMs: 0 },
 };
 
@@ -75,7 +76,16 @@ function subscribe(fn) {
 }
 
 function clearSession() {
-  set({ role: null, token: null, user: null, familyId: null, consentVersion: 1, currentDraft: null });
+  set({
+    role: null,
+    token: null,
+    user: null,
+    familyId: null,
+    consentVersion: 1,
+    currentTopic: null,
+    currentDraft: null,
+    recordEntry: null,
+  });
 }
 
 /** 仅用于测试与调试：把状态恢复成初始值。 */
@@ -88,6 +98,7 @@ function reset() {
     consentVersion: 1,
     currentTopic: null,
     currentDraft: null,
+    recordEntry: null,
     recording: { active: false, seconds: 0, tempFilePath: null, durationMs: 0 },
   });
   persist();

@@ -1,55 +1,94 @@
 .stories {
-  padding: 0 24px;
+  padding: 0 24px 40px;
   box-sizing: border-box;
 }
 
 .stories__intro {
-  margin-top: 60px;
+  margin-top: 52px;
   display: flex;
   flex-direction: column;
 }
 
 .stories__sub {
-  margin-top: 14px;
+  margin-top: 12px;
   font-size: 15px;
   color: var(--text-muted);
 }
 
+.stories__view-switch { margin-top: 26px; padding: 4px; border-radius: 14px; background: rgba(78, 102, 87, 0.09); display: flex; }
+.stories__view-option { flex: 1; min-height: 40px; border-radius: 11px; color: var(--text-muted); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.stories__view-option--active { background: var(--bg-card); color: var(--brand); font-weight: 700; box-shadow: 0 3px 12px rgba(52, 67, 58, 0.08); }
+.stories__search { min-height: 48px; margin-top: 14px; padding: 0 15px; box-sizing: border-box; border-radius: 14px; background: var(--bg-card); display: flex; align-items: center; }
+.stories__search-icon { margin-right: 9px; color: var(--brand); font-size: 21px; }
+.stories__search-input { flex: 1; min-width: 0; height: 48px; color: var(--text-primary); font-size: 14px; }
+.stories__search-clear { min-height: 40px; padding-left: 10px; color: var(--brand); font-size: 12px; display: flex; align-items: center; }
+.stories__book-entry { min-height: 76px; margin-top: 14px; padding: 0 18px; border-radius: 17px; background: var(--surface-clay); display: flex; align-items: center; justify-content: space-between; }
+.stories__book-entry--pressed { opacity: 0.85; }
+.stories__book-main { display: flex; flex-direction: column; }
+.stories__book-kicker { color: var(--accent); font-size: 11px; font-weight: 700; }
+.stories__book-title { margin-top: 5px; color: var(--text-primary); font-size: 17px; font-weight: 700; }
+.stories__book-arrow { color: var(--accent); font-size: 25px; }
+.stories__filters { width: 100%; margin-top: 18px; white-space: nowrap; }
+.stories__filters-inner { display: inline-flex; padding: 1px 2px 7px; }
+.stories__filter { min-width: 58px; height: 34px; margin-right: 8px; padding: 0 13px; box-sizing: border-box; border-radius: 17px; background: var(--bg-card); color: var(--text-muted); font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.stories__filter--active { background: var(--brand); color: var(--white); font-weight: 700; }
+
 /* 设计稿：8 个故事 y=311，排序在右 */
 .stories__bar {
-  margin-top: 42px;
+  margin-top: 22px;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
 }
 
 .stories__count {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .stories__sort {
+  min-height: 40px;
+  padding-left: 16px;
   font-size: 13px;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
 }
 
+.stories__timeline { position: relative; margin-top: 24px; padding-bottom: 4px; }
+.stories__timeline-line { position: absolute; top: 10px; bottom: 18px; left: 5px; width: 2px; border-radius: 1px; background: rgba(78, 102, 87, 0.18); }
+.stories__group { position: relative; margin-bottom: 28px; }
+.stories__year-row { min-height: 25px; display: flex; align-items: center; }
+.stories__dot { z-index: 1; width: 12px; height: 12px; border: 3px solid var(--bg-page); box-sizing: border-box; border-radius: 50%; background: var(--accent); }
+.stories__year { margin-left: 13px; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+.stories__group-cards { margin: 10px 0 0 24px; }
+.stories__card { margin-bottom: 12px; padding: 18px; border-radius: 17px; background: var(--bg-card); box-shadow: 0 5px 18px rgba(54, 66, 57, 0.06); display: flex; flex-direction: column; transition: transform 100ms ease, opacity 100ms ease; }
+.stories__card--pressed { transform: scale(0.985); opacity: 0.88; }
+.stories__card-head { display: flex; align-items: center; justify-content: space-between; }
+.stories__stage { padding: 4px 9px; border-radius: 10px; background: var(--surface-green); color: var(--brand); font-size: 11px; font-weight: 700; }
+.stories__arrow { color: var(--text-muted); font-size: 22px; line-height: 1; }
+.stories__card-title { margin-top: 11px; font-size: 19px; font-weight: 700; color: var(--text-primary); }
+.stories__card-meta { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
 .stories__list {
-  margin-top: 24px;
+  margin-top: 22px;
   display: flex;
   flex-direction: column;
 }
 
 .stories__list > list-item {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .stories__empty {
-  margin-top: 120px;
+  margin-top: 90px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
+
+.stories__clear { min-height: 44px; margin-top: 12px; color: var(--brand); font-size: 14px; display: flex; align-items: center; }
 
 .stories__empty-cta {
   margin-top: 24px;

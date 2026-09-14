@@ -1,6 +1,6 @@
 <nav-bar title="记忆银行" theme="brand" showBack="{{false}}" />
 
-<view class="page welcome">
+<view class="page welcome" style="height: {{contentHeight}}px; min-height: {{contentHeight}}px;">
   <!-- 设计稿：标题 y=122（顶栏 92 之下），左 24 -->
   <view class="welcome__intro">
     <text class="t-hero">把家里的故事，慢慢留下来</text>
@@ -11,7 +11,6 @@
   <view class="welcome__card-wrap">
     <app-card tone="green" radius="{{28}}">
       <view class="welcome__card">
-        <text class="welcome__quote">“</text>
         <view class="welcome__poem">
           <text>那些被时间</text>
           <text>温柔保存的声音</text>
@@ -27,6 +26,12 @@
   </view>
 
   <view class="welcome__cta">
-    <primary-button text="我是长辈，开始讲述" type="primary" bind:tap="onStart" />
+    <primary-button
+      text="开始讲述"
+      type="primary"
+      loading="{{navigating}}"
+      loadingText="正在进入"
+      bind:tap="onStart"
+    />
   </view>
 </view>

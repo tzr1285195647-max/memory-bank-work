@@ -382,6 +382,7 @@ class LLMAgentProvider(MockAgentProvider):
         subject_name: str,
         topic: str,
         claims: list[dict[str, Any]],
+        style: str = "natural",
     ) -> dict[str, Any]:
         if not claims:
             raise LLMUnavailableError("没有可用证据，不能写作")
@@ -389,13 +390,18 @@ class LLMAgentProvider(MockAgentProvider):
             {"id": claim["id"], "element": claim["element"], "text": claim["text"], "quote": claim["quote"]}
             for claim in claims
         ]
+        style_instruction = {
+            "raw": "尽量保留原句、语气和讲述顺序，只修正明显标点，不改变说法。",
+            "natural": "保持讲述顺序，去掉少量重复和口头停顿，使段落自然连贯。",
+            "book": "在不新增事实的前提下优化段落、节奏和书面表达，适合收入家庭故事书。",
+        }.get(style, "保持讲述顺序，去掉少量重复和口头停顿，使段落自然连贯。")
         prompt = (
             f"请把下列**已经确认的事实**整理成一段家庭记忆，主题《{topic}》，讲述者：{subject_name}。\n"
             "硬性要求：\n"
             "1. 只能使用下面给出的事实，**绝对不允许新增任何事实**（人名、时间、地点、因果都不能编）。\n"
             "2. 第一句是标题，格式为《主题》；第二句是来源说明，以「这是」开头。\n"
             "3. 其余每句话都必须是事实句，并挂上它所依据的 claim id（可多对一）。\n"
-            "4. 语气温和、口语化，像给家人看的文字。\n\n"
+            f"4. 本次整理方式：{style_instruction}\n\n"
             f"事实列表：\n{json.dumps(payload, ensure_ascii=False)}\n\n"
             '输出格式：{"title":"《...》","sentences":[{"text":"...","claim_ids":["claim-xxx"],"must_cite":true}]}'
         )
@@ -496,8 +502,8 @@ class FallbackAgentProvider:
 def build_provider() -> Any:
     """按配置选择智能体实现。
 
-    - 配置了 LLM_API_KEY：真实模型 + 失败回落
-    - 未配置：纯确定性 Mock（离线可跑，测试用这个）
+    - AGENT_MODE=llm 且配置了 LLM_API_KEY：真实模型 + 失败回落
+    - 其他情况：纯确定性 Mock（默认，离线可跑）
     """
     if not settings.llm_enabled:
         return MockAgentProvider()

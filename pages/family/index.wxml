@@ -4,15 +4,18 @@
   <view class="family__intro">
     <text class="t-title">家庭看板</text>
     <text class="family__sub">和家人一起，把记忆整理成家族故事。</text>
+    <view class="family__switch" bindtap="onSwitchRole">
+      <text>切换长辈 / 家人身份</text>
+    </view>
   </view>
 
   <!-- 设计稿：342×112 白卡，圆角 20 -->
-  <view class="family__members">
+  <view class="family__members" hover-class="family__members--pressed" bindtap="onManageFamily">
     <view class="family__members-left">
       <text class="family__label">家庭成员</text>
       <text class="family__count">{{family.memberCount}} 位</text>
     </view>
-    <text class="family__invited">已邀请 {{family.invitedCount}} 人</text>
+    <text class="family__invited">已邀请 {{family.invitedCount}} 人 · 管理 ›</text>
   </view>
 
   <text class="t-section family__section">整理进度</text>
@@ -39,6 +42,7 @@
         <text class="family__item-title">{{item.title}}</text>
         <text class="family__item-meta">{{item.mode}} · {{item.dayLabel}}</text>
       </view>
+      <text wx:if="{{item.familyNoteCount}}" class="family__item-note">{{item.familyNoteCount}} 条建议</text>
       <text class="family__item-arrow">›</text>
     </view>
     <view wx:if="{{!family.pending.length}}" class="family__empty">

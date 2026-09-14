@@ -88,6 +88,13 @@ def merge_trace(
     return _merge_by_key(left, right, ("node", "seq"))
 
 
+def merge_recording_refs(
+    left: list[dict[str, Any]] | None, right: list[dict[str, Any]] | None
+) -> list[dict[str, Any]]:
+    """每轮只绑定一段原声，重放 checkpoint 时不重复。"""
+    return _merge_by_key(left, right, ("turn_id",))
+
+
 class Claim(TypedDict, total=False):
     """一条从讲述中抽取的事实。
 
@@ -144,6 +151,7 @@ class MemoryBankState(TypedDict, total=False):
     consent_ok: bool
     stop_requested: bool
     stop_reason: str | None
+    duration_ms: int
 
     # --- 阶段控制 ---
     stage: Stage
@@ -166,6 +174,7 @@ class MemoryBankState(TypedDict, total=False):
     claim_ids: Annotated[list[str], merge_unique]
     missing_fields: list[str]
     conflicts: list[dict[str, Any]]
+    recording_refs: Annotated[list[dict[str, Any]], merge_recording_refs]
 
     # --- 写作与审计 ---
     draft_sentences: list[dict[str, Any]]
@@ -195,5 +204,6 @@ __all__ = [
     "SEVEN_ELEMENTS",
     "Stage",
     "merge_claims",
+    "merge_recording_refs",
     "merge_unique",
 ]

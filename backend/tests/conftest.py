@@ -15,3 +15,5 @@ import os
 # 必须在任何 backend 模块被导入前清空：backend.config 在导入时就会读取环境
 os.environ["LLM_API_KEY"] = ""
 os.environ["LLM_MAX_RETRIES"] = "0"
+os.environ["TENCENTCLOUD_SECRET_ID"] = ""
+os.environ["TENCENTCLOUD_SECRET_KEY"] = ""

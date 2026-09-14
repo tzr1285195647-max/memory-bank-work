@@ -3,6 +3,7 @@
   flex-direction: column;
   padding: 0 24px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* 顶栏 92 之下，标题距顶栏 30px（设计稿 y=122） */
@@ -26,28 +27,24 @@
 
 .welcome__card {
   height: 220px;
-  padding: 24px 30px 30px;
+  padding: 34px 30px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-}
-
-.welcome__quote {
-  font-size: 72px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--accent);
-  font-family: var(--font-latin);
+  justify-content: center;
 }
 
 .welcome__poem {
-  margin-top: 18px;
   display: flex;
   flex-direction: column;
   font-size: 30px;
   font-weight: 700;
   line-height: 1.27;
   color: var(--brand);
+}
+
+.welcome__poem text + text {
+  margin-top: 8px;
 }
 
 /* 设计稿：品牌名 y=619、按钮 y=650，都在下方靠底 */
@@ -72,4 +69,17 @@
 
 .welcome__cta {
   margin: 27px 0 40px;
+}
+
+@media (max-height: 720px) {
+  .welcome__intro { margin-top: 12px; }
+  .welcome .t-hero { font-size: 27px; }
+  .welcome__sub { margin-top: 6px; font-size: 14px; }
+  .welcome__card-wrap { margin-top: 18px; }
+  .welcome__card { height: 170px; padding: 24px; }
+  .welcome__poem { font-size: 26px; }
+  .welcome__bottom { margin-top: auto; }
+  .welcome__brand { font-size: 23px; }
+  .welcome__slogan { margin-top: 5px; font-size: 14px; }
+  .welcome__cta { margin: 14px 0 12px; }
 }

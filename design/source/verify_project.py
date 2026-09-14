@@ -68,7 +68,7 @@ leftovers: list[str] = []
 for path in sorted(ROOT.rglob("*")):
     if not path.is_file() or path.suffix not in {".wxml", ".wxss", ".js"}:
         continue
-    if any(part in {".git", "design", "docs", "node_modules"} for part in path.parts):
+    if any(part in {".git", ".venv", "design", "docs", "node_modules"} for part in path.parts):
         continue
     text = path.read_text(encoding="utf-8")
     hit = [m for m in PLACEHOLDER_MARKERS if m in text]
@@ -84,21 +84,22 @@ else:
 print("\n=== 7. 非法位置的 .wxml / .wxss（会被工具扫描但缺少配套文件，导致编译或渲染失败）===")
 pages_dir = (ROOT / "pages").resolve()
 comps_dir = (ROOT / "components").resolve()
+custom_tab_dir = (ROOT / "custom-tab-bar").resolve()
 misplaced: list[str] = []
 for path in list(ROOT.rglob("*.wxml")) + list(ROOT.rglob("*.wxss")):
     resolved = path.resolve()
-    if any(part in {".git", "node_modules", "design", "docs"} for part in path.parts):
+    if any(part in {".git", ".venv", "node_modules", "design", "docs"} for part in path.parts):
         continue
     if path.name == "app.wxss" and resolved.parent == ROOT:
         continue
-    if pages_dir in resolved.parents or comps_dir in resolved.parents:
+    if pages_dir in resolved.parents or comps_dir in resolved.parents or custom_tab_dir in resolved.parents:
         # 页面/组件的四件套必须同名，检查配套文件
         stem = path.with_suffix("")
         for ext in (".js", ".json"):
             if not stem.with_suffix(ext).exists():
                 misplaced.append(f"{path.relative_to(ROOT)} 缺少配套 {stem.name}{ext}")
         continue
-    misplaced.append(f"{path.relative_to(ROOT)} 位于非法目录（只允许 pages/<name>/ 与 components/<name>/）")
+    misplaced.append(f"{path.relative_to(ROOT)} 位于非法目录（只允许 pages/<name>/、components/<name>/ 与 custom-tab-bar/）")
 if misplaced:
     problems.extend(misplaced)
     for item in misplaced:
@@ -110,7 +111,7 @@ print("\n=== 8. WXML 事件绑定是否都有对应方法（漏写会导致点�
 BIND_PATTERN = re.compile(r'bind:?([a-zA-Z]+)\s*=\s*"([^"{}]+)"')
 MISSING_HANDLERS: list[str] = []
 for wxml in sorted(ROOT.rglob("*.wxml")):
-    if any(part in {".git", "node_modules", "design", "docs"} for part in wxml.parts):
+    if any(part in {".git", ".venv", "node_modules", "design", "docs"} for part in wxml.parts):
         continue
     js_path = wxml.with_suffix(".js")
     if not js_path.exists():

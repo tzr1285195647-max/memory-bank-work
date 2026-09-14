@@ -126,6 +126,10 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         )
         answer = str((payload or {}).get("answer", "")).strip()
         finish = bool((payload or {}).get("finish"))
+        segment_duration_ms = max(0, int((payload or {}).get("durationMs") or 0))
+        duration_ms = max(0, int(state.get("duration_ms") or 0)) + segment_duration_ms
+        recording_id = str((payload or {}).get("recordingId") or "").strip()
+        speaker_label = str((payload or {}).get("speakerLabel") or "长辈").strip()
         turn = {
             "id": f"turn-{uuid.uuid4().hex[:10]}",
             "round_index": state.get("round_index", 0),
@@ -133,12 +137,24 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             "answer": answer,
             "finish_requested": finish,
         }
-        return {
+        result = {
             "turns": [turn],
             "round_index": state.get("round_index", 0) + 1,
+            "duration_ms": duration_ms,
             "next_action": "evidence",
             **_trace("interview.commit_turn", turn_id=turn["id"], length=len(answer), finish=finish),
         }
+        if recording_id:
+            result["recording_refs"] = [
+                {
+                    "recording_id": recording_id,
+                    "turn_id": turn["id"],
+                    "round_index": turn["round_index"],
+                    "duration_ms": segment_duration_ms,
+                    "speaker_label": speaker_label if speaker_label in {"长辈", "家人"} else "长辈",
+                }
+            ]
+        return result
 
     # ------------------------------------------------------------ 证据抽取
 

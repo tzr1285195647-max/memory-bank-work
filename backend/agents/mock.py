@@ -174,7 +174,13 @@ class MockAgentProvider:
         subject_name: str,
         topic: str,
         claims: list[dict[str, Any]],
+        style: str = "natural",
     ) -> dict[str, Any]:
+        source_text = {
+            "raw": f"这是{subject_name}确认过的口述原文。",
+            "natural": f"这是{subject_name}亲口讲述并等待确认的一段家庭记忆。",
+            "book": f"这是根据{subject_name}亲口讲述整理、等待确认的一段家庭记忆。",
+        }.get(style, f"这是{subject_name}亲口讲述并等待确认的一段家庭记忆。")
         sentences: list[dict[str, Any]] = [
             {
                 "text": f"《{topic}》",
@@ -182,22 +188,25 @@ class MockAgentProvider:
                 "must_cite": False,
             },
             {
-                "text": f"这是{subject_name}亲口讲述并等待确认的一段家庭记忆。",
+                "text": source_text,
                 "claim_ids": [],
                 "must_cite": False,
             },
         ]
 
-        # 按要素优先级组织叙事顺序，同一要素内保持讲述顺序
-        ordered = sorted(
-            claims,
-            key=lambda c: (
-                ELEMENT_PRIORITY.index(c["element"]) if c.get("element") in ELEMENT_PRIORITY else len(ELEMENT_PRIORITY),
-                c.get("order", 0),
-            ),
-        )
+        # 原味口述和自然整理保持碎片顺序；适合成书才按叙事要素轻度重排。
+        if style == "book":
+            ordered = sorted(
+                claims,
+                key=lambda c: (
+                    ELEMENT_PRIORITY.index(c["element"]) if c.get("element") in ELEMENT_PRIORITY else len(ELEMENT_PRIORITY),
+                    c.get("order", 0),
+                ),
+            )
+        else:
+            ordered = sorted(claims, key=lambda c: c.get("order", 0))
         for claim in ordered:
-            text = str(claim.get("text", "")).strip()
+            text = str(claim.get("quote" if style == "raw" else "text", "")).strip()
             if not text:
                 continue
             sentences.append(

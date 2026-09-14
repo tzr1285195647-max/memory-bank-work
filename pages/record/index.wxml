@@ -6,6 +6,7 @@
     <text class="t-title">想讲哪一段？</text>
     <text class="record__sub">先选一个主题，再慢慢讲。</text>
   </view>
+
   <view class="record__pick">
     <primary-button text="去选主题" type="primary" bind:tap="onPickTopic" />
   </view>
@@ -17,44 +18,166 @@
     <text class="record__sub">不用准备稿，想到哪里说到哪里。</text>
   </view>
 
+  <view wx:if="{{question}}" class="record__question">
+    <view class="record__question-head">
+      <text class="record__question-label">AI 采访提示</text>
+      <text class="record__round">第 {{roundNumber}} 段</text>
+    </view>
+    <text class="record__question-text">{{question}}</text>
+  </view>
+
   <!-- 设计稿：342×250 浅绿区，圆角 28 -->
-  <view class="record__panel">
+  <view wx:if="{{!interviewComplete}}" class="record__panel">
     <text class="record__timer">{{timerText}}</text>
     <view class="record__status">
       <text class="record__dot">●</text>
       <text class="record__status-text">{{statusText}}</text>
     </view>
+    <text wx:if="{{!recording && seconds === 0}}" class="record__start-hint">点击下方圆形按钮开始录音</text>
     <!-- 设计稿：106×106 圆形暂停键 -->
     <view class="record__button" hover-class="record__button--hover" bindtap="onToggle">
       <text class="record__button-icon">{{recording ? 'Ⅱ' : '▶'}}</text>
     </view>
   </view>
 
-  <!-- 设计稿：独自讲述 / 双人访谈 -->
-  <view class="record__modes">
-    <text
-      wx:for="{{modes}}"
-      wx:key="id"
-      class="record__mode {{mode === item.id ? 'record__mode--active' : ''}}"
-      data-id="{{item.id}}"
-      bindtap="onModeChange"
-    >{{item.label}}</text>
+  <view wx:if="{{seconds > 0 && !recording}}" class="record__transcript">
+    <view class="record__transcript-head">
+      <text class="record__transcript-label">口述文字校对</text>
+      <text wx:if="{{transcriptSimulated}}" class="record__transcript-badge">演示转写</text>
+      <text wx:elif="{{transcriptNeedsConfirmation}}" class="record__transcript-badge record__transcript-badge--cloud">云端转写</text>
+    </view>
+    <text class="record__transcript-hint">{{transcriptSimulated ? '已自动填入本地演示转写。它不代表真实原声，请按刚才的讲述校对。' : (transcriptNeedsConfirmation ? '腾讯云已完成识别。请检查人名、地名和年代，再确认文字与原声一致。' : (fragmentReady ? '本轮文字已确认，请点击下方按钮保存到记忆碎片。' : (asrAvailable && !transcriptDraft ? '可先将录音转成文字，也可以直接手动填写。' : '请确认文字与刚才的原声一致。')))}}</text>
+    <view
+      wx:if="{{!transcriptDraft}}"
+      class="record__transcribe {{transcribing ? 'record__transcribe--disabled' : ''}}"
+      bindtap="onTranscribeNow"
+    >
+      <text>{{transcribing ? '正在上传并识别…' : '将这段录音转成文字'}}</text>
+    </view>
+    <view wx:if="{{transcriptDraft && !transcriptEditing}}" class="record__transcript-preview">
+      <text>{{transcriptDraft}}</text>
+    </view>
+    <textarea
+      wx:else
+      class="record__transcript-input"
+      value="{{transcriptDraft}}"
+      maxlength="6000"
+      auto-height="{{false}}"
+      fixed="{{true}}"
+      cursor-spacing="140"
+      disable-default-padding="{{true}}"
+      placeholder="例如：那年秋天，院子里的桂花开得很早……"
+      bindinput="onTranscriptInput"
+    />
+    <view wx:if="{{transcriptDraft}}" class="record__transcript-tools">
+      <view wx:if="{{!transcriptEditing}}" class="record__transcript-edit" bindtap="onEditTranscript">
+        <text>修改文字</text>
+      </view>
+      <view wx:if="{{!fragmentReady}}" class="record__transcript-confirm" bindtap="onConfirmTranscript">
+        <text>{{transcriptEditing ? '完成修改并确认' : '确认文字与原声一致'}}</text>
+      </view>
+    </view>
   </view>
 
-  <view class="record__actions">
+  <view wx:if="{{!interviewComplete && fragmentReady && seconds > 0 && !recording}}" class="record__save-fragment">
+    <text class="record__save-title">本轮文字已确认</text>
+    <text class="record__save-hint">保存后会加入下方的记忆碎片，并自动准备下一段讲述。</text>
+    <primary-button
+      text="保存到记忆碎片"
+      type="primary"
+      loading="{{uploading}}"
+      loadingText="正在保存"
+      bind:tap="onSubmitRound"
+    />
+  </view>
+
+  <view wx:if="{{!interviewComplete && !roundFinalized && !fragmentReady}}" class="record__actions">
     <primary-button
       text="{{recording ? '暂停一下' : (seconds > 0 ? '继续讲述' : '开始讲述')}}"
       type="primary"
       bind:tap="onToggle"
     />
-    <view wx:if="{{seconds > 0 && !recording}}" class="record__finish">
-      <primary-button
-        text="讲完了，生成故事"
-        type="secondary"
-        loading="{{uploading}}"
-        loadingText="正在保存"
-        bind:tap="onFinish"
-      />
+  </view>
+
+  <view wx:if="{{seconds > 0 || completedRounds.length}}" class="record__fragments">
+    <view class="record__fragments-head">
+      <view class="record__fragments-heading">
+        <text class="record__fragments-title">记忆碎片</text>
+        <text class="record__fragments-count">已保存 {{completedRounds.length}} 段</text>
+      </view>
+      <text class="record__fragments-hint">确认过的口述会按顺序连在一起，生成故事前仍可继续补充。</text>
+      <view wx:if="{{completedRounds.length}}" class="record__selection-bar">
+        <text class="record__selection-count">已选 {{selectedFragmentCount}} / {{completedRounds.length}} 段</text>
+        <text class="record__selection-all" bindtap="onToggleSelectAll">{{selectedFragmentCount === completedRounds.length ? '取消全选' : '全选'}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{!completedRounds.length}}" class="record__fragments-empty">
+      <text class="record__fragments-empty-title">还没有已保存的碎片</text>
+      <text class="record__fragments-empty-hint">确认并保存本轮文字后，它会出现在这里。</text>
+    </view>
+
+    <view wx:if="{{completedRounds.length}}" class="record__fragment-list">
+      <view
+        wx:for="{{completedRounds}}"
+        wx:key="roundNumber"
+        class="record__fragment"
+        data-id="{{item.recordingId}}"
+        bindtap="onToggleFragment"
+      >
+        <view class="record__fragment-check {{item.selected ? 'record__fragment-check--selected' : ''}}">
+          <text>{{item.selected ? '✓' : ''}}</text>
+        </view>
+        <view class="record__fragment-main">
+          <text class="record__fragment-text">{{item.transcript}}</text>
+          <view class="record__fragment-meta">
+            <text class="record__fragment-time">{{item.timeLabel}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="record__generator">
+      <text class="record__styles-title">生成故事</text>
+      <text class="record__styles-hint">Agent 只使用上面的已确认文本，不会补写没有讲过的事实。</text>
+      <view class="record__style-list">
+        <view
+          wx:for="{{writingStyles}}"
+          wx:key="id"
+          class="record__style {{writingStyle === item.id ? 'record__style--active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onWritingStyleChange"
+        >
+          <text class="record__style-name">{{item.label}}</text>
+          <text class="record__style-detail">{{item.detail}}</text>
+        </view>
+      </view>
+      <view class="record__generate-action">
+        <primary-button
+          text="用已选 {{selectedFragmentCount}} 段生成故事"
+          type="primary"
+          loading="{{uploading}}"
+          loadingText="Agent 正在整理"
+          disabled="{{selectedFragmentCount === 0}}"
+          bind:tap="onGenerateStory"
+        />
+      </view>
+    </view>
+  </view>
+
+</view>
+
+<view wx:if="{{generating}}" class="record__generating">
+  <view class="record__generating-card">
+    <text class="record__generating-title">正在生成你的故事</text>
+    <text class="record__generating-sub">所有内容都要经过原声依据核对</text>
+    <view class="record__generation-list">
+      <view wx:for="{{generationSteps}}" wx:key="*this" class="record__generation-step">
+        <view class="record__generation-dot {{generationStep > index ? 'record__generation-dot--done' : (generationStep === index ? 'record__generation-dot--active' : '')}}">
+          <text>{{generationStep > index ? '✓' : index + 1}}</text>
+        </view>
+        <text class="record__generation-text {{generationStep >= index ? 'record__generation-text--active' : ''}}">{{item}}</text>
+      </view>
     </view>
   </view>
 </view>

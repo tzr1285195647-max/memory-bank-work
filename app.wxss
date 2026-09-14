@@ -50,9 +50,12 @@ page {
   background-color: var(--bg-page);
 }
 
-.page--tab {
-  /* tabBar 页面需要给原生 tabBar 让位（76px 底栏 + 34px 安全区余量） */
-  padding-bottom: 110px;
+.page.page--tab {
+  /*
+   * 用双类选择器锁定底部安全区，避免各页面稍后声明的 padding 简写
+   * 把 padding-bottom 重置为 0。底栏本身约 76px，再留出 44px 可点击余量。
+   */
+  padding-bottom: calc(var(--tabbar-height) + 44px + env(safe-area-inset-bottom));
 }
 
 .container {

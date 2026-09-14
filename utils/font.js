@@ -27,6 +27,9 @@ function loadSerifFont() {
   if (attempted) return Promise.resolve(loaded);
   attempted = true;
 
+  // 真机纯离线演示时不访问 127.0.0.1，直接使用系统字体，避免启动阶段的无效请求。
+  if (!runtime.shouldUseBackend()) return Promise.resolve(false);
+
   const tasks = FONT_SOURCES.map(
     (source) =>
       new Promise((resolve) => {

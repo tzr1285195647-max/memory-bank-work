@@ -3,31 +3,68 @@
 <view class="page page--tab stories">
   <view class="stories__intro">
     <text class="t-title">我们的故事书</text>
-    <text class="stories__sub">已经保存的每一段声音，都值得被记住。</text>
+    <text class="stories__sub">沿着年份与人生阶段，重新走过共同的记忆。</text>
   </view>
+
+  <view class="stories__view-switch">
+    <view class="stories__view-option {{viewMode === 'timeline' ? 'stories__view-option--active' : ''}}" data-mode="timeline" bindtap="onViewMode">时间轴</view>
+    <view class="stories__view-option {{viewMode === 'list' ? 'stories__view-option--active' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
+  </view>
+
+  <view class="stories__search">
+    <text class="stories__search-icon">⌕</text>
+    <input class="stories__search-input" value="{{searchText}}" placeholder="搜索故事、人物或地点" confirm-type="search" bindinput="onSearch" />
+    <text wx:if="{{searchText}}" class="stories__search-clear" bindtap="onClearSearch">清除</text>
+  </view>
+
+  <view class="stories__book-entry" hover-class="stories__book-entry--pressed" bindtap="onBookPreview">
+    <view class="stories__book-main"><text class="stories__book-kicker">家庭纪念册</text><text class="stories__book-title">把故事排成一本书</text></view><text class="stories__book-arrow">›</text>
+  </view>
+
+  <scroll-view class="stories__filters" scroll-x="true" enhanced="true" show-scrollbar="false">
+    <view class="stories__filters-inner">
+      <view wx:for="{{lifeStages}}" wx:key="*this" class="stories__filter {{activeStage === item ? 'stories__filter--active' : ''}}" data-stage="{{item}}" bindtap="onStage">{{item}}</view>
+    </view>
+  </scroll-view>
 
   <view class="stories__bar">
-    <text class="stories__count">{{list.length}} 个故事</text>
-    <text class="stories__sort" bindtap="onSort">按时间排序 ⌄</text>
+    <text class="stories__count">{{total}} 个故事</text>
+    <text class="stories__sort" bindtap="onSort">{{sortDesc ? '从近到远' : '从远到近'}} ↕</text>
   </view>
 
-  <view wx:if="{{list.length}}" class="stories__list">
+  <view wx:if="{{list.length && viewMode === 'timeline'}}" class="stories__timeline">
+    <view class="stories__timeline-line"></view>
+    <view wx:for="{{groups}}" wx:key="key" class="stories__group">
+      <view class="stories__year-row"><view class="stories__dot"></view><text class="stories__year">{{item.yearLabel}}</text></view>
+      <view class="stories__group-cards">
+        <view wx:for="{{item.items}}" wx:for-item="story" wx:key="id" class="stories__card" hover-class="stories__card--pressed" hover-stay-time="80" data-id="{{story.id}}" bindtap="onOpen">
+          <view class="stories__card-head"><text class="stories__stage">{{story.lifeStage}}</text><text class="stories__arrow">›</text></view>
+          <text class="stories__card-title">{{story.title}}</text>
+          <text class="stories__card-meta">{{story.durationText}} · {{story.mode}}{{story.fragmentCount ? ' · ' + story.fragmentCount + ' 段碎片' : ''}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{list.length && viewMode === 'list'}}" class="stories__list">
     <list-item
       wx:for="{{list}}"
       wx:key="id"
       variant="story"
       index="{{item.index}}"
       title="{{item.title}}"
-      subtitle="{{item.durationText}} · {{item.mode}}"
+      subtitle="{{item.memoryYear ? item.memoryYear + '年 · ' : ''}}{{item.lifeStage}} · {{item.durationText}}{{item.fragmentCount ? ' · ' + item.fragmentCount + ' 段碎片' : ''}}"
       arrow="›"
       data-id="{{item.id}}"
       bind:tap="onOpen"
     />
   </view>
 
-  <view wx:else class="stories__empty">
-    <text class="t-section">还没有故事</text>
-    <text class="t-note mt-8">按下「讲述」，从一个具体的小片段开始。</text>
+  <view wx:if="{{!loading && !list.length}}" class="stories__empty">
+    <text class="t-section">{{searchText ? '没有找到相关故事' : (activeStage === '全部' ? '还没有故事' : '这个阶段还没有故事')}}</text>
+    <text class="t-note mt-8">{{searchText ? '换一个关键词试试。' : (activeStage === '全部' ? '按下「讲述」，从一个具体的小片段开始。' : '可以看看其他人生阶段，或开始一段新讲述。')}}</text>
+    <view wx:if="{{searchText}}" class="stories__clear" bindtap="onClearSearch">清除搜索</view>
+    <view wx:if="{{activeStage !== '全部'}}" class="stories__clear" bindtap="onClearFilter">查看全部故事</view>
     <view class="stories__empty-cta">
       <primary-button text="开始讲述" type="primary" bind:tap="onStart" />
     </view>

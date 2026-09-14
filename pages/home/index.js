@@ -1,14 +1,14 @@
-const store = require('../../store/index');
 const api = require('../../utils/api');
 
 Page({
   data: {
-    today: { label: '今日叙事', title: '', subtitle: '', topicId: '' },
     recent: [],
     loading: true,
   },
 
   onShow() {
+    const tabBar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
+    if (tabBar) tabBar.setData({ selected: 0 });
     this.load();
   },
 
@@ -16,7 +16,7 @@ Page({
     this.setData({ loading: true });
     try {
       const data = await api.getHome();
-      this.setData({ today: data.today, recent: data.recent, loading: false });
+      this.setData({ recent: data.recent, loading: false });
     } catch (err) {
       this.setData({ loading: false });
       wx.showToast({ title: err.message || '加载失败', icon: 'none' });
@@ -25,11 +25,6 @@ Page({
 
   onRecord() {
     wx.navigateTo({ url: '/pages/topic/index' });
-  },
-
-  onTodayTap() {
-    store.set({ currentTopic: this.data.today.topicId });
-    wx.navigateTo({ url: `/pages/record/index?topic=${this.data.today.topicId}` });
   },
 
   onStoryTap(e) {

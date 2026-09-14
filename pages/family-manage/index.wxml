@@ -1,0 +1,24 @@
+<nav-bar title="家庭与协作" theme="brandLight" showBack="{{true}}" showMore="{{false}}" />
+
+<view class="page manage">
+  <view class="manage__intro"><text class="t-title">一家人，共同守护</text><text class="manage__sub">每个人能做什么都清楚可见，故事始终由长辈最终确认。</text></view>
+
+  <view class="manage__invite">
+    <text class="manage__invite-kicker">本机演示邀请码</text>
+    <text wx:if="{{inviteReady}}" class="manage__invite-code">{{inviteCode}}</text>
+    <text wx:else class="manage__invite-title">邀请一位家人协助回忆</text>
+    <text class="manage__invite-hint">邀请码 24 小时内有效。正式上线后可接入微信分享，无需改变权限规则。</text>
+    <view wx:if="{{role === 'elder' && !inviteReady}}" class="manage__invite-action" bindtap="onGenerateInvite">生成邀请码</view>
+    <view wx:if="{{role === 'elder' && inviteReady}}" class="manage__invite-action" bindtap="onCopyInvite">复制邀请码</view>
+    <text wx:else class="manage__family-hint">家人不能继续邀请成员，如需邀请请联系长辈。</text>
+  </view>
+
+  <view class="manage__section-head"><text class="t-section">家庭成员</text><text class="manage__count">{{members.length}} 位</text></view>
+  <view class="manage__members"><view wx:for="{{members}}" wx:key="id" class="manage__member"><view class="manage__avatar">{{item.avatar}}</view><view class="manage__member-main"><text class="manage__member-name">{{item.name}}</text><text class="manage__member-role">{{item.roleLabel}}</text></view><text class="manage__member-status">已加入</text></view></view>
+
+  <text class="t-section manage__section">权限说明</text>
+  <view class="manage__permissions"><view wx:for="{{permissions}}" wx:key="role" class="manage__permission"><text class="manage__permission-role manage__permission-role--{{item.color}}">{{item.role}}</text><text class="manage__permission-detail">{{item.detail}}</text></view></view>
+
+  <view class="manage__boundary"><text class="manage__boundary-title">不可越过的边界</text><text class="manage__boundary-text">家人的建议不会直接覆盖故事；存在未处理建议时，故事不能发布；撤回授权后内容与原声会删除。</text></view>
+  <view class="manage__switch" bindtap="onSwitchRole">切换长辈 / 家人身份进行演示</view>
+</view>

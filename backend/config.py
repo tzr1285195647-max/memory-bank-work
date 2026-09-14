@@ -32,16 +32,32 @@ class Settings:
     host: str
     port: int
     project_root: Path = PROJECT_ROOT
-    # --- 大模型（留空则使用确定性 Mock 智能体，离线可跑）---
+    # --- 智能体模式：默认 mock，现场演示不触发任何外网请求 ---
+    agent_mode: str = "mock"
+    # --- 大模型（仅 AGENT_MODE=llm 且配置密钥时启用）---
     llm_api_key: str = ""
     llm_base_url: str = "https://api.deepseek.com"
     llm_model: str = "deepseek-chat"
     llm_timeout_seconds: float = 60.0
     llm_max_retries: int = 2
+    # --- 腾讯云语音转文字（仅密钥完整时启用）---
+    asr_provider: str = "tencent"
+    tencentcloud_secret_id: str = ""
+    tencentcloud_secret_key: str = ""
+    tencent_asr_region: str = "ap-guangzhou"
+    tencent_asr_engine: str = "16k_zh_en_2.0"
 
     @property
     def llm_enabled(self) -> bool:
-        return bool(self.llm_api_key.strip())
+        return self.agent_mode == "llm" and bool(self.llm_api_key.strip())
+
+    @property
+    def asr_enabled(self) -> bool:
+        return (
+            self.asr_provider == "tencent"
+            and bool(self.tencentcloud_secret_id.strip())
+            and bool(self.tencentcloud_secret_key.strip())
+        )
 
     @property
     def database_path(self) -> Path:
@@ -49,7 +65,8 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    data_dir = Path(os.getenv("MEMORY_BANK_DATA_DIR", BASE_DIR / ".data")).resolve()
+    data_dir_value = os.getenv("MEMORY_BANK_DATA_DIR", "").strip()
+    data_dir = Path(data_dir_value).resolve() if data_dir_value else (BASE_DIR / ".data").resolve()
     objects_dir = data_dir / "objects"
     data_dir.mkdir(parents=True, exist_ok=True)
     objects_dir.mkdir(parents=True, exist_ok=True)
@@ -65,11 +82,17 @@ def load_settings() -> Settings:
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024))),
         host=os.getenv("HOST", "127.0.0.1"),
         port=int(os.getenv("PORT", "8787")),
+        agent_mode=os.getenv("AGENT_MODE", "mock").strip().lower(),
         llm_api_key=os.getenv("LLM_API_KEY", ""),
         llm_base_url=os.getenv("LLM_BASE_URL", "https://api.deepseek.com").rstrip("/"),
         llm_model=os.getenv("LLM_MODEL", "deepseek-chat"),
         llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "60")),
         llm_max_retries=int(os.getenv("LLM_MAX_RETRIES", "2")),
+        asr_provider=os.getenv("ASR_PROVIDER", "tencent").strip().lower(),
+        tencentcloud_secret_id=os.getenv("TENCENTCLOUD_SECRET_ID", ""),
+        tencentcloud_secret_key=os.getenv("TENCENTCLOUD_SECRET_KEY", ""),
+        tencent_asr_region=os.getenv("TENCENT_ASR_REGION", "ap-guangzhou"),
+        tencent_asr_engine=os.getenv("TENCENT_ASR_ENGINE", "16k_zh_en_2.0"),
     )
 
 

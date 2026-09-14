@@ -3,7 +3,7 @@
 <view class="page preview">
   <view class="preview__intro">
     <text class="t-title">故事预览</text>
-    <text class="preview__sub">确认后，这段故事会保存到你的故事书。</text>
+    <text class="preview__sub">{{isFamily ? '你可以补充记忆或提出修改建议，故事仍由长辈确认。' : '确认后，这段故事会保存到你的故事书。'}}</text>
   </view>
 
   <!-- 设计稿：342×310 白卡，圆角 20，内边距 24 -->
@@ -35,7 +35,74 @@
 
     <!-- 产品规则要求：AI 生成或整理的内容必须显式标注 -->
     <view class="preview__ai">
-      <ai-badge />
+      <ai-badge text="{{canReview ? 'AI 整理 · 待确认' : 'AI 整理 · 已确认'}}" />
+    </view>
+  </view>
+
+  <view class="preview__fragments">
+    <view class="preview__fragments-head">
+      <view class="preview__fragments-heading">
+        <text class="preview__fragments-title">记忆碎片</text>
+        <text class="preview__fragments-sub">确认过的口述原文，按讲述顺序保存</text>
+      </view>
+      <text class="preview__fragments-count">{{memoryFragments.length}} 段</text>
+    </view>
+    <view wx:if="{{memoryFragments.length}}" class="preview__fragment-story">
+      <view wx:for="{{memoryFragments}}" wx:key="roundNumber" class="preview__fragment">
+        <text class="preview__fragment-text">{{item.transcript}}</text>
+        <text class="preview__fragment-time">{{item.timeLabel}}</text>
+      </view>
+    </view>
+    <view wx:else class="preview__fragments-empty">
+      <text>这条早期记录没有保存逐段口述文字，后续补充讲述会自动形成记忆碎片。</text>
+    </view>
+  </view>
+
+  <view class="preview__coordinate">
+    <view class="preview__coordinate-head">
+      <view class="preview__coordinate-title-wrap"><text class="preview__coordinate-mark">⌁</text><text class="preview__coordinate-title">记忆坐标</text></view>
+      <text wx:if="{{!canEditCoordinate}}" class="preview__coordinate-value">{{draft.memoryYear ? draft.memoryYear + '年' : '年代待补充'}} · {{draft.lifeStage}}</text>
+    </view>
+    <view wx:if="{{canEditCoordinate}}" class="preview__coordinate-edit">
+      <view class="preview__year-field">
+        <input class="preview__year-input" type="number" maxlength="4" value="{{memoryYearInput}}" placeholder="例如 1976" bindinput="onMemoryYearInput" />
+        <text class="preview__year-unit">年</text>
+      </view>
+      <view class="preview__stage-list">
+        <text wx:for="{{lifeStages}}" wx:key="*this" class="preview__stage {{lifeStage === item ? 'preview__stage--active' : ''}}" data-stage="{{item}}" bindtap="onLifeStage">{{item}}</text>
+      </view>
+      <view class="preview__coordinate-save" bindtap="onSaveMemoryMeta">{{metaSaving ? '保存中…' : '保存记忆坐标'}}</view>
+    </view>
+    <text wx:if="{{canEditCoordinate}}" class="preview__coordinate-hint">不确定年份可以留空，稍后再补充。</text>
+  </view>
+
+  <view wx:if="{{draft.conflicts.length}}" class="preview__conflicts">
+    <text class="preview__conflicts-title">发现 {{draft.conflicts.length}} 组不同讲述</text>
+    <text class="preview__conflicts-hint">系统不会替你判断，以下内容按原话并列保留。</text>
+    <view wx:for="{{draft.conflicts}}" wx:key="element" class="preview__conflict">
+      <text class="preview__conflict-element">{{item.elementLabel}}</text>
+      <text class="preview__conflict-quote">第一次：{{item.quote_a}}</text>
+      <text class="preview__conflict-quote">另一次：{{item.quote_b}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{recordings.length > 1}}" class="preview__recordings">
+    <view class="preview__recordings-head">
+      <text class="preview__recordings-title">分轮原声 · {{recordings.length}} 段</text>
+      <text class="preview__recordings-hint">点击分别回听</text>
+    </view>
+    <view
+      wx:for="{{recordings}}"
+      wx:key="recordingId"
+      class="preview__recording {{activeRecordingId === item.recordingId ? 'preview__recording--active' : ''}}"
+      data-id="{{item.recordingId}}"
+      bindtap="onPlayRound"
+    >
+      <view class="preview__recording-main">
+        <text class="preview__recording-label">{{item.roundLabel}}</text>
+        <text class="preview__recording-duration">{{item.durationText}}</text>
+      </view>
+      <text class="preview__recording-play">{{activeRecordingId === item.recordingId && playing ? 'Ⅱ' : '▶'}}</text>
     </view>
   </view>
 
@@ -49,7 +116,7 @@
       <text class="preview__claim-element">{{item.elementLabel}}</text>
       <view class="preview__claim-body">
         <text class="preview__claim-text">{{item.text}}</text>
-        <text class="preview__claim-quote">原文：{{item.quote}}</text>
+        <text class="preview__claim-quote">{{item.roundLabel}}：{{item.quote}}</text>
       </view>
     </view>
   </view>
@@ -72,25 +139,103 @@
     </view>
   </view>
 
-  <view class="preview__hint">
-    <text>{{editing ? '改好后点下方按钮保存。' : '这段文字来自你的讲述，你可以继续修改或确认。'}}</text>
+  <view wx:if="{{draft.id}}" class="preview__collaboration">
+    <view class="preview__collaboration-head">
+      <text class="preview__collaboration-title">家庭协作</text>
+      <text class="preview__collaboration-count">{{familyNotes.length}} 条建议</text>
+    </view>
+    <text class="preview__collaboration-rule">家人的内容单独保存，不会直接改写长辈的故事。</text>
+
+    <view wx:if="{{isFamily && canReview}}" class="preview__note-form">
+      <view class="preview__note-kinds">
+        <text
+          class="preview__note-kind {{noteKind === 'supplement' ? 'preview__note-kind--active' : ''}}"
+          data-kind="supplement"
+          bindtap="onNoteKind"
+        >补充回忆</text>
+        <text
+          class="preview__note-kind {{noteKind === 'correction' ? 'preview__note-kind--active' : ''}}"
+          data-kind="correction"
+          bindtap="onNoteKind"
+        >修改建议</text>
+      </view>
+      <textarea
+        class="preview__note-input"
+        value="{{noteDraft}}"
+        maxlength="500"
+        auto-height="{{true}}"
+        placeholder="例如：这里的地点好像是老车站，可以再确认一下。"
+        bindinput="onNoteInput"
+      />
+      <primary-button
+        text="提交给长辈"
+        type="secondary"
+        loading="{{noteSubmitting}}"
+        loadingText="正在提交"
+        bind:tap="onSubmitFamilyNote"
+      />
+    </view>
+
+    <view wx:if="{{familyNotes.length}}" class="preview__note-list">
+      <view wx:for="{{familyNotes}}" wx:key="id" class="preview__note">
+        <view class="preview__note-head">
+          <text class="preview__note-author">{{item.authorName}} · {{item.kindLabel}}</text>
+          <text class="preview__note-status preview__note-status--{{item.status}}">{{item.statusLabel}}</text>
+        </view>
+        <text class="preview__note-content">{{item.content}}</text>
+        <text class="preview__note-time">{{item.dayLabel}}</text>
+        <view wx:if="{{canOwnerReview && item.status === 'pending'}}" class="preview__note-actions">
+          <view class="preview__note-action preview__note-action--muted" data-id="{{item.id}}" data-action="ignore" bindtap="onResolveFamilyNote">
+            <text>暂不采用</text>
+          </view>
+          <view class="preview__note-action" data-id="{{item.id}}" data-action="accept" bindtap="onResolveFamilyNote">
+            <text>采纳建议</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <text wx:else class="preview__note-empty">还没有家人建议。</text>
   </view>
 
-  <view class="preview__actions">
+  <view class="preview__hint">
+    <text>{{isFamily ? '家人可以协助回忆，但不能替长辈发布故事。' : (!canReview ? '这段故事已经过人工确认。' : (editing ? '改好后保存，系统会重新核对原声证据。' : '这段文字来自你的讲述，你可以修改、补充或确认。'))}}</text>
+  </view>
+
+  <view wx:if="{{canOwnerReview}}" class="preview__actions">
     <primary-button
       wx:if="{{!editing}}"
       text="修改文字"
       type="secondary"
+      disabled="{{saving}}"
       bind:tap="onEdit"
     />
     <primary-button
       wx:if="{{editing}}"
       text="保存修改"
       type="secondary"
+      loading="{{saving}}"
+      loadingText="正在审计"
       bind:tap="onSaveEdit"
     />
+    <primary-button
+      wx:if="{{!editing && canContinue}}"
+      text="继续补充讲述"
+      type="secondary"
+      disabled="{{saving}}"
+      bind:tap="onContinue"
+    />
     <view class="preview__confirm">
-      <primary-button text="确认故事" type="primary" bind:tap="onConfirm" />
+      <primary-button
+        text="确认故事"
+        type="primary"
+        loading="{{saving}}"
+        loadingText="正在确认"
+        disabled="{{editing || draft.auditPassed === false || draft.findings.length || pendingNoteCount}}"
+        bind:tap="onConfirm"
+      />
+    </view>
+    <view wx:if="{{!editing}}" class="preview__discard" bindtap="onDiscard">
+      <text>放弃这次整理并删除录音</text>
     </view>
   </view>
 </view>

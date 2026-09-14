@@ -15,44 +15,12 @@
   color: var(--text-muted);
 }
 
-/* 设计稿 y=325，浅陶土 342×148 圆角 24，内边距 24 */
-.home__today {
-  margin-top: 46px;
-  height: 148px;
-  border-radius: 24px;
-  background-color: var(--surface-clay);
-  padding: 24px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-.home__today-label {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.home__today-title {
-  margin-top: 13px;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.home__today-sub {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-/* 设计稿：按钮 y=507，卡片底 473 */
 .home__cta {
-  margin-top: 34px;
+  margin-top: 38px;
 }
 
 .home__section {
-  margin-top: 48px;
+  margin-top: 44px;
 }
 
 /* 设计稿：342×104 白卡，圆角 18 */
@@ -61,7 +29,7 @@
 }
 
 .home__story {
-  min-height: 104px;
+  min-height: 122px;
   border-radius: 18px;
   background-color: var(--bg-card);
   padding: 20px 24px;
@@ -92,13 +60,24 @@
 }
 
 .home__story-meta {
-  margin-top: 11px;
+  margin-top: 8px;
   font-size: 13px;
   color: var(--text-muted);
 }
 
+.home__story-excerpt {
+  margin-top: 7px;
+  max-width: 250px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .home__story-play {
-  font-size: 22px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--accent);
   margin-left: 12px;

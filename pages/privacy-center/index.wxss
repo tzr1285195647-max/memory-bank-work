@@ -1,0 +1,31 @@
+.privacy { padding: 0 24px 48px; box-sizing: border-box; }
+.privacy__intro { margin-top: 52px; display: flex; flex-direction: column; }
+.privacy__sub { margin-top: 12px; color: var(--text-muted); font-size: 14px; line-height: 1.65; }
+.privacy__rules { margin-top: 26px; padding: 8px 20px; border-radius: 20px; background: var(--bg-card); }
+.privacy__rule { min-height: 88px; border-bottom: 1px solid rgba(78, 102, 87, 0.1); display: flex; align-items: center; }
+.privacy__rule:last-child { border-bottom: 0; }
+.privacy__rule-icon { width: 38px; height: 38px; flex-shrink: 0; border-radius: 19px; background: var(--surface-green); color: var(--brand); font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.privacy__rule-main { min-width: 0; margin-left: 14px; display: flex; flex-direction: column; }
+.privacy__rule-title { color: var(--text-primary); font-size: 15px; font-weight: 700; }
+.privacy__rule-text { margin-top: 5px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.privacy__section-head { margin-top: 34px; display: flex; align-items: baseline; justify-content: space-between; }
+.privacy__count { color: var(--text-muted); font-size: 12px; }
+.privacy__filters { width: 100%; margin-top: 14px; white-space: nowrap; }
+.privacy__filters-inner { display: inline-flex; padding-bottom: 7px; }
+.privacy__filter { min-width: 56px; height: 34px; margin-right: 8px; padding: 0 12px; box-sizing: border-box; border-radius: 17px; background: var(--bg-card); color: var(--text-muted); font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.privacy__filter--active { background: var(--brand); color: var(--white); font-weight: 700; }
+.privacy__events { margin-top: 14px; }
+.privacy__event { min-height: 92px; display: flex; }
+.privacy__event-line { position: relative; width: 20px; flex-shrink: 0; border-left: 2px solid rgba(78, 102, 87, 0.14); }
+.privacy__event-dot { position: absolute; top: 19px; left: -6px; width: 10px; height: 10px; border: 2px solid var(--bg-page); border-radius: 7px; background: var(--brand); }
+.privacy__event-dot--family { background: var(--accent); }
+.privacy__event-dot--privacy { background: #a75954; }
+.privacy__event-dot--audio { background: var(--brand-light); }
+.privacy__event-main { flex: 1; margin-bottom: 12px; padding: 15px 16px; border-radius: 15px; background: var(--bg-card); display: flex; flex-direction: column; }
+.privacy__event-head { display: flex; align-items: center; justify-content: space-between; }
+.privacy__event-category { color: var(--brand); font-size: 11px; font-weight: 700; }
+.privacy__event-time { color: var(--text-muted); font-size: 11px; }
+.privacy__event-summary { margin-top: 7px; color: var(--text-primary); font-size: 14px; line-height: 1.45; }
+.privacy__event-actor { margin-top: 5px; color: var(--text-muted); font-size: 11px; }
+.privacy__empty { min-height: 120px; color: var(--text-muted); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.privacy__footer { margin-top: 18px; color: var(--text-muted); font-size: 11px; line-height: 1.6; text-align: center; }

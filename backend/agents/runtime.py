@@ -95,6 +95,8 @@ class AgentRuntime:
             "agent_trace": [],
             "errors": [],
             "audit_findings": [],
+            "duration_ms": 0,
+            "recording_refs": [],
         }
         with self._lock:
             self.graph.invoke(initial, self._config(session_id))
@@ -125,6 +127,8 @@ class AgentRuntime:
             "stage": self._derive_stage(values, interrupts),
             "round_index": values.get("round_index", 0),
             "max_rounds": values.get("max_rounds", DEFAULT_MAX_ROUNDS),
+            "duration_ms": values.get("duration_ms", 0),
+            "recordings": values.get("recording_refs", []),
             "question": values.get("current_question", ""),
             "turns": values.get("turns", []),
             "claims": values.get("claims", []),
@@ -133,7 +137,7 @@ class AgentRuntime:
             "draft_sentences": values.get("draft_sentences", []),
             "audit_findings": values.get("audit_findings", []),
             "audit_passed": values.get("audit_passed", True),
-            "conflicts": (values.get("decision") or {}).get("conflicts", []),
+            "conflicts": values.get("conflicts", []),
             "delivery": values.get("delivery"),
             "stop_requested": bool(values.get("stop_requested")),
             "stop_reason": values.get("stop_reason"),

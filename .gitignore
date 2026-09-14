@@ -46,6 +46,8 @@ backend/.data/
 
 # pytest 临时目录（沙箱下系统临时目录不可写）
 .pytest-tmp/
+.pytest-run/
+.pytest-runs/
 
 # 数据库与端口文件（无论出现在哪个目录都不能入库）
 *.db

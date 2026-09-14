@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "nav-bar": "../../components/nav-bar/index",
+    "primary-button": "../../components/primary-button/index"
+  },
+  "navigationStyle": "custom",
+  "enableShareAppMessage": true
+}

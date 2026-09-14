@@ -10,15 +10,24 @@ from sqlalchemy.orm import Session
 from . import service
 from .database import get_session
 from .schemas import (
+    AuditListOut,
     FamilyOut,
+    FamilyNoteActionRequest,
+    FamilyNoteCreateRequest,
+    FamilyNoteOut,
     HealthOut,
     HomeOut,
     LoginRequest,
     LoginResponse,
+    MemoryFragmentConfirmRequest,
     ProfileOut,
     RecordingOut,
+    TranscriptionOut,
     RevokeOut,
     StoryActionRequest,
+    StoryAuditOut,
+    StoryAuditRequest,
+    StoryDiscardOut,
     StoryListOut,
     StoryOut,
     StoryPatchRequest,
@@ -101,6 +110,54 @@ def upload_recording(
         duration_ms=durationMs,
         consent_version=consentVersion,
         upload=file,
+        actor_user_id=auth.user_id,
+    )
+
+
+@router.get("/asr/status")
+def get_asr_status() -> dict:
+    return service.asr_status()
+
+
+@router.post("/recordings/{recording_id}/transcription", response_model=TranscriptionOut)
+def start_recording_transcription(
+    recording_id: str,
+    payload: StoryActionRequest,
+    session: SessionDep,
+    auth: AuthDep,
+) -> dict:
+    return service.start_transcription(
+        session,
+        family_id=auth.family_id,
+        recording_id=recording_id,
+        consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
+    )
+
+
+@router.get("/recordings/{recording_id}/transcription", response_model=TranscriptionOut)
+def get_recording_transcription(recording_id: str, session: SessionDep, auth: AuthDep) -> dict:
+    return service.refresh_transcription(
+        session,
+        family_id=auth.family_id,
+        recording_id=recording_id,
+    )
+
+
+@router.put("/recordings/{recording_id}/fragment", response_model=RecordingOut)
+def confirm_recording_fragment(
+    recording_id: str,
+    payload: MemoryFragmentConfirmRequest,
+    session: SessionDep,
+    auth: AuthDep,
+) -> dict:
+    return service.confirm_memory_fragment(
+        session,
+        family_id=auth.family_id,
+        recording_id=recording_id,
+        transcript=payload.transcript,
+        consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
     )
 
 
@@ -120,6 +177,7 @@ def create_draft(
         duration_ms=durationMs,
         consent_version=consentVersion,
         recording_id=recordingId,
+        actor_user_id=auth.user_id,
     )
 
 
@@ -133,9 +191,77 @@ def get_story(story_id: str, session: SessionDep, auth: AuthDep) -> dict:
     return service.get_story(session, auth.family_id, story_id)
 
 
+@router.get("/stories/{story_id}/family-notes", response_model=list[FamilyNoteOut])
+def get_family_notes(story_id: str, session: SessionDep, auth: AuthDep) -> list[dict]:
+    return service.list_family_notes(session, auth.family_id, story_id)
+
+
+@router.post(
+    "/stories/{story_id}/family-notes",
+    response_model=FamilyNoteOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_family_note(
+    story_id: str,
+    payload: FamilyNoteCreateRequest,
+    session: SessionDep,
+    auth: AuthDep,
+) -> dict:
+    return service.add_family_note(
+        session,
+        auth.family_id,
+        story_id,
+        user_id=auth.user_id,
+        role=auth.role,
+        kind=payload.kind,
+        content=payload.content,
+        consent_version=payload.consentVersion,
+    )
+
+
+@router.post(
+    "/stories/{story_id}/family-notes/{note_id}/resolve",
+    response_model=FamilyNoteOut,
+)
+def resolve_family_note(
+    story_id: str,
+    note_id: str,
+    payload: FamilyNoteActionRequest,
+    session: SessionDep,
+    auth: AuthDep,
+) -> dict:
+    return service.resolve_family_note(
+        session,
+        auth.family_id,
+        story_id,
+        note_id,
+        role=auth.role,
+        action=payload.action,
+        consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
+    )
+
+
 @router.patch("/stories/{story_id}", response_model=StoryOut)
 def patch_story(story_id: str, payload: StoryPatchRequest, session: SessionDep, auth: AuthDep) -> dict:
     return service.update_story(
+        session,
+        auth.family_id,
+        story_id,
+        body=payload.body,
+        mode=payload.mode,
+        memory_year=payload.memoryYear,
+        life_stage=payload.lifeStage,
+        consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
+    )
+
+
+@router.post("/stories/{story_id}/audit", response_model=StoryAuditOut)
+def audit_story(
+    story_id: str, payload: StoryAuditRequest, session: SessionDep, auth: AuthDep
+) -> dict:
+    return service.audit_story_text(
         session,
         auth.family_id,
         story_id,
@@ -144,13 +270,33 @@ def patch_story(story_id: str, payload: StoryPatchRequest, session: SessionDep, 
     )
 
 
+@router.post("/stories/{story_id}/discard", response_model=StoryDiscardOut)
+def discard_story(
+    story_id: str, payload: StoryActionRequest, session: SessionDep, auth: AuthDep
+) -> dict:
+    return service.discard_story(
+        session, auth.family_id, story_id, consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
+    )
+
+
 @router.post("/stories/{story_id}/confirm", response_model=StoryOut)
 def confirm_story(story_id: str, payload: StoryActionRequest, session: SessionDep, auth: AuthDep) -> dict:
     return service.confirm_story(
-        session, auth.family_id, story_id, consent_version=payload.consentVersion
+        session,
+        auth.family_id,
+        story_id,
+        role=auth.role,
+        consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
     )
+
+
+@router.get("/audit-events", response_model=AuditListOut)
+def audit_events(session: SessionDep, auth: AuthDep, limit: int = 50) -> dict:
+    return service.list_audit_events(session, auth.family_id, limit)
 
 
 @router.post("/consent/revoke", response_model=RevokeOut)
 def revoke(session: SessionDep, auth: AuthDep) -> dict:
-    return service.revoke_consent(session, auth.family_id)
+    return service.revoke_consent(session, auth.family_id, auth.user_id)

@@ -63,6 +63,62 @@
   color: var(--text-muted);
 }
 
+.profile__environment {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background-color: var(--surface-green);
+  display: flex;
+  flex-direction: column;
+}
+
+.profile__environment-head {
+  display: flex;
+  align-items: center;
+}
+
+.profile__environment-dot {
+  margin-right: 8px;
+  color: var(--brand);
+  font-size: 11px;
+}
+
+.profile__environment-dot--online {
+  color: var(--accent);
+}
+
+.profile__environment-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile__environment-detail {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--brand);
+}
+
+.profile__environment-note {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.profile__environment-check {
+  min-height: 40px;
+  margin-top: 12px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .profile__section {
   margin-top: 44px;
 }

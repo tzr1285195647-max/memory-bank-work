@@ -6,16 +6,8 @@
     <text class="home__sub">一次只讲一个小故事，不用从出生讲起。</text>
   </view>
 
-  <!-- 设计稿：342×148 浅陶土卡「今日叙事」 -->
-  <view class="home__today" bindtap="onTodayTap">
-    <text class="home__today-label">今日叙事</text>
-    <text class="home__today-title">{{today.title}}</text>
-    <text class="home__today-sub">{{today.subtitle}}</text>
-  </view>
-
-  <!-- 设计稿：342×82 主按钮，距卡片 34 —— 「按下讲述」 -->
   <view class="home__cta">
-    <primary-button text="按下讲述" type="primary" bind:tap="onRecord" />
+    <primary-button text="开始一段新讲述" type="primary" bind:tap="onRecord" />
   </view>
 
   <text class="t-section home__section">最近的故事</text>
@@ -31,12 +23,13 @@
     >
       <view class="home__story-main">
         <text class="home__story-title">{{item.title}}</text>
+        <text class="home__story-excerpt">{{item.body}}</text>
         <text class="home__story-meta">{{item.dayLabel}} · {{item.durationText}}</text>
       </view>
-      <text class="home__story-play">▶</text>
+      <text class="home__story-play">›</text>
     </view>
     <view wx:if="{{!loading && !recent.length}}" class="home__empty">
-      <text class="t-note">还没有故事，点上面的「按下讲述」开始第一段。</text>
+      <text class="t-note">还没有故事，点上面的按钮开始第一段。</text>
     </view>
   </view>
 </view>

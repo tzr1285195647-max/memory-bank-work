@@ -8,12 +8,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from ..agent_service import (
     get_runtime,
+    generate_story_from_fragments,
     reset_runtime,
     review_draft,
     review_story,
@@ -48,6 +49,7 @@ class AnswerRequest(BaseModel):
     topicId: str = Field(default="", max_length=32)
     recordingId: str | None = None
     durationMs: int = Field(default=0, ge=0)
+    speakerLabel: str = Field(default="长辈", pattern=r"^(长辈|家人)$")
     consentVersion: int = Field(ge=1)
 
 
@@ -55,6 +57,7 @@ class StopRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     sessionId: str = Field(min_length=4, max_length=64)
+    topicId: str = Field(default="", max_length=32)
     consentVersion: int = Field(ge=1)
 
 
@@ -74,6 +77,16 @@ class StoryReviewRequest(BaseModel):
     consentVersion: int = Field(ge=1)
 
 
+class FragmentGenerationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    recordingIds: list[str] = Field(min_length=1, max_length=8)
+    topicId: str = Field(min_length=1, max_length=32)
+    subjectName: str = Field(default="讲述者", max_length=60)
+    style: str = Field(default="natural", pattern=r"^(raw|natural|book)$")
+    consentVersion: int = Field(ge=1)
+
+
 @router.get("/status")
 def agent_status(session: SessionDep, auth: AuthDep) -> dict[str, Any]:
     """当前使用的智能体实现与降级情况，便于确认现场用的是模型还是 Mock。"""
@@ -81,6 +94,7 @@ def agent_status(session: SessionDep, auth: AuthDep) -> dict[str, Any]:
     provider = runtime.provider
     return {
         "provider": runtime.provider_name,
+        "configuredMode": settings.agent_mode,
         "llmEnabled": settings.llm_enabled,
         "model": settings.llm_model if settings.llm_enabled else None,
         "baseUrl": settings.llm_base_url if settings.llm_enabled else None,
@@ -124,6 +138,8 @@ def answer(payload: AnswerRequest, session: SessionDep, auth: AuthDep) -> dict[s
         finish=payload.finish,
         recording_id=payload.recordingId,
         topic_id=payload.topicId,
+        duration_ms=payload.durationMs,
+        speaker_label=payload.speakerLabel,
     )
 
 
@@ -135,6 +151,25 @@ def stop(payload: StopRequest, session: SessionDep, auth: AuthDep) -> dict[str, 
         _runtime(),
         family_id=auth.family_id,
         session_id=payload.sessionId,
+        topic_id=payload.topicId,
+        consent_version=payload.consentVersion,
+    )
+
+
+@router.post("/fragments/generate", response_model=StoryOut, status_code=status.HTTP_201_CREATED)
+def generate_from_fragments(
+    payload: FragmentGenerationRequest, session: SessionDep, auth: AuthDep
+) -> dict[str, Any]:
+    """将用户勾选的多段记忆碎片统一交给写作 Agent。"""
+    return generate_story_from_fragments(
+        session,
+        _runtime(),
+        family_id=auth.family_id,
+        actor_user_id=auth.user_id,
+        recording_ids=payload.recordingIds,
+        topic_id=payload.topicId,
+        subject_name=payload.subjectName,
+        style=payload.style,
         consent_version=payload.consentVersion,
     )
 
@@ -145,6 +180,8 @@ def review(payload: ReviewRequest, session: SessionDep, auth: AuthDep) -> dict[s
 
     改写后若仍有无证据句子，返回 403 并说明原因——AI 与人都不允许新增事实。
     """
+    if auth.role != "elder":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有长辈账号可以处理故事草稿")
     return review_draft(
         session,
         _runtime(),
@@ -161,6 +198,8 @@ def review_existing(
     story_id: str, payload: StoryReviewRequest, session: SessionDep, auth: AuthDep
 ) -> dict[str, Any]:
     """故事书里的确认：先按证据核对改写后的正文，通过才允许发布。"""
+    if auth.role != "elder":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有长辈账号可以确认故事")
     result = review_story(
         session,
         _runtime(),
@@ -168,6 +207,7 @@ def review_existing(
         story_id=story_id,
         body=payload.body,
         consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
     )
     return result
 

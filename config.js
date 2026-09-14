@@ -1,14 +1,35 @@
 /**
  * 前端运行配置。
  *
- * baseUrl 指向本机后端（开发用）。
- * 注意：微信真机不允许请求 http://127.0.0.1，也不允许 IP 地址；
- * 真机调试或上线需要 HTTPS 域名并加入小程序后台白名单（见 docs/TECH_PLAN.md 第 9 节）。
- * 开发者工具演示时请在「详情 -> 本地设置」勾选「不校验合法域名」。
+ * 开发者工具访问 127.0.0.1；真机调试访问同一局域网内的电脑地址。
+ * 本机演示需在「详情 -> 本地设置」勾选「不校验合法域名」。正式发布仍需 HTTPS。
  */
 
 module.exports = {
-  baseUrl: 'http://127.0.0.1:8787',
+  devtoolsBaseUrl: 'http://127.0.0.1:8787',
+  // 当前电脑的局域网 IPv4。网络环境变化后只需修改这一行。
+  deviceBaseUrl: 'http://10.13.2.8:8787',
+  get baseUrl() {
+    return this.isDeviceRuntime() ? this.deviceBaseUrl : this.devtoolsBaseUrl;
+  },
   /** 后端不可用时的表现：true=自动降级到 mock 数据，保证演示不中断 */
   fallbackToMock: true,
+  /**
+   * 真机无法访问电脑的 127.0.0.1。开启后，手机会直接使用本地演示数据，
+   * 不再发起注定失败的网络请求；开发者工具仍连接本机后端。
+   */
+  offlineOnDevice: false,
+  isDeviceRuntime() {
+    try {
+      const info = typeof wx.getDeviceInfo === 'function'
+        ? wx.getDeviceInfo()
+        : wx.getSystemInfoSync();
+      return Boolean(info && info.platform && info.platform !== 'devtools');
+    } catch (err) {
+      return false;
+    }
+  },
+  shouldUseBackend() {
+    return !(this.offlineOnDevice && this.isDeviceRuntime());
+  },
 };

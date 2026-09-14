@@ -1,0 +1,28 @@
+<nav-bar title="隐私与记录" theme="brand" showBack="{{true}}" showMore="{{false}}" />
+
+<view class="page privacy">
+  <view class="privacy__intro">
+    <text class="t-title">你的记忆，由你决定</text>
+    <text class="privacy__sub">这里只记录“做过什么”，不保存故事正文、转写内容或录音地址。</text>
+  </view>
+
+  <view class="privacy__rules">
+    <view class="privacy__rule"><text class="privacy__rule-icon">声</text><view class="privacy__rule-main"><text class="privacy__rule-title">原声只为整理故事</text><text class="privacy__rule-text">本机演示不上传公网；放弃草稿或撤回授权时会删除。</text></view></view>
+    <view class="privacy__rule"><text class="privacy__rule-icon">签</text><view class="privacy__rule-main"><text class="privacy__rule-title">AI 整理必须标明</text><text class="privacy__rule-text">没有长辈确认，任何草稿都不会进入故事书。</text></view></view>
+    <view class="privacy__rule"><text class="privacy__rule-icon">家</text><view class="privacy__rule-main"><text class="privacy__rule-title">家人建议单独保存</text><text class="privacy__rule-text">家人不能直接改写或发布长辈的故事。</text></view></view>
+  </view>
+
+  <view class="privacy__section-head"><text class="t-section">操作记录</text><text class="privacy__count">最近 {{allEvents.length}} 条</text></view>
+  <scroll-view class="privacy__filters" scroll-x="true" show-scrollbar="false">
+    <view class="privacy__filters-inner"><view wx:for="{{filters}}" wx:key="key" class="privacy__filter {{activeFilter === item.key ? 'privacy__filter--active' : ''}}" data-filter="{{item.key}}" bindtap="onFilter">{{item.label}}</view></view>
+  </scroll-view>
+
+  <view wx:if="{{events.length}}" class="privacy__events">
+    <view wx:for="{{events}}" wx:key="id" class="privacy__event">
+      <view class="privacy__event-line"><view class="privacy__event-dot privacy__event-dot--{{item.category}}"></view></view>
+      <view class="privacy__event-main"><view class="privacy__event-head"><text class="privacy__event-category">{{item.categoryLabel}}</text><text class="privacy__event-time">{{item.timeLabel}}</text></view><text class="privacy__event-summary">{{item.summary}}</text><text class="privacy__event-actor">操作人：{{item.actorName}}</text></view>
+    </view>
+  </view>
+  <view wx:if="{{!loading && !events.length}}" class="privacy__empty"><text>暂时没有这类操作记录</text></view>
+  <text class="privacy__footer">操作记录不包含故事正文和原声内容，用于说明授权、修改与确认过程。</text>
+</view>

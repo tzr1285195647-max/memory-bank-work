@@ -1,6 +1,5 @@
 {
   "pages": [
-    "pages/components/index",
     "pages/welcome/index",
     "pages/role/index",
     "pages/login/index",
@@ -10,7 +9,11 @@
     "pages/story-preview/index",
     "pages/family/index",
     "pages/stories/index",
-    "pages/profile/index"
+    "pages/profile/index",
+    "pages/privacy-center/index",
+    "pages/book-preview/index",
+    "pages/family-manage/index",
+    "pages/components/index"
   ],
   "window": {
     "backgroundTextStyle": "dark",
@@ -20,9 +23,15 @@
     "navigationBarTextStyle": "black",
     "navigationStyle": "custom"
   },
+  "permission": {
+    "scope.record": {
+      "desc": "用于录制长辈讲述的故事原声，并在确认故事前提供回听"
+    }
+  },
   "tabBar": {
+    "custom": true,
     "color": "#747A73",
-    "selectedColor": "#4E6657",
+    "selectedColor": "#C98362",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [

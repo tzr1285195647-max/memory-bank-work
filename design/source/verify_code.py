@@ -9,7 +9,17 @@ import sys
 from pathlib import Path
 
 ROOT = Path(r"D:\记忆银行")
-SKIP_DIRS = {".git", "design", "docs", "node_modules", ".pytest_cache"}
+SKIP_DIRS = {
+    ".git",
+    ".venv",
+    ".pytest-run",
+    ".pytest-runs",
+    ".pytest-tmp",
+    "design",
+    "docs",
+    "node_modules",
+    ".pytest_cache",
+}
 
 js_files: list[Path] = []
 wxml_files: list[Path] = []

@@ -27,6 +27,7 @@ Component({
     statusBarHeight: 20,
     barHeight: 64,
     color: '#4E6657',
+    navigating: false,
   },
 
   lifetimes: {
@@ -59,12 +60,19 @@ Component({
     },
 
     onBack() {
-      if (!this.data.showBack) return;
+      if (!this.data.showBack || this.data.navigating) return;
+      this.setData({ navigating: true });
       const pages = getCurrentPages();
       if (pages.length > 1) {
-        wx.navigateBack();
+        wx.navigateBack({
+          fail: () => wx.switchTab({ url: '/pages/home/index' }),
+          complete: () => this.setData({ navigating: false }),
+        });
       } else {
-        wx.reLaunch({ url: '/pages/home/index' });
+        wx.switchTab({
+          url: '/pages/home/index',
+          complete: () => this.setData({ navigating: false }),
+        });
       }
     },
 

@@ -85,6 +85,7 @@ class AgentProvider(Protocol):
         subject_name: str,
         topic: str,
         claims: list[dict[str, Any]],
+        style: str = "natural",
     ) -> DraftResult:
         """写作：只能用给定 claims 里的事实，每条事实句必须引用 claim id。"""
         ...

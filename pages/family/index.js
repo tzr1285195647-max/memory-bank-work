@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const store = require('../../store/index');
 
 Page({
   data: {
@@ -27,5 +28,14 @@ Page({
 
   onReview(e) {
     wx.navigateTo({ url: `/pages/story-preview/index?id=${e.currentTarget.dataset.id}` });
+  },
+
+  onSwitchRole() {
+    store.clearSession();
+    wx.reLaunch({ url: '/pages/role/index' });
+  },
+
+  onManageFamily() {
+    wx.navigateTo({ url: '/pages/family-manage/index' });
   },
 });
