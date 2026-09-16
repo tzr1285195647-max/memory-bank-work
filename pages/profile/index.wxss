@@ -63,6 +63,13 @@
   color: var(--text-muted);
 }
 
+.profile__avatar--elder-female { background: #D8E1D1; }
+.profile__avatar--elder-male { background: #D4DED9; }
+.profile__avatar--middle-female { background: #F1DACE; }
+.profile__avatar--middle-male { background: #D6E1E6; }
+.profile__avatar--youth-female { background: #F3DFE4; }
+.profile__avatar--youth-male { background: #D9E6EE; }
+
 .profile__environment {
   margin-top: 16px;
   padding: 16px 20px;

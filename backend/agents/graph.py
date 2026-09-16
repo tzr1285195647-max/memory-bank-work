@@ -99,6 +99,13 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
                 **_trace("interview.select_question", should_stop=True, reason=decision.get("stop_reason")),
             }
 
+        if decision.get("complete"):
+            return {
+                "current_question": "", "next_action": "no_more_questions",
+                "complete_reason": decision.get("complete_reason") or "材料已经足够生成故事",
+                **_trace("interview.select_question", complete=True),
+            }
+
         question = decision.get("question")
         return {
             "current_question": question or "",
@@ -218,10 +225,18 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         covered = {str(claim.get("element")) for claim in claims}
         missing = [element for element in st.SEVEN_ELEMENTS if element not in covered]
         conflicts = provider.resolve_conflicts(claims=claims)
+        turns = state.get("turns", [])
+        claim_turns = {str(item.get("turn_id")) for item in claims}
+        consecutive_empty = 0
+        for turn in reversed(turns):
+            if str(turn.get("id")) in claim_turns:
+                break
+            consecutive_empty += 1
         return {
             "missing_fields": missing,
             "conflicts": conflicts,
             "next_action": "draft",
+            "no_new_fact_rounds": consecutive_empty,
             **_trace("evidence.merge", total=len(claims), missing=missing, conflicts=len(conflicts)),
         }
 
@@ -387,6 +402,8 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         if state.get("round_index", 0) >= state.get("max_rounds", 3):
             return "draft"
         if state.get("stop_requested"):
+            return "draft"
+        if state.get("no_new_fact_rounds", 0) >= 2:
             return "draft"
         if not state.get("missing_fields"):
             return "draft"

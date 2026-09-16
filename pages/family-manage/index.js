@@ -1,63 +1,130 @@
 const store = require('../../store/index');
-
-const INVITE_KEY = 'memoryBank.familyInvite';
+const api = require('../../utils/api');
 
 Page({
   data: {
-    role: 'elder',
-    inviteCode: '',
-    inviteReady: false,
+    familyName: '记忆银行演示家庭',
     members: [],
-    permissions: [
-      { role: '长辈', color: 'green', detail: '讲述、修改、处理家人建议并最终确认故事' },
-      { role: '家人', color: 'clay', detail: '查看家庭故事、补充回忆和提出修改建议' },
-    ],
+    invitations: [],
+    loading: true,
+    isAdmin: false,
+    currentUserId: '',
+    invitePhone: '',
+    inviteRole: 'family',
+    inviting: false,
+    editingId: '',
+    editName: '',
+    editAge: '',
+    editGender: 'female',
+    editRole: 'family',
+    saving: false,
   },
 
-  onLoad() {
+  onShow() {
     const snapshot = store.snapshot();
-    const role = snapshot.role || 'elder';
-    const name = (snapshot.user && snapshot.user.displayName) || (role === 'elder' ? '林阿姨' : '家人');
     this.setData({
-      role,
-      members: [
-        { id: 'owner', name: role === 'elder' ? name : '林阿姨', roleLabel: '长辈 · 故事确认人', avatar: role === 'elder' ? name[0] : '林' },
-        { id: 'family-1', name: role === 'family' ? name : '小林', roleLabel: '家人 · 协助回忆', avatar: role === 'family' ? name[0] : '小' },
-      ],
+      currentUserId: snapshot.user ? snapshot.user.id : '',
+      isAdmin: Boolean(snapshot.user && snapshot.user.isAdmin),
     });
+    this.load();
+  },
+
+  async load() {
+    this.setData({ loading: true });
     try {
-      const invite = wx.getStorageSync(INVITE_KEY);
-      if (invite && invite.code && invite.expiresAt > Date.now()) {
-        this.setData({ inviteCode: invite.code, inviteReady: true });
-      }
+      const result = await api.getFamilyMembers();
+      const me = (result.members || []).find((item) => item.id === this.data.currentUserId);
+      this.setData({
+        familyName: result.familyName,
+        members: result.members || [],
+        invitations: result.invitations || [],
+        isAdmin: Boolean(me && me.isAdmin),
+        loading: false,
+      });
     } catch (err) {
-      console.warn('[family] 邀请码读取失败', err && err.message);
+      this.setData({ loading: false });
+      wx.showToast({ title: err.message || '成员加载失败', icon: 'none' });
     }
   },
 
-  onGenerateInvite() {
-    if (this.data.role !== 'elder') {
-      wx.showToast({ title: '只有长辈可以生成邀请码', icon: 'none' });
+  onInvitePhone(e) { this.setData({ invitePhone: e.detail.value }); },
+  onInviteRole(e) { this.setData({ inviteRole: e.currentTarget.dataset.role }); },
+
+  async onInvite() {
+    if (!this.data.isAdmin || this.data.inviting) return;
+    if (!/^1\d{10}$/.test(this.data.invitePhone)) {
+      wx.showToast({ title: '请输入正确手机号', icon: 'none' });
       return;
     }
-    const source = `${store.snapshot().familyId || 'local-family'}-${Date.now()}`;
-    let hash = 0;
-    for (let index = 0; index < source.length; index += 1) hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
-    const inviteCode = String(100000 + (hash % 900000));
-    try { wx.setStorageSync(INVITE_KEY, { code: inviteCode, expiresAt: Date.now() + 86400000 }); } catch (err) { console.warn(err); }
-    this.setData({ inviteCode, inviteReady: true });
+    this.setData({ inviting: true });
+    try {
+      const result = await api.inviteFamilyMember({
+        phone: this.data.invitePhone, role: this.data.inviteRole,
+      });
+      this.setData({ invitePhone: '', inviting: false });
+      wx.showToast({ title: result.status === 'joined' ? '成员已加入' : '邀请已保存', icon: 'success' });
+      await this.load();
+    } catch (err) {
+      this.setData({ inviting: false });
+      wx.showToast({ title: err.message || '邀请失败', icon: 'none' });
+    }
   },
 
-  onCopyInvite() {
-    if (!this.data.inviteCode) return;
-    wx.setClipboardData({
-      data: this.data.inviteCode,
-      success: () => wx.showToast({ title: '邀请码已复制', icon: 'success' }),
+  onEditMember(e) {
+    if (!this.data.isAdmin) return;
+    const member = this.data.members.find((item) => item.id === e.currentTarget.dataset.id);
+    if (!member) return;
+    this.setData({
+      editingId: member.id, editName: member.displayName, editAge: String(member.age),
+      editGender: member.gender, editRole: member.role,
     });
   },
+  onCancelEdit() { this.setData({ editingId: '' }); },
+  onEditName(e) { this.setData({ editName: e.detail.value }); },
+  onEditAge(e) { this.setData({ editAge: String(e.detail.value || '').replace(/\D/g, '').slice(0, 3) }); },
+  onEditGender(e) { this.setData({ editGender: e.currentTarget.dataset.gender }); },
+  onEditRole(e) { this.setData({ editRole: e.currentTarget.dataset.role }); },
 
-  onSwitchRole() {
-    store.clearSession();
-    wx.reLaunch({ url: '/pages/role/index' });
+  async onSaveMember() {
+    if (!this.data.editingId || this.data.saving) return;
+    const age = Number(this.data.editAge);
+    if (this.data.editName.trim().length < 2 || age < 6 || age > 120) {
+      wx.showToast({ title: '请检查昵称和年龄', icon: 'none' });
+      return;
+    }
+    this.setData({ saving: true });
+    try {
+      await api.updateFamilyMember(this.data.editingId, {
+        displayName: this.data.editName.trim(), age,
+        gender: this.data.editGender, role: this.data.editRole,
+      });
+      this.setData({ saving: false, editingId: '' });
+      wx.showToast({ title: '成员资料已保存', icon: 'success' });
+      await this.load();
+    } catch (err) {
+      this.setData({ saving: false });
+      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
+    }
+  },
+
+  onDeleteMember(e) {
+    if (!this.data.isAdmin) return;
+    const member = this.data.members.find((item) => item.id === e.currentTarget.dataset.id);
+    if (!member || member.isAdmin) return;
+    wx.showModal({
+      title: `移除${member.displayName}？`,
+      content: '移除后该账号不能再进入这个家庭，可再次通过手机号邀请。',
+      confirmText: '确认移除', confirmColor: '#C98362',
+      success: async ({ confirm }) => {
+        if (!confirm) return;
+        try {
+          await api.deleteFamilyMember(member.id);
+          wx.showToast({ title: '成员已移除', icon: 'success' });
+          await this.load();
+        } catch (err) {
+          wx.showToast({ title: err.message || '移除失败', icon: 'none' });
+        }
+      },
+    });
   },
 });

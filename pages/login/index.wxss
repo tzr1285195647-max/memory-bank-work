@@ -114,6 +114,17 @@
   color: var(--text-muted);
 }
 
+.login__register-row { display: flex; gap: 12px; }
+.login__register-field { flex: 1; min-width: 0; }
+.login__gender-row { display: flex; height: 48px; gap: 6px; margin-top: 8px; }
+.login__gender { flex: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #D9DDD5; border-radius: 14px; color: var(--text-muted); }
+.login__gender--active { color: #FFFFFF; background: var(--brand); border-color: var(--brand); }
+.login__accounts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.login__account { padding: 9px 10px; border-radius: 12px; background: rgba(255,255,255,.72); border: 1px solid rgba(78,102,87,.12); }
+.login__account-name, .login__account-meta { display: block; }
+.login__account-name { color: var(--text-primary); font-size: 14px; font-weight: 700; }
+.login__account-meta { margin-top: 2px; color: var(--text-muted); font-size: 10px; }
+
 /* 小屏真机进一步收紧间距，保证无需上下拖动也能看到全部内容。 */
 @media (max-height: 720px) {
   .login__intro { margin-top: 12px; }

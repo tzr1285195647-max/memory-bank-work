@@ -83,6 +83,20 @@ def _classify(sentence: str) -> str:
 class MockAgentProvider:
     name = "mock-agents"
 
+    def clean_transcript(self, *, asr_raw_text: str, narrator_name: str, topic: str) -> dict[str, Any]:
+        """离线安全降级：只删明确语气词并补最少标点，不添加任何词。"""
+        text = asr_raw_text.strip()
+        changes: list[dict[str, str]] = []
+        for filler in ("呃，", "嗯，", "那个，", "呃", "嗯"):
+            if filler in text:
+                text = text.replace(filler, "")
+                changes.append({"type": "delete_filler", "before": filler, "after": "", "reason": "删除无意义语气词"})
+        text = re.sub(r"(然后[，,]?\s*){2,}", "然后，", text)
+        if text and text[-1] not in "。！？!?":
+            text += "。"
+            changes.append({"type": "punctuate", "before": "", "after": "。", "reason": "补充句末标点"})
+        return {"cleanText": text or asr_raw_text, "changes": changes, "uncertainties": []}
+
     # ------------------------------------------------------------- 采访导演
 
     def choose_question(

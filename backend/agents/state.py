@@ -161,6 +161,8 @@ class MemoryBankState(TypedDict, total=False):
     review_action: str | None
     target_element: str | None
     closing: str | None
+    complete_reason: str | None
+    no_new_fact_rounds: int
 
     # --- 采访导演 ---
     current_question: str

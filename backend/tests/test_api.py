@@ -70,6 +70,51 @@ def test_topics_seeded_from_design(client, session_data):
     assert [t["glyph"] for t in topics] == ["乡", "校", "业", "家"]
 
 
+def test_four_demo_accounts_share_one_family_and_liu_is_admin(client):
+    sessions = []
+    for phone in ("13800008899", "13900007788", "13700006677", "13600005566"):
+        response = client.post(
+            "/api/auth/login", json={"phone": phone, "password": "123456"}
+        )
+        assert response.status_code == 200, response.text
+        sessions.append(response.json())
+    assert len({item["familyId"] for item in sessions}) == 1
+    assert [item["user"]["displayName"] for item in sessions] == ["林奶奶", "王爷爷", "小刘", "小李"]
+    assert sessions[2]["user"]["isAdmin"] is True
+    assert sessions[0]["user"]["avatarKey"] == "elder-female"
+
+
+def test_admin_phone_invite_register_update_and_remove(client):
+    admin = client.post(
+        "/api/auth/login", json={"phone": "13700006677", "password": "123456"}
+    ).json()
+    headers = auth_header(admin)
+    phone = "13100001234"
+    invited = client.post(
+        "/api/family/invitations", headers=headers,
+        json={"phone": phone, "role": "family"},
+    )
+    assert invited.status_code == 201, invited.text
+    registered = client.post(
+        "/api/auth/register",
+        json={
+            "phone": phone, "password": "abcdef", "displayName": "小周",
+            "role": "family", "gender": "female", "age": 28,
+        },
+    )
+    assert registered.status_code == 201, registered.text
+    assert registered.json()["familyId"] == admin["familyId"]
+    member_id = registered.json()["user"]["id"]
+    updated = client.patch(
+        f"/api/family/members/{member_id}", headers=headers,
+        json={"displayName": "小周周", "age": 29},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["displayName"] == "小周周"
+    removed = client.delete(f"/api/family/members/{member_id}", headers=headers)
+    assert removed.status_code == 200, removed.text
+
+
 def test_recording_upload_and_media_access(client, session_data):
     payload = b"ID3\x03\x00\x00\x00" + b"\xff" * 512
     resp = client.post(
@@ -88,6 +133,42 @@ def test_recording_upload_and_media_access(client, session_data):
     media = client.get(body["audioUrl"])
     assert media.status_code == 200
     assert media.content == payload
+
+
+def test_memory_fragment_crud_and_persistent_listing(client, session_data):
+    headers = auth_header(session_data)
+    upload = client.post(
+        "/api/recordings", headers=headers,
+        files={"file": ("fragment.mp3", io.BytesIO(b"ID3" + b"x" * 256), "audio/mpeg")},
+        data={
+            "topicId": "school", "durationMs": "3000",
+            "consentVersion": str(session_data["consentVersion"]),
+        },
+    )
+    assert upload.status_code == 201, upload.text
+    recording_id = upload.json()["assetId"]
+    confirmed = client.put(
+        f"/api/recordings/{recording_id}/fragment", headers=headers,
+        json={"transcript": "这是第一段校对文字。", "consentVersion": session_data["consentVersion"]},
+    )
+    assert confirmed.status_code == 200, confirmed.text
+    assert confirmed.json()["confirmedText"] == "这是第一段校对文字。"
+    listed = client.get("/api/fragments?topicId=school", headers=headers)
+    assert recording_id in {item["recordingId"] for item in listed.json()}
+    fragment = next(item for item in listed.json() if item["recordingId"] == recording_id)
+    assert fragment["facts"]
+    assert all(item["quote"] in fragment["confirmedText"] for item in fragment["facts"])
+    assert all(item["fragmentId"] == recording_id for item in fragment["facts"])
+    updated = client.patch(
+        f"/api/fragments/{recording_id}", headers=headers,
+        json={"transcript": "这是修改后的文字。", "topicId": "work", "consentVersion": session_data["consentVersion"]},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["topicId"] == "work"
+    deleted = client.delete(
+        f"/api/fragments/{recording_id}?consentVersion={session_data['consentVersion']}", headers=headers,
+    )
+    assert deleted.status_code == 200, deleted.text
 
 
 def test_recording_transcription_flow_without_network(client, session_data, monkeypatch):
@@ -130,6 +211,10 @@ def test_recording_transcription_flow_without_network(client, session_data, monk
     assert completed.status_code == 200
     assert completed.json()["status"] == "success"
     assert completed.json()["transcript"] == "这是经过校对前的云端识别文字。"
+    assert completed.json()["asrRawText"] == "这是经过校对前的云端识别文字。"
+    assert completed.json()["agentCleanText"] == "这是经过校对前的云端识别文字。"
+    assert completed.json()["confirmedText"] == ""
+    assert completed.json()["cleanStatus"] == "success"
 
 
 def test_stale_consent_version_is_rejected(client, session_data):

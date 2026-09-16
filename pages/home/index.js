@@ -4,11 +4,13 @@ Page({
   data: {
     recent: [],
     loading: true,
+    navigating: false,
   },
 
   onShow() {
     const tabBar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
     if (tabBar) tabBar.setData({ selected: 0 });
+    this.setData({ navigating: false });
     this.load();
   },
 
@@ -24,7 +26,12 @@ Page({
   },
 
   onRecord() {
-    wx.navigateTo({ url: '/pages/topic/index' });
+    if (this.data.navigating) return;
+    this.setData({ navigating: true });
+    wx.navigateTo({
+      url: '/pages/topic/index',
+      fail: () => this.setData({ navigating: false }),
+    });
   },
 
   onStoryTap(e) {

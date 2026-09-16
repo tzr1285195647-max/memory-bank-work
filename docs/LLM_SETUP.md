@@ -1,7 +1,6 @@
 # 接入真实大模型
 
-智能体层默认用**确定性 Mock 实现**（离线可跑、结果可复现）。配置 API Key 后自动切换到真实模型，
-**架构、图、审计、测试都不需要改动**——因为模型只是 `AgentProvider` 的一个实现。
+智能体层支持真实模型和明确标注的规则降级。仅填写 API Key 不会自动启用；必须同时设置 `AGENT_MODE=llm`。
 
 ## 一、怎么把 Key 给我（推荐方式）
 
@@ -13,12 +12,13 @@ Copy-Item .env.example .env
 notepad .env          # 填 LLM_API_KEY 一行即可
 ```
 
-`.env` 的内容（只改第一行）：
+`.env` 至少配置以下四项（不要把真实值提交到 Git）：
 
 ```ini
 LLM_API_KEY=sk-你的密钥
 LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-chat
+AGENT_MODE=llm
 ```
 
 改完**重启后端**即可：
@@ -81,7 +81,7 @@ curl http://127.0.0.1:8787/api/agent/status -H "Authorization: Bearer <token>"
 | 停止意愿 | **本地关键词规则**先判定，不让模型决定是否继续追问 | 直接停止，不再问 |
 | 证据抽取 | 每条事实的 `quote` 必须**真的出现在讲述原文里**（子串匹配），要素必须在七要素内 | 丢弃该条，并记录丢弃数 |
 | 写作 | 引用 id 必须真实存在；标题/来源说明句才允许无引用 | 无引用的事实句由审计报出 |
-| 审计 | **始终用确定性实现**，不交给模型自证 | 有问题即退回采访 |
+| 审计 | 事实审计 Agent 逐句检查，同时叠加确定性硬规则 | 任一层发现无依据内容即禁止发布 |
 
 审计为什么不用模型：审计规则必须**可解释、可复现**。让模型自己检查自己写的东西，
 既不可复现也无法向评委解释。
@@ -90,8 +90,8 @@ curl http://127.0.0.1:8787/api/agent/status -H "Authorization: Bearer <token>"
 
 ```text
 选择实现：
-  未配置 Key            → MockAgentProvider（纯确定性）
-  配置了 Key            → FallbackAgentProvider(LLMAgentProvider)
+  AGENT_MODE!=llm 或未配置 Key → MockAgentProvider（纯确定性）
+  AGENT_MODE=llm 且配置 Key    → FallbackAgentProvider(LLMAgentProvider)
                            ├── 调用成功 → 用模型结果
                            └── 失败/输出不合规 → 回落 Mock，并累计 fallbackCount
 ```

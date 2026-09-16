@@ -87,6 +87,7 @@ class AgentRuntime:
             "consent_ok": consent_ok,
             "stage": "interview",
             "round_index": 0,
+            "no_new_fact_rounds": 0,
             "turns": [],
             "claims": [],
             "claim_ids": [],

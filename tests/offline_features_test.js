@@ -15,7 +15,8 @@ assert.ok(record.includes('ensureCaptureConsent'));
 assert.ok(record.includes('speakerLabel'));
 
 const family = fs.readFileSync(new URL('../pages/family-manage/index.js', import.meta.url), 'utf8');
-assert.ok(family.includes('onGenerateInvite'));
-assert.ok(family.includes('86400000'));
+assert.ok(family.includes('onInvite'));
+assert.ok(family.includes('getFamilyMembers'));
+assert.ok(family.includes('onDeleteMember'));
 
 console.log('offline features test: ok');

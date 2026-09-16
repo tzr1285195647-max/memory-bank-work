@@ -6,11 +6,12 @@
 
 | 智能体 | 职责 | 硬约束 |
 |---|---|---|
+| **口述校对** `TranscriptCleaner` | ASR 后生成可编辑校对建议 | 原始、建议、确认三份文字分开保存；不得新增事实 |
 | **采访导演** `InterviewDirector` | 依据已讲内容与缺失要素，决定下一个问题 | 老人明确表示停止 → 立即停止追问；同一缺失项不重复追问 |
 | **证据抽取** `EvidenceExtractor` | 从讲述中抽取七要素 | **每条事实必须带原文片段（quote）与来源轮次（turn_id）**；找不到证据就留空 |
 | **写作** `WritingAgent` | 把已确认的事实组织成故事 | 只能用传入的证据，**不得新增事实**；每条事实句挂 claim id |
 | **写作审计** `WritingAuditor` | 逐句校验草稿 | 无引用的事实句、引用不存在的证据、证据不可追溯 → 一律报出 |
-| **冲突处理** `ConflictResolver` | 同一要素出现矛盾讲述 | **并列保留、不裁定**，交给家人确认 |
+冲突识别作为证据 Agent 的子能力执行：同一要素出现矛盾讲述时并列保留、不裁定，交给家人确认。
 
 七要素：`time / place / people / event / result / impact / feeling`。缺失即留在 `missing_fields`，**禁止推测**。
 
@@ -62,14 +63,14 @@ load_context → consent_gate ─(撤回)─────────────
 ## 4. 端口与实现分离
 
 ```text
-provider.py   AgentProvider 协议（五类能力）
-mock.py       MockAgentProvider —— 纯规则、确定性、离线可跑
-llm.py        真实模型适配器（待接入；只需实现同一协议）
+provider.py   AgentProvider 协议（五类核心能力 + 证据冲突子能力）
+mock.py       MockAgentProvider —— 明示的规则降级，确定性、离线可跑
+llm.py        OpenAI 兼容真实模型适配器；Pydantic/JSON Schema 校验后才进入业务流程
 ```
 
 架构约束：**图与业务层只依赖 `AgentProvider`，不依赖任何模型 SDK**。换真模型时图、状态、审计、测试全部不动。
 
-为什么先做 Mock：它现在就能把「证据链是否成立」跑成自动化断言；换成真模型后，审计逻辑与测试完全复用。
+真实模式使用 `FallbackAgentProvider`。模型失败会明示记录降级次数和原因；本地规则仍作为证据与发布的硬闸门，不把降级结果伪装为真实模型输出。
 
 ## 5. 已踩过的坑（别再踩）
 
@@ -102,7 +103,7 @@ python backend/agents_smoke.py         # 端到端跑一遍：采访 → 证据 
 
 | 项 | 说明 |
 |---|---|
-| 真实模型适配器 | 实现 `llm.py`：结构化输出 + 校验失败即丢弃（见 `docs/PRODUCT_FOUNDATION.md`） |
+| Agent 评测扩充 | 持续补充方言、人名地名、年代模糊与跨碎片冲突样本 |
 | 时间码回听 | 转写分段与 claim 建立字符偏移→时间码映射，点句跳回原声 |
 | 七要素完整度视图 | 把 `missing_fields` 呈现到 07 屏，直观展示"查漏补缺" |
 | 冲突并列展示 | `conflicts` 已在状态里产出，界面按并列呈现，不做裁定 |

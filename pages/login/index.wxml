@@ -2,33 +2,38 @@
 
 <view class="page login" style="min-height: {{contentHeight}}px;">
   <view class="login__intro">
-    <text class="t-hero">登录记忆银行</text>
-    <text class="login__sub">登录后，继续保存珍贵的声音</text>
+    <text class="t-hero">{{pageMode === 'register' ? '创建本机账号' : '登录记忆银行'}}</text>
+    <text class="login__sub">{{pageMode === 'register' ? '资料只保存在本机，用于匹配角色与头像' : '请选择演示账号，或输入已注册手机号'}}</text>
   </view>
 
   <view class="login__form">
-    <text class="login__label">手机号</text>
-    <input
-      class="login__input"
-      type="number"
-      maxlength="11"
-      placeholder="请输入手机号"
-      placeholder-class="login__placeholder"
-      value="{{phone}}"
-      bindinput="onPhoneInput"
-    />
+    <block wx:if="{{pageMode === 'register'}}">
+      <text class="login__label">昵称</text>
+      <input class="login__input" maxlength="20" placeholder="例如：陈奶奶" value="{{displayName}}" bindinput="onNameInput" />
+      <view class="login__register-row">
+        <view class="login__register-field">
+          <text class="login__label login__label--second">年龄</text>
+          <input class="login__input" type="number" maxlength="3" placeholder="年龄" value="{{age}}" bindinput="onAgeInput" />
+        </view>
+        <view class="login__register-field">
+          <text class="login__label login__label--second">性别</text>
+          <view class="login__gender-row">
+            <view class="login__gender {{gender === 'female' ? 'login__gender--active' : ''}}" data-gender="female" bindtap="onGender">女</view>
+            <view class="login__gender {{gender === 'male' ? 'login__gender--active' : ''}}" data-gender="male" bindtap="onGender">男</view>
+          </view>
+        </view>
+      </view>
+      <text class="login__label login__label--second">家庭身份</text>
+      <view class="login__gender-row">
+        <view class="login__gender {{registerRole === 'elder' ? 'login__gender--active' : ''}}" data-role="elder" bindtap="onRegisterRole">长辈</view>
+        <view class="login__gender {{registerRole === 'family' ? 'login__gender--active' : ''}}" data-role="family" bindtap="onRegisterRole">晚辈家属</view>
+      </view>
+    </block>
 
-    <text class="login__label login__label--second">{{loginMode === 'sms' ? '验证码' : '密码'}}</text>
-    <input
-      wx:if="{{loginMode === 'password'}}"
-      class="login__input"
-      password="{{true}}"
-      maxlength="32"
-      placeholder="请输入密码"
-      placeholder-class="login__placeholder"
-      value="{{password}}"
-      bindinput="onPasswordInput"
-    />
+    <text class="login__label login__label--second">手机号</text>
+    <input class="login__input" type="number" maxlength="11" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhoneInput" />
+    <text class="login__label login__label--second">{{pageMode === 'login' && loginMode === 'sms' ? '验证码' : '密码'}}</text>
+    <input wx:if="{{pageMode === 'register' || loginMode === 'password'}}" class="login__input" password="{{true}}" maxlength="32" placeholder="至少 6 位密码" value="{{password}}" bindinput="onPasswordInput" />
     <view wx:else class="login__code-row">
       <input class="login__input login__code-input" type="number" maxlength="6" placeholder="请输入 6 位验证码" value="{{smsCode}}" bindinput="onCodeInput" />
       <view class="login__code-send {{smsCountdown ? 'login__code-send--disabled' : ''}}" bindtap="onSendCode">{{smsCountdown ? smsCountdown + '秒' : '获取验证码'}}</view>
@@ -37,28 +42,21 @@
   </view>
 
   <view class="login__submit">
-    <primary-button
-      text="{{loginMode === 'sms' ? '验证码登录' : '登录'}}"
-      type="primary"
-      loading="{{submitting}}"
-      loadingText="登录中"
-      bind:tap="onLogin"
-    />
+    <primary-button text="{{pageMode === 'register' ? '完成注册并登录' : (loginMode === 'sms' ? '验证码登录' : '登录')}}" type="primary" loading="{{submitting}}" loadingText="请稍候" bind:tap="onLogin" />
   </view>
 
   <view class="login__links">
-    <view class="login__link" bindtap="onSmsLogin">
-      <text class="login__link-strong">{{loginMode === 'sms' ? '使用密码登录' : '验证码登录'}}</text>
-    </view>
-    <view class="login__link" bindtap="onRegister">
-      <text class="login__link-normal">还没有账户？ 注册</text>
-    </view>
+    <view wx:if="{{pageMode === 'login'}}" class="login__link" bindtap="onSmsLogin"><text class="login__link-strong">{{loginMode === 'sms' ? '使用密码登录' : '验证码登录'}}</text></view>
+    <view class="login__link" bindtap="onRegister"><text class="login__link-normal">{{pageMode === 'register' ? '返回登录' : '注册新账号'}}</text></view>
   </view>
 
-  <!-- 演示便利：一键填入演示账号（正式版应移除） -->
-  <view class="login__demo" bindtap="onFillDemo">
-    <text class="login__demo-title">演示账号</text>
-    <text class="login__demo-text">{{demoPhone}} / {{demoPassword}}</text>
-    <text class="login__demo-hint">点击自动填入 · 任意 11 位新手机号也可直接注册登录</text>
+  <view wx:if="{{pageMode === 'login'}}" class="login__demo">
+    <text class="login__demo-title">四个家庭演示账号 · 密码均为 {{demoPassword}}</text>
+    <view class="login__accounts">
+      <view wx:for="{{demoAccounts}}" wx:key="phone" class="login__account" data-index="{{index}}" bindtap="onChooseDemo">
+        <text class="login__account-name">{{item.name}}</text>
+        <text class="login__account-meta">{{item.role}} · {{item.phone}}</text>
+      </view>
+    </view>
   </view>
 </view>

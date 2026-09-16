@@ -5,7 +5,7 @@
     <text class="t-title">家庭看板</text>
     <text class="family__sub">和家人一起，把记忆整理成家族故事。</text>
     <view class="family__switch" bindtap="onSwitchRole">
-      <text>切换长辈 / 家人身份</text>
+      <text>退出并切换家庭账号</text>
     </view>
   </view>
 

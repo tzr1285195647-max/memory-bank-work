@@ -8,6 +8,7 @@
 
   <!-- 设计稿：342×310 白卡，圆角 20，内边距 24 -->
   <view class="preview__card">
+    <text class="preview__narrator">{{draft.narratorName || '讲述者'}}的记忆</text>
     <text class="preview__title">{{draft.title}}</text>
 
     <textarea
@@ -49,6 +50,7 @@
     </view>
     <view wx:if="{{memoryFragments.length}}" class="preview__fragment-story">
       <view wx:for="{{memoryFragments}}" wx:key="roundNumber" class="preview__fragment">
+        <text class="preview__fragment-origin">{{item.narratorName || draft.narratorName || '讲述者'}}的记忆</text>
         <text class="preview__fragment-text">{{item.transcript}}</text>
         <text class="preview__fragment-time">{{item.timeLabel}}</text>
       </view>
@@ -117,6 +119,20 @@
       <view class="preview__claim-body">
         <text class="preview__claim-text">{{item.text}}</text>
         <text class="preview__claim-quote">{{item.roundLabel}}：{{item.quote}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{draft.sentenceEvidence.length}}" class="preview__evidence">
+    <view class="preview__evidence-head">
+      <text class="preview__evidence-title">逐句依据</text>
+      <text class="preview__evidence-hint">事实句必须有已确认碎片来源</text>
+    </view>
+    <view wx:for="{{draft.sentenceEvidence}}" wx:key="id" class="preview__claim">
+      <text class="preview__claim-element">{{item.must_cite ? (item.sourceCount ? '已追溯' : '无依据') : '说明'}}</text>
+      <view class="preview__claim-body">
+        <text class="preview__claim-text">{{item.text}}</text>
+        <text wx:if="{{item.sources.length}}" class="preview__claim-quote">来自 {{item.sources.length}} 条确认事实</text>
       </view>
     </view>
   </view>
@@ -201,7 +217,7 @@
     <text>{{isFamily ? '家人可以协助回忆，但不能替长辈发布故事。' : (!canReview ? '这段故事已经过人工确认。' : (editing ? '改好后保存，系统会重新核对原声证据。' : '这段文字来自你的讲述，你可以修改、补充或确认。'))}}</text>
   </view>
 
-  <view wx:if="{{canOwnerReview}}" class="preview__actions">
+  <view wx:if="{{canEditStory}}" class="preview__actions">
     <primary-button
       wx:if="{{!editing}}"
       text="修改文字"
@@ -224,7 +240,7 @@
       disabled="{{saving}}"
       bind:tap="onContinue"
     />
-    <view class="preview__confirm">
+    <view wx:if="{{canOwnerReview}}" class="preview__confirm">
       <primary-button
         text="确认故事"
         type="primary"
@@ -234,8 +250,11 @@
         bind:tap="onConfirm"
       />
     </view>
-    <view wx:if="{{!editing}}" class="preview__discard" bindtap="onDiscard">
+    <view wx:if="{{!editing && canReview}}" class="preview__discard" bindtap="onDiscard">
       <text>放弃这次整理并删除录音</text>
+    </view>
+    <view wx:if="{{!editing && !canReview}}" class="preview__discard" bindtap="onDeleteStory">
+      <text>删除这个故事</text>
     </view>
   </view>
 </view>

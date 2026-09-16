@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const store = require('../../store/index');
 const { LIFE_STAGES, groupStories } = require('../../utils/timeline');
 
 Page({
@@ -13,11 +14,14 @@ Page({
     activeStage: '全部',
     lifeStages: LIFE_STAGES,
     searchText: '',
+    canManage: false,
+    navigating: false,
   },
 
   onShow() {
     const tabBar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
     if (tabBar) tabBar.setData({ selected: 2 });
+    this.setData({ canManage: store.snapshot().role === 'elder', navigating: false });
     this.load();
   },
 
@@ -36,7 +40,7 @@ Page({
   refreshView() {
     const keyword = this.data.searchText.trim().toLowerCase();
     const source = keyword
-      ? this.data.allStories.filter((story) => `${story.title || ''} ${story.body || ''} ${story.lifeStage || ''}`.toLowerCase().includes(keyword))
+      ? this.data.allStories.filter((story) => `${story.title || ''} ${story.body || ''} ${story.lifeStage || ''} ${story.narratorName || ''}`.toLowerCase().includes(keyword))
       : this.data.allStories;
     const result = groupStories(source, {
       stage: this.data.activeStage,
@@ -85,7 +89,35 @@ Page({
     wx.navigateTo({ url: `/pages/story-preview/index?id=${e.currentTarget.dataset.id}` });
   },
 
+  onEditStory(e) {
+    wx.navigateTo({ url: `/pages/story-preview/index?id=${e.currentTarget.dataset.id}` });
+  },
+
+  onDeleteStory(e) {
+    const storyId = e.currentTarget.dataset.id;
+    const story = this.data.allStories.find((item) => item.id === storyId);
+    wx.showModal({
+      title: `删除《${story ? story.title : '这个故事'}》？`,
+      content: '删除后无法恢复。', confirmText: '确认删除', confirmColor: '#C98362',
+      success: async ({ confirm }) => {
+        if (!confirm) return;
+        try {
+          await api.deleteStory(storyId);
+          wx.showToast({ title: '故事已删除', icon: 'success' });
+          await this.load();
+        } catch (err) {
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+        }
+      },
+    });
+  },
+
   onStart() {
-    wx.navigateTo({ url: '/pages/topic/index' });
+    if (this.data.navigating) return;
+    this.setData({ navigating: true });
+    wx.navigateTo({
+      url: '/pages/topic/index',
+      fail: () => this.setData({ navigating: false }),
+    });
   },
 });

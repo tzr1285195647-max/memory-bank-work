@@ -12,7 +12,16 @@ class RequestModel(BaseModel):
 class LoginRequest(RequestModel):
     phone: str = Field(min_length=11, max_length=11, pattern=r"^1\d{10}$")
     password: str = Field(min_length=6, max_length=64)
-    role: str = Field(default="elder", pattern=r"^(elder|family)$")
+    role: str | None = Field(default=None, pattern=r"^(elder|family)$")
+
+
+class RegisterRequest(RequestModel):
+    phone: str = Field(min_length=11, max_length=11, pattern=r"^1\d{10}$")
+    password: str = Field(min_length=6, max_length=64)
+    displayName: str = Field(min_length=2, max_length=20)
+    role: str = Field(pattern=r"^(elder|family)$")
+    gender: str = Field(pattern=r"^(female|male)$")
+    age: int = Field(ge=6, le=120)
 
 
 class UserOut(BaseModel):
@@ -20,6 +29,10 @@ class UserOut(BaseModel):
     displayName: str
     phoneMasked: str
     role: str
+    gender: str = "female"
+    age: int = 60
+    avatarKey: str = "elder-female"
+    isAdmin: bool = False
 
 
 class LoginResponse(BaseModel):
@@ -53,12 +66,18 @@ class ProfileOut(BaseModel):
     avatarText: str
     roleLabel: str
     phoneMasked: str
+    gender: str = "female"
+    age: int = 60
+    avatarKey: str = "elder-female"
+    isAdmin: bool = False
     stats: StatsOut
 
 
 class StoryOut(BaseModel):
     id: str
     topicId: str = ""
+    narratorUserId: str = ""
+    narratorName: str = "讲述者"
     index: str
     title: str
     body: str
@@ -73,6 +92,8 @@ class StoryOut(BaseModel):
     claims: list[dict] = Field(default_factory=list)
     missingFields: list[str] = Field(default_factory=list)
     findings: list[dict] = Field(default_factory=list)
+    sentenceEvidence: list[dict] = Field(default_factory=list)
+    auditSuggestions: list[str] = Field(default_factory=list)
     conflicts: list[dict] = Field(default_factory=list)
     sessionId: str = ""
     recordings: list[dict] = Field(default_factory=list)
@@ -143,9 +164,18 @@ class FamilyNoteOut(BaseModel):
 
 class RecordingOut(BaseModel):
     assetId: str
+    narratorUserId: str = ""
+    narratorName: str = "讲述者"
     durationMs: int
     audioUrl: str
     transcript: str
+    asrRawText: str = ""
+    agentCleanText: str = ""
+    confirmedText: str = ""
+    cleanChanges: list[dict] = Field(default_factory=list)
+    uncertainties: list[dict] = Field(default_factory=list)
+    cleanStatus: str = "idle"
+    cleanProvider: str = ""
     consentVersion: int
 
 
@@ -153,6 +183,13 @@ class TranscriptionOut(BaseModel):
     recordingId: str
     status: str
     transcript: str = ""
+    asrRawText: str = ""
+    agentCleanText: str = ""
+    confirmedText: str = ""
+    cleanChanges: list[dict] = Field(default_factory=list)
+    uncertainties: list[dict] = Field(default_factory=list)
+    cleanStatus: str = "idle"
+    cleanProvider: str = ""
     error: str = ""
     provider: str = "tencent"
 
@@ -162,12 +199,79 @@ class MemoryFragmentConfirmRequest(RequestModel):
     consentVersion: int = Field(ge=1)
 
 
+class MemoryFragmentOut(BaseModel):
+    recordingId: str
+    narratorUserId: str = ""
+    narratorName: str = "讲述者"
+    topicId: str
+    transcript: str
+    asrRawText: str = ""
+    agentCleanText: str = ""
+    confirmedText: str = ""
+    facts: list[dict] = Field(default_factory=list)
+    durationMs: int
+    audioUrl: str
+    order: int
+    createdAt: str
+    timeLabel: str
+    confirmed: bool = False
+    confirmedBy: str = ""
+
+
+class MemoryFragmentPatchRequest(RequestModel):
+    transcript: str | None = Field(default=None, min_length=1, max_length=6000)
+    topicId: str | None = Field(default=None, min_length=1, max_length=32)
+    consentVersion: int = Field(ge=1)
+
+
+class MemoryFragmentReorderRequest(RequestModel):
+    recordingIds: list[str] = Field(min_length=1, max_length=100)
+    consentVersion: int = Field(ge=1)
+
+
 class FamilyOut(BaseModel):
     memberCount: int
     invitedCount: int
     doneStories: int
     totalStories: int
     pending: list[StoryOut]
+
+
+class FamilyMemberOut(BaseModel):
+    id: str
+    displayName: str
+    phone: str
+    phoneMasked: str
+    role: str
+    roleLabel: str
+    gender: str
+    age: int
+    avatarKey: str
+    avatarText: str
+    isAdmin: bool
+
+
+class FamilyMembersOut(BaseModel):
+    familyId: str
+    familyName: str
+    members: list[FamilyMemberOut]
+    invitations: list[dict] = Field(default_factory=list)
+
+
+class FamilyInviteRequest(RequestModel):
+    phone: str = Field(min_length=11, max_length=11, pattern=r"^1\d{10}$")
+    role: str = Field(default="family", pattern=r"^(elder|family)$")
+
+
+class FamilyMemberPatchRequest(RequestModel):
+    displayName: str | None = Field(default=None, min_length=2, max_length=20)
+    role: str | None = Field(default=None, pattern=r"^(elder|family)$")
+    gender: str | None = Field(default=None, pattern=r"^(female|male)$")
+    age: int | None = Field(default=None, ge=6, le=120)
+
+
+class ProfilePatchRequest(RequestModel):
+    displayName: str = Field(min_length=2, max_length=20)
 
 
 class RevokeOut(BaseModel):

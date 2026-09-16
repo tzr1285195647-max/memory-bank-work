@@ -8,10 +8,16 @@ from fastapi import APIRouter, Depends, File, Form, Header, UploadFile, status
 from sqlalchemy.orm import Session
 
 from . import service
+from .agent_service import clean_recording_transcript, extract_recording_evidence, get_runtime
+from .config import settings
 from .database import get_session
 from .schemas import (
     AuditListOut,
     FamilyOut,
+    FamilyInviteRequest,
+    FamilyMemberOut,
+    FamilyMemberPatchRequest,
+    FamilyMembersOut,
     FamilyNoteActionRequest,
     FamilyNoteCreateRequest,
     FamilyNoteOut,
@@ -19,7 +25,12 @@ from .schemas import (
     HomeOut,
     LoginRequest,
     LoginResponse,
+    ProfilePatchRequest,
+    RegisterRequest,
     MemoryFragmentConfirmRequest,
+    MemoryFragmentOut,
+    MemoryFragmentPatchRequest,
+    MemoryFragmentReorderRequest,
     ProfileOut,
     RecordingOut,
     TranscriptionOut,
@@ -74,9 +85,25 @@ def login(payload: LoginRequest, session: SessionDep) -> dict:
     return service.login(session, phone=payload.phone, password=payload.password, role=payload.role)
 
 
+@router.post("/auth/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterRequest, session: SessionDep) -> dict:
+    return service.register(
+        session, phone=payload.phone, password=payload.password,
+        display_name=payload.displayName, role=payload.role,
+        gender=payload.gender, age=payload.age,
+    )
+
+
 @router.get("/me", response_model=ProfileOut)
 def me(session: SessionDep, auth: AuthDep) -> dict:
     return service.profile(session, auth.family_id, auth.user_id)
+
+
+@router.patch("/me", response_model=ProfileOut)
+def patch_me(payload: ProfilePatchRequest, session: SessionDep, auth: AuthDep) -> dict:
+    return service.update_profile(
+        session, auth.family_id, auth.user_id, display_name=payload.displayName
+    )
 
 
 @router.get("/topics", response_model=list[TopicOut])
@@ -92,6 +119,37 @@ def home(session: SessionDep, auth: AuthDep) -> dict:
 @router.get("/family", response_model=FamilyOut)
 def family(session: SessionDep, auth: AuthDep) -> dict:
     return service.family_board(session, auth.family_id)
+
+
+@router.get("/family/members", response_model=FamilyMembersOut)
+def family_members(session: SessionDep, auth: AuthDep) -> dict:
+    return service.list_family_members(session, auth.family_id)
+
+
+@router.post("/family/invitations", status_code=status.HTTP_201_CREATED)
+def invite_family_member(payload: FamilyInviteRequest, session: SessionDep, auth: AuthDep) -> dict:
+    return service.invite_family_member(
+        session, auth.family_id, auth.user_id, phone=payload.phone, role=payload.role
+    )
+
+
+@router.patch("/family/members/{member_user_id}", response_model=FamilyMemberOut)
+def patch_family_member(
+    member_user_id: str, payload: FamilyMemberPatchRequest,
+    session: SessionDep, auth: AuthDep,
+) -> dict:
+    return service.update_family_member(
+        session, auth.family_id, auth.user_id, member_user_id,
+        display_name=payload.displayName, role=payload.role,
+        gender=payload.gender, age=payload.age,
+    )
+
+
+@router.delete("/family/members/{member_user_id}")
+def delete_family_member(member_user_id: str, session: SessionDep, auth: AuthDep) -> dict:
+    return service.remove_family_member(
+        session, auth.family_id, auth.user_id, member_user_id
+    )
 
 
 @router.post("/recordings", response_model=RecordingOut, status_code=status.HTTP_201_CREATED)
@@ -137,11 +195,17 @@ def start_recording_transcription(
 
 @router.get("/recordings/{recording_id}/transcription", response_model=TranscriptionOut)
 def get_recording_transcription(recording_id: str, session: SessionDep, auth: AuthDep) -> dict:
-    return service.refresh_transcription(
+    result = service.refresh_transcription(
         session,
         family_id=auth.family_id,
         recording_id=recording_id,
     )
+    if result.get("status") == "success" and result.get("asrRawText") and result.get("cleanStatus") in {"idle", "pending", "failed"}:
+        return clean_recording_transcript(
+            session, get_runtime(settings.data_dir / "checkpoints.sqlite3"),
+            family_id=auth.family_id, recording_id=recording_id,
+        )
+    return result
 
 
 @router.put("/recordings/{recording_id}/fragment", response_model=RecordingOut)
@@ -151,12 +215,61 @@ def confirm_recording_fragment(
     session: SessionDep,
     auth: AuthDep,
 ) -> dict:
-    return service.confirm_memory_fragment(
+    result = service.confirm_memory_fragment(
         session,
         family_id=auth.family_id,
         recording_id=recording_id,
         transcript=payload.transcript,
         consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
+    )
+    extract_recording_evidence(
+        session, get_runtime(settings.data_dir / "checkpoints.sqlite3"),
+        family_id=auth.family_id, recording_id=recording_id,
+    )
+    return result
+
+
+@router.get("/fragments", response_model=list[MemoryFragmentOut])
+def memory_fragments(session: SessionDep, auth: AuthDep, topicId: str | None = None) -> list[dict]:
+    return service.list_memory_fragments(session, auth.family_id, topicId)
+
+
+@router.patch("/fragments/{recording_id}", response_model=MemoryFragmentOut)
+def patch_memory_fragment(
+    recording_id: str, payload: MemoryFragmentPatchRequest,
+    session: SessionDep, auth: AuthDep,
+) -> dict:
+    result = service.update_memory_fragment(
+        session, auth.family_id, recording_id, transcript=payload.transcript,
+        topic_id=payload.topicId, consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
+    )
+    if payload.transcript is not None:
+        extract_recording_evidence(
+            session, get_runtime(settings.data_dir / "checkpoints.sqlite3"),
+            family_id=auth.family_id, recording_id=recording_id,
+        )
+        result = service.memory_fragment_to_dict(session, service._recording_for_family(session, auth.family_id, recording_id))
+    return result
+
+
+@router.put("/fragments/reorder", response_model=list[MemoryFragmentOut])
+def reorder_memory_fragments(
+    payload: MemoryFragmentReorderRequest, session: SessionDep, auth: AuthDep,
+) -> list[dict]:
+    return service.reorder_memory_fragments(
+        session, auth.family_id, payload.recordingIds,
+        consent_version=payload.consentVersion, actor_user_id=auth.user_id,
+    )
+
+
+@router.delete("/fragments/{recording_id}")
+def delete_memory_fragment(
+    recording_id: str, consentVersion: int, session: SessionDep, auth: AuthDep,
+) -> dict:
+    return service.delete_memory_fragment(
+        session, auth.family_id, recording_id, consent_version=consentVersion,
         actor_user_id=auth.user_id,
     )
 
@@ -276,6 +389,14 @@ def discard_story(
 ) -> dict:
     return service.discard_story(
         session, auth.family_id, story_id, consent_version=payload.consentVersion,
+        actor_user_id=auth.user_id,
+    )
+
+
+@router.delete("/stories/{story_id}", response_model=StoryDiscardOut)
+def delete_story(story_id: str, consentVersion: int, session: SessionDep, auth: AuthDep) -> dict:
+    return service.delete_story(
+        session, auth.family_id, story_id, consent_version=consentVersion,
         actor_user_id=auth.user_id,
     )
 

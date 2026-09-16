@@ -38,26 +38,26 @@
       <view class="stories__year-row"><view class="stories__dot"></view><text class="stories__year">{{item.yearLabel}}</text></view>
       <view class="stories__group-cards">
         <view wx:for="{{item.items}}" wx:for-item="story" wx:key="id" class="stories__card" hover-class="stories__card--pressed" hover-stay-time="80" data-id="{{story.id}}" bindtap="onOpen">
-          <view class="stories__card-head"><text class="stories__stage">{{story.lifeStage}}</text><text class="stories__arrow">›</text></view>
+          <view class="stories__card-head"><view class="stories__tags"><text class="stories__stage">{{story.lifeStage}}</text><text class="stories__narrator">{{story.narratorName || '讲述者'}}的记忆</text></view><text class="stories__arrow">›</text></view>
           <text class="stories__card-title">{{story.title}}</text>
           <text class="stories__card-meta">{{story.durationText}} · {{story.mode}}{{story.fragmentCount ? ' · ' + story.fragmentCount + ' 段碎片' : ''}}</text>
+          <view wx:if="{{canManage}}" class="stories__manage">
+            <text data-id="{{story.id}}" catchtap="onEditStory">重新编辑</text>
+            <text class="stories__manage-delete" data-id="{{story.id}}" catchtap="onDeleteStory">删除</text>
+          </view>
         </view>
       </view>
     </view>
   </view>
 
   <view wx:if="{{list.length && viewMode === 'list'}}" class="stories__list">
-    <list-item
-      wx:for="{{list}}"
-      wx:key="id"
-      variant="story"
-      index="{{item.index}}"
-      title="{{item.title}}"
-      subtitle="{{item.memoryYear ? item.memoryYear + '年 · ' : ''}}{{item.lifeStage}} · {{item.durationText}}{{item.fragmentCount ? ' · ' + item.fragmentCount + ' 段碎片' : ''}}"
-      arrow="›"
-      data-id="{{item.id}}"
-      bind:tap="onOpen"
-    />
+    <view wx:for="{{list}}" wx:key="id" class="stories__list-block">
+      <list-item variant="story" index="{{item.index}}" title="{{item.title}}" subtitle="{{item.narratorName || '讲述者'}}的记忆 · {{item.memoryYear ? item.memoryYear + '年 · ' : ''}}{{item.lifeStage}} · {{item.durationText}}{{item.fragmentCount ? ' · ' + item.fragmentCount + ' 段碎片' : ''}}" arrow="›" data-id="{{item.id}}" bind:tap="onOpen" />
+      <view wx:if="{{canManage}}" class="stories__manage stories__manage--list">
+        <text data-id="{{item.id}}" bindtap="onEditStory">重新编辑</text>
+        <text class="stories__manage-delete" data-id="{{item.id}}" bindtap="onDeleteStory">删除</text>
+      </view>
+    </view>
   </view>
 
   <view wx:if="{{!loading && !list.length}}" class="stories__empty">

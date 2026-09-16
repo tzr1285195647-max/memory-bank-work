@@ -216,6 +216,81 @@ def test_selected_memory_fragments_generate_one_story(client, auth):
     }
     assert second["assetId"] not in {item["recordingId"] for item in story["recordings"]}
     assert "红烧肉" not in story["body"]
+    assert story["sentenceEvidence"]
+    assert all(
+        (not sentence["must_cite"]) or sentence["claim_ids"]
+        for sentence in story["sentenceEvidence"]
+    )
+
+
+def test_family_reviewer_cannot_replace_original_narrator(client):
+    """小刘代为确认和生成时，故事署名仍必须来自林奶奶的录音归属。"""
+
+    elder_login = client.post(
+        "/api/auth/login",
+        json={"phone": "13800008899", "password": "123456", "role": "elder"},
+    ).json()
+    family_login = client.post(
+        "/api/auth/login",
+        json={"phone": "13700006677", "password": "123456", "role": "family"},
+    ).json()
+    elder_auth = {
+        "headers": {"Authorization": f"Bearer {elder_login['token']}"},
+        "consent": elder_login["consentVersion"],
+    }
+    recording = upload_recording(client, elder_auth, "school", 12000, "grandma-school.mp3")
+    confirmed = client.put(
+        f"/api/recordings/{recording['assetId']}/fragment",
+        headers=elder_auth["headers"],
+        json={
+            "transcript": "我第一次上学是在一九五九年的秋天。",
+            "consentVersion": elder_auth["consent"],
+        },
+    )
+    assert confirmed.status_code == 200, confirmed.text
+
+    generated = client.post(
+        "/api/agent/fragments/generate",
+        headers={"Authorization": f"Bearer {family_login['token']}"},
+        json={
+            "recordingIds": [recording["assetId"]],
+            "topicId": "school",
+            # 即使旧客户端错误地提交当前审核人的名字，服务端也必须忽略。
+            "subjectName": "小刘",
+            "style": "book",
+            "consentVersion": family_login["consentVersion"],
+        },
+    )
+    assert generated.status_code == 201, generated.text
+    story = generated.json()
+    assert story["narratorName"] == "林奶奶"
+    assert "林奶奶亲口讲述" in story["body"]
+    assert "小刘亲口讲述" not in story["body"]
+
+
+def test_fragments_from_two_narrators_cannot_generate_single_person_story(client):
+    elder_a = client.post("/api/auth/login", json={"phone": "13800008899", "password": "123456"}).json()
+    elder_b = client.post("/api/auth/login", json={"phone": "13900007788", "password": "123456"}).json()
+    auth_a = {"headers": {"Authorization": f"Bearer {elder_a['token']}"}, "consent": elder_a["consentVersion"]}
+    auth_b = {"headers": {"Authorization": f"Bearer {elder_b['token']}"}, "consent": elder_b["consentVersion"]}
+    first = upload_recording(client, auth_a, "school", 3000, "elder-a.mp3")
+    second = upload_recording(client, auth_b, "school", 3000, "elder-b.mp3")
+    for auth_data, item, text in (
+        (auth_a, first, "我第一次上学是在秋天。"),
+        (auth_b, second, "我第一次上学是在春天。"),
+    ):
+        response = client.put(
+            f"/api/recordings/{item['assetId']}/fragment", headers=auth_data["headers"],
+            json={"transcript": text, "consentVersion": auth_data["consent"]},
+        )
+        assert response.status_code == 200, response.text
+    mixed = client.post(
+        "/api/agent/fragments/generate", headers=auth_a["headers"],
+        json={"recordingIds": [first["assetId"], second["assetId"]], "topicId": "school",
+              "style": "natural", "consentVersion": auth_a["consent"]},
+    )
+    assert mixed.status_code == 422
+    assert "同一位讲述人" in mixed.json()["detail"]
 
 
 def test_stop_interview_keeps_topic_for_fragment_generation(client, auth):
@@ -323,7 +398,7 @@ def test_approve_produces_delivery_and_story(client, auth):
     assert "经过人工确认" in body["delivery"]
 
     story = client.get(f"/api/stories/{view['storyId']}", headers=auth["headers"]).json()
-    assert story["status"] == "pending_review", "故事仍需人工在故事书里确认"
+    assert story["status"] == "confirmed", "长辈在 LangGraph 人工确认点批准后应正式发布"
 
 
 def test_story_review_rejects_invented_text(client, auth):

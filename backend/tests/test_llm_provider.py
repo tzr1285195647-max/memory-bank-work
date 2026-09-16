@@ -192,12 +192,12 @@ def test_fallback_provider_uses_mock_when_model_fails():
     assert wrapper.last_error
 
 
-def test_audit_always_uses_deterministic_implementation():
-    """审计不允许交给模型自证。"""
+def test_audit_calls_model_but_keeps_deterministic_fallback():
+    """审计 Agent 调用模型；失败时仍由确定性硬规则拦住无依据句。"""
     exploding = provider_with([LLMUnavailableError("不该被调用")])
     wrapper = FallbackAgentProvider(exploding, MockAgentProvider())
     claims = [{"id": "c1", "element": "time", "text": "那年秋天", "quote": "那年秋天", "turn_id": "t1"}]
     sentences = [{"id": "s1", "text": "他去了北京。", "claim_ids": [], "must_cite": True}]
     findings = wrapper.audit_draft(sentences=sentences, claims=claims)
     assert findings and findings[0]["kind"] == "unsupported"
-    assert wrapper.fallback_count == 0, "审计不该触发模型调用"
+    assert wrapper.fallback_count == 1

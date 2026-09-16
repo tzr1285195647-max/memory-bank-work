@@ -1,24 +1,65 @@
-<nav-bar title="家庭与协作" theme="brandLight" showBack="{{true}}" showMore="{{false}}" />
+<nav-bar title="家庭成员管理" theme="brand" showBack="{{true}}" showMore="{{false}}" />
 
 <view class="page manage">
-  <view class="manage__intro"><text class="t-title">一家人，共同守护</text><text class="manage__sub">每个人能做什么都清楚可见，故事始终由长辈最终确认。</text></view>
-
-  <view class="manage__invite">
-    <text class="manage__invite-kicker">本机演示邀请码</text>
-    <text wx:if="{{inviteReady}}" class="manage__invite-code">{{inviteCode}}</text>
-    <text wx:else class="manage__invite-title">邀请一位家人协助回忆</text>
-    <text class="manage__invite-hint">邀请码 24 小时内有效。正式上线后可接入微信分享，无需改变权限规则。</text>
-    <view wx:if="{{role === 'elder' && !inviteReady}}" class="manage__invite-action" bindtap="onGenerateInvite">生成邀请码</view>
-    <view wx:if="{{role === 'elder' && inviteReady}}" class="manage__invite-action" bindtap="onCopyInvite">复制邀请码</view>
-    <text wx:else class="manage__family-hint">家人不能继续邀请成员，如需邀请请联系长辈。</text>
+  <view class="manage__intro">
+    <text class="t-title">{{familyName}}</text>
+    <text class="manage__sub">四个账号共享故事、录音转写与记忆碎片。</text>
   </view>
 
-  <view class="manage__section-head"><text class="t-section">家庭成员</text><text class="manage__count">{{members.length}} 位</text></view>
-  <view class="manage__members"><view wx:for="{{members}}" wx:key="id" class="manage__member"><view class="manage__avatar">{{item.avatar}}</view><view class="manage__member-main"><text class="manage__member-name">{{item.name}}</text><text class="manage__member-role">{{item.roleLabel}}</text></view><text class="manage__member-status">已加入</text></view></view>
+  <view wx:if="{{isAdmin}}" class="manage__invite">
+    <text class="manage__invite-kicker">管理员 · 通过手机号邀请</text>
+    <input class="manage__input" type="number" maxlength="11" placeholder="输入成员手机号" value="{{invitePhone}}" bindinput="onInvitePhone" />
+    <view class="manage__choice-row">
+      <view class="manage__choice {{inviteRole === 'elder' ? 'manage__choice--active' : ''}}" data-role="elder" bindtap="onInviteRole">长辈</view>
+      <view class="manage__choice {{inviteRole === 'family' ? 'manage__choice--active' : ''}}" data-role="family" bindtap="onInviteRole">晚辈家属</view>
+    </view>
+    <view class="manage__invite-action" bindtap="onInvite">{{inviting ? '正在邀请…' : '邀请加入家庭'}}</view>
+    <text class="manage__invite-hint">已注册账号会立即加入；未注册手机号会保留邀请，注册后自动加入。</text>
+  </view>
 
-  <text class="t-section manage__section">权限说明</text>
-  <view class="manage__permissions"><view wx:for="{{permissions}}" wx:key="role" class="manage__permission"><text class="manage__permission-role manage__permission-role--{{item.color}}">{{item.role}}</text><text class="manage__permission-detail">{{item.detail}}</text></view></view>
+  <view wx:else class="manage__notice">只有家庭管理员小刘可以邀请、修改和移除成员。</view>
 
-  <view class="manage__boundary"><text class="manage__boundary-title">不可越过的边界</text><text class="manage__boundary-text">家人的建议不会直接覆盖故事；存在未处理建议时，故事不能发布；撤回授权后内容与原声会删除。</text></view>
-  <view class="manage__switch" bindtap="onSwitchRole">切换长辈 / 家人身份进行演示</view>
+  <view class="manage__section-head">
+    <text class="t-section">家庭成员</text>
+    <text class="manage__count">{{members.length}} 人</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="manage__empty">正在加载成员…</view>
+  <view wx:for="{{members}}" wx:key="id" class="manage__member">
+    <view class="manage__avatar manage__avatar--{{item.avatarKey}}">{{item.avatarText}}</view>
+    <view class="manage__member-main">
+      <view class="manage__member-head">
+        <text class="manage__member-name">{{item.displayName}}</text>
+        <text wx:if="{{item.isAdmin}}" class="manage__admin">管理员</text>
+      </view>
+      <text class="manage__member-meta">{{item.roleLabel}} · {{item.age}} 岁 · {{item.phoneMasked}}</text>
+      <view wx:if="{{isAdmin}}" class="manage__member-actions">
+        <text data-id="{{item.id}}" bindtap="onEditMember">编辑</text>
+        <text wx:if="{{!item.isAdmin}}" class="manage__delete" data-id="{{item.id}}" bindtap="onDeleteMember">移除</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{editingId}}" class="manage__editor">
+    <text class="t-section">编辑成员</text>
+    <input class="manage__input" maxlength="20" value="{{editName}}" placeholder="昵称" bindinput="onEditName" />
+    <input class="manage__input" type="number" maxlength="3" value="{{editAge}}" placeholder="年龄" bindinput="onEditAge" />
+    <view class="manage__choice-row">
+      <view class="manage__choice {{editGender === 'female' ? 'manage__choice--active' : ''}}" data-gender="female" bindtap="onEditGender">女</view>
+      <view class="manage__choice {{editGender === 'male' ? 'manage__choice--active' : ''}}" data-gender="male" bindtap="onEditGender">男</view>
+    </view>
+    <view class="manage__choice-row">
+      <view class="manage__choice {{editRole === 'elder' ? 'manage__choice--active' : ''}}" data-role="elder" bindtap="onEditRole">长辈</view>
+      <view class="manage__choice {{editRole === 'family' ? 'manage__choice--active' : ''}}" data-role="family" bindtap="onEditRole">晚辈家属</view>
+    </view>
+    <view class="manage__editor-actions">
+      <view class="manage__cancel" bindtap="onCancelEdit">取消</view>
+      <view class="manage__save" bindtap="onSaveMember">{{saving ? '保存中…' : '保存修改'}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{invitations.length}}" class="manage__pending">
+    <text class="t-section">待注册邀请</text>
+    <text wx:for="{{invitations}}" wx:key="id" class="manage__pending-item">{{item.phone}} · {{item.role === 'elder' ? '长辈' : '晚辈家属'}}</text>
+  </view>
 </view>

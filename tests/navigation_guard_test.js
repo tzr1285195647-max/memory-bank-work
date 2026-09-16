@@ -12,11 +12,15 @@ function loadPage(relativePath, snapshot = {}) {
       if (id === '../../store/index') {
         return { snapshot: () => snapshot, set() {} };
       }
+      if (id === '../../utils/api') {
+        return { getHome: async () => ({ recent: [] }), getTopics: async () => [] };
+      }
       throw new Error(`unexpected require: ${id}`);
     },
     wx: {
       navigateTo(options) { calls.push(options.url); },
       reLaunch(options) { calls.push(options.url); },
+      switchTab(options) { calls.push(options.url); },
     },
   });
   const page = {
@@ -43,5 +47,16 @@ const chooseEvent = { currentTarget: { dataset: { role: 'elder' } } };
 role.page.onChoose(chooseEvent);
 role.page.onChoose(chooseEvent);
 assert.deepStrictEqual(role.calls, ['/pages/login/index?role=elder']);
+
+const home = loadPage('../pages/home/index.js');
+home.page.onRecord();
+home.page.onRecord();
+assert.deepStrictEqual(home.calls, ['/pages/topic/index']);
+
+const topic = loadPage('../pages/topic/index.js');
+const topicEvent = { currentTarget: { dataset: { id: 'school' } } };
+topic.page.onChoose(topicEvent);
+topic.page.onChoose(topicEvent);
+assert.deepStrictEqual(topic.calls, ['/pages/record/index']);
 
 console.log('navigation guard test: ok');

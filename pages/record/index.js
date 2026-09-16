@@ -44,29 +44,6 @@ function fragmentTime(timestamp = Date.now()) {
   return `今天 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-const DEMO_TRANSCRIPTS = {
-  hometown: [
-    '我小时候住在一条老街旁边，门前有一条小河，夏天傍晚大家常在河边乘凉。',
-    '那时候邻居们都很熟，谁家做了好吃的，总会端一小碗送给左邻右舍。',
-    '现在想起来，我最怀念的是傍晚的风，还有街坊们坐在一起聊天的声音。',
-  ],
-  school: [
-    '我上学时每天要走很远的路，书包是家里用旧布给我缝的。',
-    '老师对我们很耐心，放学以后还会留下来帮我们把不会的题再讲一遍。',
-    '那段日子虽然条件简单，但同学们互相照顾，我一直记到现在。',
-  ],
-  work: [
-    '我刚参加工作时什么都不熟，师傅每天带着我一点一点学。',
-    '有一次任务很急，我们几个人一直忙到天黑，最后总算按时做完了。',
-    '那份工作让我明白，手艺要慢慢练，答应别人的事情也一定要做好。',
-  ],
-  family: [
-    '我们年轻时经人介绍认识，第一次见面只是坐下来喝了一杯茶。',
-    '后来两家人常来往，我们也慢慢熟悉起来，日子就这样一起过了下来。',
-    '一家人在一起最重要的是互相体谅，有事情坐下来好好商量。',
-  ],
-};
-
 const CAPTURE_CONSENT_KEY = 'memoryBank.captureConsent.v1';
 
 Page({
@@ -86,6 +63,10 @@ Page({
     question: '',
     sessionId: '',
     transcriptDraft: '',
+    asrRawText: '',
+    agentCleanText: '',
+    transcriptUncertainties: [],
+    cleanProvider: '',
     transcriptSimulated: false,
     transcriptNeedsConfirmation: false,
     transcriptEditing: false,
@@ -98,6 +79,8 @@ Page({
     completedRounds: [],
     memoryFragments: [],
     selectedFragmentCount: 0,
+    editingFragmentId: '',
+    editingFragmentText: '',
     baseDraftBody: '',
     interviewComplete: false,
     writingStyle: 'natural',
@@ -110,6 +93,7 @@ Page({
     generating: false,
     generationStep: 0,
     generationSteps: ['整理口述文字', '提取记忆要点', '核对原声依据'],
+    topicNavigating: false,
   },
 
   onLoad(options) {
@@ -128,6 +112,7 @@ Page({
     const tabBar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
     if (tabBar) tabBar.setData({ selected: 1 });
     this.pageActive = true;
+    this.setData({ topicNavigating: false });
     this.pauseWhenStartedInBackground = false;
     const recorderState = this.recorder ? this.recorder.state : 'idle';
     this.setData({
@@ -160,6 +145,8 @@ Page({
       durationMs: item.durationMs || 0,
       audioPath: item.audioPath || item.audioUrl || '',
       transcript: item.transcript || '',
+      narratorUserId: item.narratorUserId || '',
+      narratorName: item.narratorName || '',
       timeLabel: item.timeLabel || `第 ${index + 1} 段`,
       selected: true,
       pending: false,
@@ -200,8 +187,175 @@ Page({
     this.createRecorder();
 
     await Promise.all([this.loadTopicTitle(topicId), this.loadAsrStatus()]);
+    if (!resumeDraft && topicId) await this.loadPersistedFragments(topicId);
 
     if (this.pageActive && topicId) await this.prepareInterview();
+  },
+
+  async loadPersistedFragments(topicId) {
+    try {
+      const fragments = await api.getMemoryFragments(topicId);
+      if (!this.pageAlive || topicId !== this.data.topicId) return;
+      const existing = new Map((this.data.completedRounds || []).map((item) => [item.recordingId, item]));
+      fragments.forEach((item, index) => {
+        if (existing.has(item.recordingId)) {
+          existing.set(item.recordingId, {
+            ...existing.get(item.recordingId),
+            narratorUserId: item.narratorUserId || existing.get(item.recordingId).narratorUserId || '',
+            narratorName: item.narratorName || existing.get(item.recordingId).narratorName || '讲述者',
+            confirmedBy: item.confirmedBy || existing.get(item.recordingId).confirmedBy || '',
+            pending: item.confirmed === false,
+          });
+        } else {
+          existing.set(item.recordingId, {
+            recordingId: item.recordingId,
+            narratorUserId: item.narratorUserId || '',
+            narratorName: item.narratorName || '讲述者',
+            roundNumber: index + 1,
+            durationMs: item.durationMs || 0,
+            audioPath: item.audioUrl || '',
+            transcript: item.transcript || '',
+            timeLabel: item.timeLabel || `第 ${index + 1} 段`,
+            selected: item.confirmed !== false,
+            pending: item.confirmed === false,
+            confirmedBy: item.confirmedBy || '',
+          });
+        }
+      });
+      const completedRounds = Array.from(existing.values()).map((item, index) => ({
+        ...item, roundNumber: index + 1,
+      }));
+      this.setData({
+        completedRounds,
+        memoryFragments: completedRounds,
+        selectedFragmentCount: completedRounds.filter((item) => item.selected !== false).length,
+      });
+    } catch (err) {
+      console.warn('[record] 历史记忆碎片加载失败', err && err.message);
+    }
+  },
+
+  onEditFragment(e) {
+    const recordingId = e.currentTarget.dataset.id;
+    const item = this.data.completedRounds.find((fragment) => fragment.recordingId === recordingId);
+    if (!item) return;
+    this.setData({ editingFragmentId: recordingId, editingFragmentText: item.transcript });
+  },
+
+  onFragmentEditInput(e) { this.setData({ editingFragmentText: e.detail.value }); },
+  noop() {},
+  onCancelFragmentEdit() { this.setData({ editingFragmentId: '', editingFragmentText: '' }); },
+  async onSaveFragmentEdit() {
+    const recordingId = this.data.editingFragmentId;
+    const transcript = this.data.editingFragmentText.trim();
+    if (!recordingId || !transcript) {
+      wx.showToast({ title: '内容不能为空', icon: 'none' });
+      return;
+    }
+    try {
+      await api.updateMemoryFragment(recordingId, { transcript });
+      const confirmer = (store.snapshot().user && store.snapshot().user.displayName) || '家人';
+      const completedRounds = this.data.completedRounds.map((fragment) => (
+        fragment.recordingId === recordingId
+          ? { ...fragment, transcript, pending: false, selected: true, confirmedBy: confirmer }
+          : fragment
+      ));
+      this.setData({
+        completedRounds, memoryFragments: completedRounds,
+        selectedFragmentCount: completedRounds.filter((fragment) => fragment.selected !== false).length,
+        editingFragmentId: '', editingFragmentText: '',
+      });
+      wx.showToast({ title: '碎片已更新', icon: 'success' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '修改失败', icon: 'none' });
+    }
+  },
+
+  async onConfirmSavedFragment(e) {
+    const recordingId = e.currentTarget.dataset.id;
+    const item = this.data.completedRounds.find((fragment) => fragment.recordingId === recordingId);
+    if (!item || !item.transcript) return;
+    try {
+      await api.updateMemoryFragment(recordingId, { transcript: item.transcript });
+      const name = (store.snapshot().user && store.snapshot().user.displayName) || '家人';
+      const completedRounds = this.data.completedRounds.map((fragment) => (
+        fragment.recordingId === recordingId
+          ? { ...fragment, pending: false, selected: true, confirmedBy: name }
+          : fragment
+      ));
+      this.setData({
+        completedRounds, memoryFragments: completedRounds,
+        selectedFragmentCount: completedRounds.filter((fragment) => fragment.selected !== false).length,
+      });
+      wx.showToast({ title: '文字已确认', icon: 'success' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '确认失败', icon: 'none' });
+    }
+  },
+
+  async moveFragmentOrder(recordingId, offset) {
+    const list = [...this.data.completedRounds];
+    const index = list.findIndex((item) => item.recordingId === recordingId);
+    const target = index + offset;
+    if (index < 0 || target < 0 || target >= list.length) return;
+    [list[index], list[target]] = [list[target], list[index]];
+    const completedRounds = list.map((item, roundIndex) => ({ ...item, roundNumber: roundIndex + 1 }));
+    this.setData({ completedRounds, memoryFragments: completedRounds });
+    try {
+      await api.reorderMemoryFragments(completedRounds.map((item) => item.recordingId));
+    } catch (err) {
+      wx.showToast({ title: err.message || '排序保存失败', icon: 'none' });
+      await this.loadPersistedFragments(this.data.topicId);
+    }
+  },
+
+  onFragmentUp(e) { this.moveFragmentOrder(e.currentTarget.dataset.id, -1); },
+  onFragmentDown(e) { this.moveFragmentOrder(e.currentTarget.dataset.id, 1); },
+
+  onMoveFragment(e) {
+    const recordingId = e.currentTarget.dataset.id;
+    const topics = [
+      { id: 'hometown', label: '我的家乡' }, { id: 'school', label: '上学的日子' },
+      { id: 'work', label: '工作与手艺' }, { id: 'family', label: '爱情与家庭' },
+    ].filter((item) => item.id !== this.data.topicId);
+    wx.showActionSheet({
+      itemList: topics.map((item) => item.label),
+      success: async ({ tapIndex }) => {
+        try {
+          await api.updateMemoryFragment(recordingId, { topicId: topics[tapIndex].id });
+          const completedRounds = this.data.completedRounds.filter((item) => item.recordingId !== recordingId);
+          this.setData({
+            completedRounds, memoryFragments: completedRounds,
+            selectedFragmentCount: completedRounds.filter((item) => item.selected !== false).length,
+          });
+          wx.showToast({ title: '碎片已移动', icon: 'success' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '移动失败', icon: 'none' });
+        }
+      },
+    });
+  },
+
+  onDeleteFragment(e) {
+    const recordingId = e.currentTarget.dataset.id;
+    wx.showModal({
+      title: '删除这段记忆碎片？', content: '对应原声也会从本机删除。',
+      confirmText: '删除', confirmColor: '#C98362',
+      success: async ({ confirm }) => {
+        if (!confirm) return;
+        try {
+          await api.deleteMemoryFragment(recordingId);
+          const completedRounds = this.data.completedRounds.filter((item) => item.recordingId !== recordingId);
+          this.setData({
+            completedRounds, memoryFragments: completedRounds,
+            selectedFragmentCount: completedRounds.filter((item) => item.selected !== false).length,
+          });
+          wx.showToast({ title: '碎片已删除', icon: 'success' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+        }
+      },
+    });
   },
 
   createRecorder() {
@@ -508,19 +662,6 @@ Page({
     wx.showToast({ title: '已确认本轮文字', icon: 'success' });
   },
 
-  ensureDemoTranscript() {
-    if (this.data.transcriptDraft.trim()) return;
-    const samples = DEMO_TRANSCRIPTS[this.data.topicId] || DEMO_TRANSCRIPTS.hometown;
-    const sample = samples[Math.min(this.data.roundNumber - 1, samples.length - 1)];
-    this.setData({
-      transcriptDraft: sample,
-      transcriptSimulated: true,
-      transcriptNeedsConfirmation: false,
-      transcriptEditing: false,
-      fragmentReady: false,
-    });
-  },
-
   onWritingStyleChange(e) {
     if (this.data.uploading) return;
     const writingStyle = e.currentTarget.dataset.id;
@@ -568,7 +709,12 @@ Page({
 
   onPickTopic() {
     // 主题页不是 tabBar 页面，需要保留返回录音页的导航栈。
-    wx.navigateTo({ url: '/pages/topic/index' });
+    if (this.data.topicNavigating) return;
+    this.setData({ topicNavigating: true });
+    wx.navigateTo({
+      url: '/pages/topic/index',
+      fail: () => this.setData({ topicNavigating: false }),
+    });
   },
 
   /** 后端不可用时把临时录音转为持久文件，保证切页后仍可回听。 */
@@ -660,9 +806,21 @@ Page({
 
   async pollTranscription(recordingId) {
     const maxAttempts = 60;
+    let transientErrors = 0;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       if (!this.pageAlive) throw new Error('页面已关闭');
-      const result = await api.getTranscription(recordingId);
+      let result;
+      try {
+        result = await api.getTranscription(recordingId);
+        transientErrors = 0;
+      } catch (err) {
+        // 腾讯云任务已经提交后，电脑网络短暂抖动不应立即判定整段转写失败。
+        // 保留任务并自动重试；连续失败才交给用户处理。
+        transientErrors += 1;
+        if (transientErrors >= 4) throw err;
+        await this.wait(1500);
+        continue;
+      }
       if (result.status === 'success') return result;
       if (result.status === 'failed') throw new Error(result.error || '语音识别失败');
       await this.wait(attempt < 8 ? 1000 : 1800);
@@ -697,10 +855,31 @@ Page({
         this.finalizedRound = finalized;
         this.setData({ roundFinalized: true });
       }
-      await api.startTranscription(finalized.recording.assetId);
+      // 创建云端任务时允许两次短暂网络重试。录音已经保存在本机后端，
+      // 重试只会重新提交同一段原声，不会要求讲述者重新录制。
+      let startError = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          await api.startTranscription(finalized.recording.assetId);
+          startError = null;
+          break;
+        } catch (err) {
+          startError = err;
+          const message = (err && err.message) || '';
+          const retryable = /无法连接腾讯云|请求过于频繁|网络.*重试/i.test(message);
+          if (!retryable || attempt === 2) break;
+          this.setData({ statusText: `腾讯云连接波动，正在重试（${attempt + 1}/2）…` });
+          await this.wait(1200 * (attempt + 1));
+        }
+      }
+      if (startError) throw startError;
       const result = await this.pollTranscription(finalized.recording.assetId);
       this.setData({
-        transcriptDraft: result.transcript || '',
+        asrRawText: result.asrRawText || result.transcript || '',
+        agentCleanText: result.agentCleanText || '',
+        transcriptDraft: result.agentCleanText || result.asrRawText || result.transcript || '',
+        transcriptUncertainties: result.uncertainties || [],
+        cleanProvider: result.cleanProvider || '',
         transcriptSimulated: false,
         transcriptNeedsConfirmation: true,
         transcriptEditing: false,
@@ -715,6 +894,7 @@ Page({
       if (!this.pageAlive) return;
       const errorMessage = (err && err.message) || '请检查网络和腾讯云配置，也可以先手动填写口述文字。';
       const needsRerecord = /没有采集到麦克风声音|没有识别到清晰的人声|没有可识别的声音/.test(errorMessage);
+      const cloudOffline = /无法连接腾讯云|腾讯云.*网络|请求过于频繁/i.test(errorMessage);
       const backendOffline = /网络|后端暂不可用|后端响应|连接|timeout|fail|OFFLINE_DEVICE|BACKEND_COOLDOWN/i.test(errorMessage)
         && !/腾讯云/.test(errorMessage);
       if (needsRerecord) {
@@ -743,6 +923,8 @@ Page({
             }
           : backendOffline
             ? { statusText: '手机未连接到电脑转写服务' }
+            : cloudOffline
+              ? { statusText: '电脑暂时无法连接腾讯云，可直接重试' }
             : { statusText: '自动转写未完成，可重试或手动填写' }),
       });
       if (needsRerecord) {
@@ -766,14 +948,20 @@ Page({
         });
         return;
       }
+      if (cloudOffline) {
+        wx.showModal({
+          title: '腾讯云连接失败',
+          content: '录音已经安全保存在电脑中，不需要重新录制。请确认电脑可以联网且后端正在运行，然后点击“将这段录音转成文字”直接重试。',
+          showCancel: false,
+          confirmText: '知道了',
+        });
+        return;
+      }
       wx.showModal({
         title: '自动转写未完成',
-        content: errorMessage,
-        confirmText: '填入演示文字',
-        cancelText: '我来手动填写',
-        success: ({ confirm }) => {
-          if (confirm) this.ensureDemoTranscript();
-        },
+        content: `${errorMessage}\n\n录音已保留。你可以重新转写，或直接在文字框中人工填写。`,
+        showCancel: false,
+        confirmText: '知道了',
       });
     }
   },
@@ -837,7 +1025,7 @@ Page({
           durationMs: payload.durationMs,
         });
       }
-      await api.confirmMemoryFragment(recording.assetId, transcript);
+      const savedFragment = await api.confirmMemoryFragment(recording.assetId, transcript);
       view = await api.answerInterview({
         sessionId: this.data.sessionId,
         answer: transcript,
@@ -858,6 +1046,8 @@ Page({
           transcript,
           durationMs: payload.durationMs,
           audioPath: recording.audioUrl,
+          narratorUserId: savedFragment.narratorUserId || recording.narratorUserId || '',
+          narratorName: savedFragment.narratorName || recording.narratorName || '讲述者',
           speakerLabel: '长辈',
           savedAt,
           timeLabel: (confirmedFragment && confirmedFragment.timeLabel) || fragmentTime(savedAt),
@@ -910,6 +1100,7 @@ Page({
       console.warn('[record] 智能体流程不可用，使用本地采访', err && err.message);
       localAudioPath = await this.saveLocalRecording(payload.tempFilePath);
       const savedAt = (confirmedFragment && confirmedFragment.savedAt) || Date.now();
+      const currentUser = store.snapshot().user;
       const completedRounds = [
         ...this.data.completedRounds,
         {
@@ -919,6 +1110,8 @@ Page({
           transcript,
           durationMs: payload.durationMs,
           audioPath: localAudioPath,
+          narratorUserId: (currentUser && currentUser.id) || '',
+          narratorName: (currentUser && currentUser.displayName) || '讲述者',
           speakerLabel: '长辈',
           savedAt,
           timeLabel: (confirmedFragment && confirmedFragment.timeLabel) || fragmentTime(savedAt),
@@ -1112,11 +1305,9 @@ Page({
     try {
       await this.showGenerationStep(0, 260);
       await this.showGenerationStep(1, 320);
-      const user = store.snapshot().user;
       const draft = await api.generateStoryFromFragments({
         recordingIds: selected.map((item) => item.recordingId),
         topicId: this.data.topicId,
-        subjectName: (user && user.displayName) || '讲述者',
         style: this.data.writingStyle,
       });
       await this.showGenerationStep(2, 420);

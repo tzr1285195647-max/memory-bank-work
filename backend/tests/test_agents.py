@@ -136,6 +136,23 @@ def test_answers_survive_multiple_resumes(runtime):
     assert any("第三轮" in a for a in answers)
 
 
+def test_checkpoint_survives_runtime_restart(tmp_path):
+    checkpoint = tmp_path / "restart-checkpoints.sqlite3"
+    first = AgentRuntime(checkpoint)
+    start(first, "restart-1", max_rounds=4)
+    first.resume("restart-1", {"answer": "那年秋天，我在村里的学校第一次上学。"})
+    before = first.view("restart-1")
+    first.close()
+    second = AgentRuntime(checkpoint)
+    try:
+        after = second.view("restart-1")
+        assert after["turns"] == before["turns"]
+        assert after["claims"] == before["claims"]
+        assert after["stage"] == "interview"
+    finally:
+        second.close()
+
+
 # --------------------------------------------------------------- 写作与审计
 
 

@@ -47,6 +47,14 @@
       <text wx:elif="{{transcriptNeedsConfirmation}}" class="record__transcript-badge record__transcript-badge--cloud">云端转写</text>
     </view>
     <text class="record__transcript-hint">{{transcriptSimulated ? '已自动填入本地演示转写。它不代表真实原声，请按刚才的讲述校对。' : (transcriptNeedsConfirmation ? '腾讯云已完成识别。请检查人名、地名和年代，再确认文字与原声一致。' : (fragmentReady ? '本轮文字已确认，请点击下方按钮保存到记忆碎片。' : (asrAvailable && !transcriptDraft ? '可先将录音转成文字，也可以直接手动填写。' : '请确认文字与刚才的原声一致。')))}}</text>
+    <view wx:if="{{asrRawText}}" class="record__text-version">
+      <text class="record__text-version-label">腾讯云原始转写（只读保留）</text>
+      <text class="record__text-version-body">{{asrRawText}}</text>
+    </view>
+    <view wx:if="{{agentCleanText}}" class="record__text-version record__text-version--agent">
+      <text class="record__text-version-label">Agent 校对建议 · 可继续修改</text>
+      <text wx:if="{{transcriptUncertainties.length}}" class="record__uncertainty">有 {{transcriptUncertainties.length}} 处人名、地名或年代需要你确认</text>
+    </view>
     <view
       wx:if="{{!transcriptDraft}}"
       class="record__transcribe {{transcribing ? 'record__transcribe--disabled' : ''}}"
@@ -129,9 +137,27 @@
           <text>{{item.selected ? '✓' : ''}}</text>
         </view>
         <view class="record__fragment-main">
+          <text class="record__fragment-origin">{{item.narratorName || '讲述者'}}的记忆</text>
           <text class="record__fragment-text">{{item.transcript}}</text>
           <view class="record__fragment-meta">
             <text class="record__fragment-time">{{item.timeLabel}}</text>
+            <text wx:if="{{item.pending}}" class="record__fragment-pending">待家人校对</text>
+            <text wx:elif="{{item.confirmedBy}}" class="record__fragment-confirmed">{{item.confirmedBy}} 已确认</text>
+          </view>
+          <view class="record__fragment-actions">
+            <text data-id="{{item.recordingId}}" catchtap="onEditFragment">编辑</text>
+            <text wx:if="{{item.pending}}" class="record__fragment-confirm" data-id="{{item.recordingId}}" catchtap="onConfirmSavedFragment">确认文字</text>
+            <text data-id="{{item.recordingId}}" catchtap="onFragmentUp">上移</text>
+            <text data-id="{{item.recordingId}}" catchtap="onFragmentDown">下移</text>
+            <text data-id="{{item.recordingId}}" catchtap="onMoveFragment">移动</text>
+            <text class="record__fragment-delete" data-id="{{item.recordingId}}" catchtap="onDeleteFragment">删除</text>
+          </view>
+          <view wx:if="{{editingFragmentId === item.recordingId}}" class="record__fragment-editor" catchtap="noop">
+            <textarea class="record__fragment-editor-input" value="{{editingFragmentText}}" maxlength="6000" auto-height="{{true}}" bindinput="onFragmentEditInput" />
+            <view class="record__fragment-editor-actions">
+              <text bindtap="onCancelFragmentEdit">取消</text>
+              <text class="record__fragment-editor-save" bindtap="onSaveFragmentEdit">保存文字</text>
+            </view>
           </view>
         </view>
       </view>

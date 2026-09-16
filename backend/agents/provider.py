@@ -62,6 +62,10 @@ class AgentProvider(Protocol):
 
     name: str
 
+    def clean_transcript(self, *, asr_raw_text: str, narrator_name: str, topic: str) -> dict[str, Any]:
+        """口述校对：保留原始事实，只返回可供用户修改和确认的建议。"""
+        ...
+
     def choose_question(
         self,
         *,

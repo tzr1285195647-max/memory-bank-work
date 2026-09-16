@@ -15,8 +15,11 @@ Component({
 
   methods: {
     onTap() {
-      if (this.data.disabled || this.data.loading) return;
+      if (this.data.disabled || this.data.loading || this._tapLocked) return;
+      // 真机上一次触摸偶尔会连续派发 tap；短锁避免重复提交和重复入栈。
+      this._tapLocked = true;
       this.triggerEvent('tap');
+      setTimeout(() => { this._tapLocked = false; }, 500);
     },
   },
 });

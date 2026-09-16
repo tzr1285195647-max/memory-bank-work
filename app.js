@@ -25,11 +25,11 @@ App({
 
   onLaunch() {
     store.restore();
+    // 本机演示每次冷启动都重新登录，避免四个账号切换时串用身份。
+    store.clearSession();
     // 字体加载失败不影响启动，仅是观感降级
     font.loadSerifFont();
   },
 
-  onShow() {
-    // 预留：从后台回前台时检查登录态有效性
-  },
+  onShow() {},
 });

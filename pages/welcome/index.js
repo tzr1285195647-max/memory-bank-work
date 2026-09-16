@@ -18,7 +18,7 @@ Page({
     if (snapshot.token && snapshot.role) {
       this.setData({ navigating: true });
       wx.reLaunch({
-        url: snapshot.role === 'family' ? '/pages/family/index' : '/pages/home/index',
+        url: '/pages/home/index',
         fail: () => this.setData({ navigating: false }),
       });
       return;

@@ -15,12 +15,24 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from typing import Any
 
 import httpx
+from pydantic import ValidationError
 
 from ..config import settings
 from .mock import MockAgentProvider
+from .schemas import (
+    AuditFindingModel,
+    AuditResultModel,
+    ConflictGroupModel,
+    ConflictResultModel,
+    DraftResultModel,
+    ExtractResultModel,
+    QuestionDecisionModel,
+    TranscriptCleanResult,
+)
 from .state import ELEMENT_LABELS, ELEMENT_PRIORITY, SEVEN_ELEMENTS
 
 LOGGER = logging.getLogger("memory_bank.agents.llm")
@@ -122,6 +134,7 @@ class LLMAgentProvider(MockAgentProvider):
         self.last_missing_fields: dict[str, int] = {}
         # 服务端是否支持严格 JSON Schema（None = 未探测过）
         self._strict_schema_supported: bool | None = None
+        self.last_attempts = 0
         if not self.api_key:
             raise LLMUnavailableError("未配置 LLM_API_KEY")
 
@@ -152,6 +165,7 @@ class LLMAgentProvider(MockAgentProvider):
         self.last_http_status: int | None = None
         self.last_error_detail: str = ""
         for attempt in range(settings.llm_max_retries + 1):
+            self.last_attempts = attempt + 1
             # 每轮重新决定 response_format：上一轮可能刚探测出服务端不支持严格 schema
             strict = bool(schema) and self._strict_schema_supported is not False
             if strict:
@@ -210,6 +224,25 @@ class LLMAgentProvider(MockAgentProvider):
                 )
         raise LLMUnavailableError(f"模型调用失败：{type(last_error).__name__}（{self.last_error_detail[:120]}）")
 
+    # ------------------------------------------------------------ 口述校对
+
+    def clean_transcript(self, *, asr_raw_text: str, narrator_name: str, topic: str) -> dict[str, Any]:
+        prompt = (
+            f"请校对{narrator_name}关于《{topic}》的 ASR 原始转写。\n"
+            "只允许修正明显错别字/常见同音字，删除呃、嗯、那个等无意义语气词，减少重复连接词，补标点和分段。\n"
+            "必须保留方言、人物称呼、年代及所有原有事实；不确定的人名、地名、年代只标记，不要擅自改写；严禁新增事实。\n"
+            f"原始转写：\n{asr_raw_text}\n\n"
+            '输出：{"cleanText":"...","changes":[{"type":"delete_filler|correct_typo|reduce_repetition|punctuate|paragraph","before":"","after":"","reason":""}],"uncertainties":[{"text":"","reason":""}]}'
+        )
+        schema = TranscriptCleanResult.model_json_schema()
+        data = self._chat(user_prompt=prompt, max_tokens=1800, schema=schema)
+        result = TranscriptCleanResult.model_validate(data)
+        cleaned = result.cleanText.strip()
+        # 校对结果不得凭空引入大量新信息；硬闸门采用字符集合与长度上限，精确事实仍由用户确认。
+        if len(cleaned) > max(len(asr_raw_text) * 1.35, len(asr_raw_text) + 24):
+            raise LLMUnavailableError("校对结果长度异常，可能新增事实")
+        return result.model_dump()
+
     # ------------------------------------------------------------ 采访导演
 
     def choose_question(
@@ -242,7 +275,7 @@ class LLMAgentProvider(MockAgentProvider):
             f"仍然缺失的要素：{json.dumps(missing_labels, ensure_ascii=False)}\n\n"
             "请生成至多一个温和的追问，只针对仍缺失的要素，不要重复已问过的问题，"
             "不要暗示不存在的事实。若认为已经没有必要继续，把 question 设为 null。\n"
-            '输出格式：{"question": "...", "target_element": "time|place|people|event|result|impact|feeling|null"}'
+            '输出格式：{"question":"...","target_element":"time|place|people|event|result|impact|feeling|null","complete":false,"complete_reason":null}'
         )
         data = self._chat(
             user_prompt=prompt,
@@ -255,14 +288,19 @@ class LLMAgentProvider(MockAgentProvider):
                         "type": ["string", "null"],
                         "enum": [*SEVEN_ELEMENTS, None],
                     },
+                    "complete": {"type": "boolean"},
+                    "complete_reason": {"type": ["string", "null"]},
                 },
-                "required": ["question", "target_element"],
+                "required": ["question", "target_element", "complete", "complete_reason"],
                 "additionalProperties": False,
             },
         )
 
         question = data.get("question")
         target = data.get("target_element")
+        if data.get("complete"):
+            return {"should_stop": False, "question": None, "target_element": None,
+                    "complete": True, "complete_reason": data.get("complete_reason") or "材料已经足够生成故事"}
         if target is not None and target not in SEVEN_ELEMENTS:
             target = None
         if isinstance(question, str) and question.strip():
@@ -275,8 +313,10 @@ class LLMAgentProvider(MockAgentProvider):
                 "question": question.strip(),
                 "target_element": target,
                 "closing": None,
+                "complete": False,
             }
-        return {"should_stop": False, "stop_reason": None, "question": None, "target_element": None, "closing": None}
+        return {"should_stop": False, "stop_reason": None, "question": None, "target_element": None,
+                "closing": None, "complete": True, "complete_reason": "没有需要继续追问的要素"}
 
     @staticmethod
     def _stop_patterns() -> tuple[str, ...]:
@@ -369,10 +409,11 @@ class LLMAgentProvider(MockAgentProvider):
             )
 
         covered = {claim["element"] for claim in claims}
-        return {
+        validated = ExtractResultModel.model_validate({
             "claims": claims,
             "missing_fields": [element for element in SEVEN_ELEMENTS if element not in covered],
-        }
+        })
+        return validated.model_dump()
 
     # --------------------------------------------------------------- 写作
 
@@ -455,7 +496,53 @@ class LLMAgentProvider(MockAgentProvider):
             )
         if not sentences:
             raise LLMUnavailableError("模型输出的句子全部不合规")
-        return {"title": str(data.get("title") or f"《{topic}》"), "sentences": sentences}
+        validated = DraftResultModel.model_validate(
+            {"title": str(data.get("title") or f"《{topic}》"), "sentences": sentences}
+        )
+        return validated.model_dump()
+
+    # --------------------------------------------------------------- 事实审计
+
+    def audit_draft(self, *, sentences: list[dict[str, Any]], claims: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """模型逐句审计，再与确定性审计取并集；模型不能放宽本地硬规则。"""
+        prompt = (
+            "逐句审计故事。检查新增人物、地点、时间、动作、结果、感受、关系变化、讲述者混淆、"
+            "模糊年份具体化和未解决冲突。每句只能引用给定 claim。\n"
+            f"句子：{json.dumps(sentences, ensure_ascii=False)}\n"
+            f"证据：{json.dumps(claims, ensure_ascii=False)}\n"
+            '输出 {"findings":[],"conflicts":[],"suggestions":[],"passed":true}。'
+        )
+        data = self._chat(user_prompt=prompt, max_tokens=1800, schema=AuditResultModel.model_json_schema())
+        model_result = AuditResultModel.model_validate(data)
+        local = super().audit_draft(sentences=sentences, claims=claims)
+        merged: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        for item in [*local, *[entry.model_dump() for entry in model_result.findings if entry.status != "passed"]]:
+            normalized = dict(item)
+            normalized.setdefault("status", "unsupported" if normalized.get("kind") in {"unsupported", "invalid_citation", "quote_mismatch"} else "needs_confirmation")
+            key = (str(normalized.get("sentence_id")), str(normalized.get("kind")))
+            if key not in seen:
+                seen.add(key)
+                merged.append(normalized)
+        return merged
+
+    def resolve_conflicts(self, *, claims: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if len(claims) < 2:
+            return []
+        prompt = (
+            "识别证据中明确互相矛盾的时间、人物或事件。只能并列冲突，不判断谁对。\n"
+            f"证据：{json.dumps(claims, ensure_ascii=False)}\n"
+            '输出 {"conflicts":[{"element":"time","quote_a":"","turn_a":"","quote_b":"","turn_b":"","note":""}]}。'
+        )
+        data = self._chat(user_prompt=prompt, max_tokens=1000, schema=ConflictResultModel.model_json_schema())
+        result = ConflictResultModel.model_validate(data)
+        valid_turns = {str(item.get("turn_id")) for item in claims}
+        valid_quotes = {str(item.get("quote")) for item in claims}
+        return [
+            item.model_dump() for item in result.conflicts
+            if item.turn_a in valid_turns and item.turn_b in valid_turns
+            and item.quote_a in valid_quotes and item.quote_b in valid_quotes
+        ]
 
 
 class FallbackAgentProvider:
@@ -472,15 +559,62 @@ class FallbackAgentProvider:
         self.fallback = fallback or MockAgentProvider()
         self.fallback_count = 0
         self.last_error: str | None = None
+        self.call_records: list[dict[str, Any]] = []
 
     def _call(self, method: str, **kwargs: Any) -> Any:
+        started = time.perf_counter()
+        fallback_used = False
+        error: str | None = None
         try:
-            return getattr(self.primary, method)(**kwargs)
-        except LLMUnavailableError as exc:
+            result = getattr(self.primary, method)(**kwargs)
+        except (LLMUnavailableError, ValidationError, ValueError, TypeError) as exc:
             self.fallback_count += 1
             self.last_error = str(exc)
+            fallback_used = True
+            error = str(exc)
             LOGGER.warning("模型不可用，回落到确定性实现 method=%s reason=%s", method, exc)
-            return getattr(self.fallback, method)(**kwargs)
+            result = getattr(self.fallback, method)(**kwargs)
+        result = self._validate_output(method, result)
+        self.call_records.append({
+            "agent": method,
+            "model": self.primary.model,
+            "prompt_version": "p0-v1",
+            "duration_ms": int((time.perf_counter() - started) * 1000),
+            "retry_count": max(0, int(getattr(self.primary, "last_attempts", 1)) - 1),
+            "fallback_used": fallback_used,
+            "error": error,
+        })
+        return result
+
+    @staticmethod
+    def _validate_output(method: str, result: Any) -> Any:
+        if method == "clean_transcript":
+            return TranscriptCleanResult.model_validate(result).model_dump()
+        if method == "choose_question":
+            return QuestionDecisionModel.model_validate(result).model_dump()
+        if method == "extract_claims":
+            return ExtractResultModel.model_validate(result).model_dump()
+        if method == "compose_draft":
+            return DraftResultModel.model_validate(result).model_dump()
+        if method == "resolve_conflicts":
+            return [ConflictGroupModel.model_validate(item).model_dump() for item in result]
+        if method == "audit_draft":
+            output = []
+            for item in result:
+                normalized = dict(item)
+                normalized.setdefault("status", "unsupported" if normalized.get("kind") in {"unsupported", "invalid_citation", "quote_mismatch"} else "needs_confirmation")
+                normalized.setdefault("claim_ids", [])
+                normalized.setdefault("fragment_ids", [])
+                output.append(AuditFindingModel.model_validate(normalized).model_dump())
+            return output
+        return result
+
+    def consume_call_records(self) -> list[dict[str, Any]]:
+        records, self.call_records = self.call_records, []
+        return records
+
+    def clean_transcript(self, **kwargs: Any) -> dict[str, Any]:
+        return self._call("clean_transcript", **kwargs)
 
     def choose_question(self, **kwargs: Any) -> dict[str, Any]:
         return self._call("choose_question", **kwargs)
@@ -492,8 +626,7 @@ class FallbackAgentProvider:
         return self._call("compose_draft", **kwargs)
 
     def audit_draft(self, **kwargs: Any) -> list[dict[str, Any]]:
-        # 审计始终用确定性实现：审计规则必须是可解释、可复现的，不能交给模型自证
-        return self.fallback.audit_draft(**kwargs)
+        return self._call("audit_draft", **kwargs)
 
     def resolve_conflicts(self, **kwargs: Any) -> list[dict[str, Any]]:
         return self._call("resolve_conflicts", **kwargs)

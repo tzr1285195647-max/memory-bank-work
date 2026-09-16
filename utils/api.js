@@ -122,24 +122,68 @@ module.exports = {
   },
 
   login({ phone, password, role }) {
-    return withFallback(
-      () => request({
-        path: '/api/auth/login',
-        method: 'POST',
-        data: { phone, password, role },
-        auth: false,
-      }),
-      () => ({
-        token: 'local-device-demo',
-        familyId: 'local-family',
-        consentVersion: 1,
-        user: {
-          id: 'local',
-          displayName: role === 'family' ? '家人' : '林阿姨',
-          phoneMasked: phone ? `${phone.slice(0, 3)}****${phone.slice(-4)}` : '',
-        },
-      })
-    );
+    return request({
+      path: '/api/auth/login', method: 'POST', data: { phone, password, role },
+      auth: false, timeout: 5000,
+    });
+  },
+
+  register({ phone, password, displayName, role, gender, age }) {
+    return request({
+      path: '/api/auth/register', method: 'POST',
+      data: { phone, password, displayName, role, gender, age },
+      auth: false, timeout: 5000,
+    });
+  },
+
+  updateProfile(displayName) {
+    return request({ path: '/api/me', method: 'PATCH', data: { displayName } });
+  },
+
+  getFamilyMembers() {
+    return request({ path: '/api/family/members' });
+  },
+
+  inviteFamilyMember({ phone, role }) {
+    return request({
+      path: '/api/family/invitations', method: 'POST', data: { phone, role },
+    });
+  },
+
+  updateFamilyMember(memberId, patch) {
+    return request({
+      path: `/api/family/members/${memberId}`, method: 'PATCH', data: patch,
+    });
+  },
+
+  deleteFamilyMember(memberId) {
+    return request({ path: `/api/family/members/${memberId}`, method: 'DELETE' });
+  },
+
+  getMemoryFragments(topicId = '') {
+    const suffix = topicId ? `?topicId=${encodeURIComponent(topicId)}` : '';
+    return request({ path: `/api/fragments${suffix}` }).then((items) => (items || []).map((item) => ({
+      ...item, audioUrl: absoluteUrl(item.audioUrl),
+    })));
+  },
+
+  updateMemoryFragment(recordingId, patch) {
+    return request({
+      path: `/api/fragments/${recordingId}`, method: 'PATCH',
+      data: { ...patch, consentVersion: store.snapshot().consentVersion || 1 },
+    });
+  },
+
+  reorderMemoryFragments(recordingIds) {
+    return request({
+      path: '/api/fragments/reorder', method: 'PUT',
+      data: { recordingIds, consentVersion: store.snapshot().consentVersion || 1 },
+    });
+  },
+
+  deleteMemoryFragment(recordingId) {
+    const consent = store.snapshot().consentVersion || 1;
+    return request({ path: `/api/fragments/${recordingId}?consentVersion=${consent}`, method: 'DELETE' });
   },
 
   getTopics() {
@@ -239,6 +283,11 @@ module.exports = {
       method: 'POST',
       data: { consentVersion },
     });
+  },
+
+  deleteStory(storyId) {
+    const consent = store.snapshot().consentVersion || 1;
+    return request({ path: `/api/stories/${storyId}?consentVersion=${consent}`, method: 'DELETE' });
   },
 
   getFamily() {
@@ -412,14 +461,13 @@ module.exports = {
   },
 
   /** 只用用户勾选的多段记忆碎片生成故事。 */
-  generateStoryFromFragments({ recordingIds, topicId, subjectName = '讲述者', style = 'natural' }) {
+  generateStoryFromFragments({ recordingIds, topicId, style = 'natural' }) {
     return request({
       path: '/api/agent/fragments/generate',
       method: 'POST',
       data: {
         recordingIds,
         topicId,
-        subjectName,
         style,
         consentVersion: store.snapshot().consentVersion || 1,
       },

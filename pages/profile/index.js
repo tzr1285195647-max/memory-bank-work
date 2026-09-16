@@ -15,8 +15,8 @@ Page({
     profile: FALLBACK_PROFILE,
     statsList: [],
     environment: {
-      title: '本机离线演示',
-      detail: 'LangGraph · 确定性 Agent · 无需公网',
+      title: '本机数据演示',
+      detail: 'LangGraph · 本机数据库 · 云接口按配置调用',
       online: false,
     },
     checking: false,
@@ -36,9 +36,9 @@ Page({
         profile,
         statsList: this.toStats(profile.stats),
         environment: {
-          title: isLocal ? '本机离线演示' : '外部模型模式',
+          title: isLocal ? '本机规则 Agent' : '真实模型 Agent',
           detail: isLocal
-            ? 'LangGraph · 确定性 Agent · 无需公网'
+            ? 'LangGraph · 本机数据库 · 云端转写按配置调用'
             : `${agent.model || 'LLM'} · 失败自动降级`,
           online: !isLocal,
         },
@@ -61,6 +61,31 @@ Page({
     wx.navigateTo({ url: '/pages/family-manage/index' });
   },
 
+  onEditNickname() {
+    wx.showModal({
+      title: '修改昵称', editable: true,
+      placeholderText: '请输入 2—20 个字',
+      content: this.data.profile.displayName || '',
+      success: async ({ confirm, content }) => {
+        if (!confirm) return;
+        const displayName = String(content || '').trim();
+        if (displayName.length < 2 || displayName.length > 20) {
+          wx.showToast({ title: '昵称需要 2—20 个字', icon: 'none' });
+          return;
+        }
+        try {
+          const profile = await api.updateProfile(displayName);
+          const snapshot = store.snapshot();
+          store.set({ user: { ...snapshot.user, displayName } });
+          this.setData({ profile, statsList: this.toStats(profile.stats) });
+          wx.showToast({ title: '昵称已修改', icon: 'success' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '修改失败', icon: 'none' });
+        }
+      },
+    });
+  },
+
   onFamilyBoard() {
     wx.navigateTo({ url: '/pages/family/index' });
   },
@@ -81,7 +106,7 @@ Page({
           '运行方式：手机纯离线模式',
           `主题数据：${topics.length} 项`,
           '录音保存：手机本地',
-          '公网依赖：无',
+          '业务数据：本机保存',
         ].join('\n'),
         showCancel: false,
       });
@@ -101,7 +126,7 @@ Page({
           `本机后端：${health.status === 'ok' ? '已连接' : '异常'}`,
           `主题数据：${topics.length} 项`,
           `采访 Agent：${localAgent ? '本机确定性模式' : agent.model || '外部模型'}`,
-          '公网依赖：无',
+          '业务数据：本机保存；云接口会主动访问厂商',
         ].join('\n'),
         showCancel: false,
       });

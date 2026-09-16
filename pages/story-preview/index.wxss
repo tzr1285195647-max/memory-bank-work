@@ -95,6 +95,20 @@
   margin-top: 0;
 }
 
+.preview__narrator,
+.preview__fragment-origin {
+  align-self: flex-start;
+  padding: 4px 9px;
+  border-radius: 11px;
+  background: var(--surface-clay);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.preview__narrator { margin-bottom: 10px; }
+.preview__fragment-origin { margin-bottom: 7px; }
+
 .preview__coordinate { margin-top: 20px; padding: 18px 20px; border-radius: 18px; background: var(--bg-card); }
 .preview__coordinate-head { display: flex; align-items: center; justify-content: space-between; }
 .preview__coordinate-title-wrap { display: flex; align-items: center; }

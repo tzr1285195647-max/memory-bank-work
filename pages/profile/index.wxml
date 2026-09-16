@@ -8,7 +8,7 @@
 
   <!-- 设计稿：342×108 白卡；头像 60 圆 -->
   <view class="profile__user">
-    <view class="profile__avatar">
+    <view class="profile__avatar profile__avatar--{{profile.avatarKey}}">
       <text class="profile__avatar-text">{{profile.avatarText}}</text>
     </view>
     <view class="profile__user-main">
@@ -23,7 +23,7 @@
       <text class="profile__environment-title">{{environment.title}}</text>
     </view>
     <text class="profile__environment-detail">{{environment.detail}}</text>
-    <text class="profile__environment-note">真实执行采访、证据抽取、写作审计和人工确认流程</text>
+    <text class="profile__environment-note">业务库留在电脑；腾讯转写和真实模型启用后会把必要内容发给对应厂商。</text>
     <view class="profile__environment-check" bindtap="onDemoCheck">
       <text>{{checking ? '正在检查…' : '一键演示自检'}}</text>
     </view>
@@ -42,6 +42,10 @@
   <text class="t-section profile__section">账户与家庭</text>
 
   <view class="profile__rows">
+    <view class="profile__row" hover-class="profile__row--hover" bindtap="onEditNickname">
+      <text class="profile__row-title">修改昵称</text>
+      <text class="profile__row-arrow">›</text>
+    </view>
     <view class="profile__row" hover-class="profile__row--hover" bindtap="onFamily">
       <text class="profile__row-title">家庭与协作</text>
       <text class="profile__row-arrow">›</text>

@@ -32,6 +32,7 @@ class Settings:
     host: str
     port: int
     project_root: Path = PROJECT_ROOT
+    allow_auto_register: bool = False
     # --- 智能体模式：默认 mock，现场演示不触发任何外网请求 ---
     agent_mode: str = "mock"
     # --- 大模型（仅 AGENT_MODE=llm 且配置密钥时启用）---
@@ -80,6 +81,7 @@ def load_settings() -> Settings:
         jwt_issuer=os.getenv("JWT_ISSUER", "memory-bank"),
         access_token_minutes=int(os.getenv("ACCESS_TOKEN_MINUTES", "720")),
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024))),
+        allow_auto_register=os.getenv("ALLOW_AUTO_REGISTER", "0") == "1",
         host=os.getenv("HOST", "127.0.0.1"),
         port=int(os.getenv("PORT", "8787")),
         agent_mode=os.getenv("AGENT_MODE", "mock").strip().lower(),

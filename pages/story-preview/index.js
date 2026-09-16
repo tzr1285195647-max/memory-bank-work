@@ -16,7 +16,7 @@ const ELEMENT_LABELS = {
 
 Page({
   data: {
-    draft: { title: '', durationMs: 0, mode: '自然整理' },
+    draft: { title: '', durationMs: 0, mode: '自然整理', claims: [], sentenceEvidence: [], missingFields: [], findings: [], conflicts: [] },
     body: '',
     editing: false,
     hasAudio: false,
@@ -30,6 +30,7 @@ Page({
     canReview: true,
     canOwnerReview: true,
     canEditCoordinate: true,
+    canEditStory: true,
     canContinue: false,
     role: 'elder',
     isFamily: false,
@@ -96,6 +97,8 @@ Page({
     const memoryFragments = fragmentSource
       .map((item, index) => ({
         roundNumber: item.roundNumber || (item.roundIndex || index) + 1,
+        narratorUserId: item.narratorUserId || draft.narratorUserId || '',
+        narratorName: item.narratorName || draft.narratorName || '讲述者',
         transcript: String(item.transcript || '').trim(),
         timeLabel: item.timeLabel || `第 ${index + 1} 段`,
       }))
@@ -127,10 +130,18 @@ Page({
       ...item,
       elementLabel: item.elementLabel || ELEMENT_LABELS[item.element] || item.element,
     }));
+    const claimsById = {};
+    claims.forEach((item) => { claimsById[item.id] = item; });
+    const sentenceEvidence = (draft.sentenceEvidence || []).map((sentence) => ({
+      ...sentence,
+      sources: (sentence.claim_ids || []).map((id) => claimsById[id]).filter(Boolean),
+      sourceCount: (sentence.claim_ids || []).length,
+    }));
     const canReview = draft.status !== 'confirmed';
-    const canOwnerReview = canReview && role === 'elder';
+    const canEditStory = role === 'elder';
+    const canOwnerReview = canReview && canEditStory;
     this.setData({
-      draft: { ...draft, claims, missingFields, findings: draft.findings || [], conflicts },
+      draft: { ...draft, claims, sentenceEvidence, missingFields, findings: draft.findings || [], conflicts },
       body: draft.body || '',
       originalBody: draft.body || '',
       hasAudio,
@@ -140,6 +151,7 @@ Page({
       canReview,
       canOwnerReview,
       canEditCoordinate: role === 'elder',
+      canEditStory,
       role,
       isFamily: role === 'family',
       canContinue: canOwnerReview && Boolean(draft.sessionId) && recordings.length < 6,
@@ -189,7 +201,7 @@ Page({
   },
 
   onEdit() {
-    if (!this.data.canOwnerReview || this.data.saving) return;
+    if (!this.data.canEditStory || this.data.saving) return;
     this.setData({ editing: true });
   },
 
@@ -275,7 +287,10 @@ Page({
         findings: audit.findings || [],
       };
       store.set({ currentDraft: nextDraft });
-      this.setData({ draft: nextDraft, editing: false, saving: false });
+      this.setData({
+        draft: nextDraft, editing: false, saving: false,
+        canReview: true, canOwnerReview: true,
+      });
       if (!audit.auditPassed) {
         wx.showModal({
           title: '发现缺少原声依据的内容',
@@ -372,6 +387,15 @@ Page({
   async onContinue() {
     const { draft } = this.data;
     if (this.data.saving) return;
+    if (/^fragments-/.test(draft.sessionId || '')) {
+      // 勾选碎片生成的故事没有可恢复的采访 checkpoint；回到录音页开启新的补充会话。
+      store.set({
+        currentTopic: draft.topicId || this.topicId,
+        recordEntry: { topicId: draft.topicId || this.topicId, resume: false, nonce: Date.now() },
+      });
+      wx.switchTab({ url: '/pages/record/index' });
+      return;
+    }
     if (!draft.sessionId) {
       wx.showToast({ title: '本地草稿暂不支持继续追问', icon: 'none' });
       return;
@@ -456,6 +480,28 @@ Page({
             content: err.message || '请稍后重试。',
             showCancel: false,
           });
+        }
+      },
+    });
+  },
+
+  onDeleteStory() {
+    if (!this.data.canEditStory || this.data.saving || !this.data.draft.id) return;
+    wx.showModal({
+      title: '删除这个故事？',
+      content: '故事、关联记录和未处理建议将被删除，此操作不可撤销。',
+      confirmText: '确认删除', confirmColor: '#C98362',
+      success: async ({ confirm }) => {
+        if (!confirm) return;
+        this.setData({ saving: true });
+        try {
+          await api.deleteStory(this.data.draft.id);
+          store.set({ currentDraft: null });
+          wx.showToast({ title: '故事已删除', icon: 'success' });
+          setTimeout(() => wx.reLaunch({ url: '/pages/stories/index' }), 600);
+        } catch (err) {
+          this.setData({ saving: false });
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
         }
       },
     });

@@ -14,6 +14,17 @@ Page({
     smsCountdown: 0,
     errorText: '',
     contentHeight: 620,
+    pageMode: 'login',
+    displayName: '',
+    gender: 'female',
+    age: '',
+    registerRole: 'elder',
+    demoAccounts: [
+      { name: '林奶奶', phone: '13800008899', role: '长辈' },
+      { name: '王爷爷', phone: '13900007788', role: '长辈' },
+      { name: '小刘', phone: '13700006677', role: '家属 · 管理员' },
+      { name: '小李', phone: '13600005566', role: '家属' },
+    ],
   },
 
   onFillDemo() {
@@ -21,9 +32,18 @@ Page({
     wx.showToast({ title: '已填入演示账号', icon: 'none' });
   },
 
+  onChooseDemo(e) {
+    const account = this.data.demoAccounts[Number(e.currentTarget.dataset.index)];
+    if (!account) return;
+    this.setData({ phone: account.phone, password: this.data.demoPassword, errorText: '' });
+  },
+
   onLoad(options) {
     // 从 02 身份选择带过来的身份；直接点「已有账户？登录」时不带
-    if (options.role) store.set({ role: options.role });
+    if (options.role) {
+      store.set({ role: options.role });
+      this.setData({ registerRole: options.role });
+    }
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
     const navHeight = (info.statusBarHeight || 20) + 92;
     this.setData({ contentHeight: Math.max(500, info.windowHeight - navHeight) });
@@ -37,6 +57,22 @@ Page({
     this.setData({ password: e.detail.value, errorText: '' });
   },
 
+  onNameInput(e) {
+    this.setData({ displayName: e.detail.value, errorText: '' });
+  },
+
+  onAgeInput(e) {
+    this.setData({ age: String(e.detail.value || '').replace(/\D/g, '').slice(0, 3), errorText: '' });
+  },
+
+  onGender(e) {
+    this.setData({ gender: e.currentTarget.dataset.gender, errorText: '' });
+  },
+
+  onRegisterRole(e) {
+    this.setData({ registerRole: e.currentTarget.dataset.role, errorText: '' });
+  },
+
   onCodeInput(e) {
     this.setData({ smsCode: e.detail.value, errorText: '' });
   },
@@ -46,7 +82,18 @@ Page({
       this.setData({ errorText: '请输入正确的 11 位手机号' });
       return false;
     }
-    if (this.data.loginMode === 'sms' && this.data.smsCode !== '246810') {
+    if (this.data.pageMode === 'register') {
+      if (this.data.displayName.trim().length < 2) {
+        this.setData({ errorText: '请输入至少 2 个字的昵称' });
+        return false;
+      }
+      const age = Number(this.data.age);
+      if (!age || age < 6 || age > 120) {
+        this.setData({ errorText: '请输入 6—120 岁之间的年龄' });
+        return false;
+      }
+    }
+    if (this.data.pageMode === 'login' && this.data.loginMode === 'sms' && this.data.smsCode !== '246810') {
       this.setData({ errorText: '请输入本机演示验证码 246810' });
       return false;
     }
@@ -63,41 +110,35 @@ Page({
     this.setData({ submitting: true });
 
     try {
-      const result = await api.login({
-        phone: this.data.phone,
-        password: this.data.loginMode === 'sms' ? '246810' : this.data.password,
-        role,
-      });
+      const result = this.data.pageMode === 'register'
+        ? await api.register({
+          phone: this.data.phone,
+          password: this.data.password,
+          displayName: this.data.displayName.trim(), role: this.data.registerRole,
+          gender: this.data.gender, age: Number(this.data.age),
+        })
+        : await api.login({
+          phone: this.data.phone,
+          password: this.data.loginMode === 'sms' ? '246810' : this.data.password,
+          role,
+        });
+      const actualRole = (result.user && result.user.role) || role;
       store.set({
-        role,
+        role: actualRole,
         token: result.token,
         familyId: result.familyId,
         consentVersion: result.consentVersion || 1,
         user: result.user,
       });
       this.setData({ submitting: false, useMock: false });
-      wx.reLaunch({ url: role === 'family' ? '/pages/family/index' : '/pages/home/index' });
+      wx.reLaunch({ url: '/pages/home/index' });
     } catch (err) {
-      // 后端未启动时不阻断演示：给出明确提示并降级为本地会话
       this.setData({ submitting: false });
       console.warn('[login] 后端登录失败', err);
       wx.showModal({
-        title: '后端未连接',
-        content: `${err.message || '请求失败'}\n\n是否先以本地演示模式进入？（数据不会保存到后端）`,
-        confirmText: '本地进入',
-        cancelText: '重试',
-        success: ({ confirm }) => {
-          if (!confirm) return;
-          store.set({
-            role,
-            token: '',
-            familyId: '',
-            consentVersion: 1,
-            user: { id: 'local', displayName: role === 'family' ? '家人' : '林阿姨', phoneMasked: '' },
-          });
-          this.setData({ useMock: true });
-          wx.reLaunch({ url: role === 'family' ? '/pages/family/index' : '/pages/home/index' });
-        },
+        title: this.data.pageMode === 'register' ? '注册失败' : '登录失败',
+        content: `${err.message || '请求失败'}\n\n请确认本机后端已经启动。`,
+        showCancel: false,
       });
     }
   },
@@ -132,7 +173,10 @@ Page({
   },
 
   onRegister() {
-    wx.showToast({ title: '首次登录会自动注册，直接登录即可', icon: 'none' });
+    this.setData({
+      pageMode: this.data.pageMode === 'register' ? 'login' : 'register',
+      loginMode: 'password', errorText: '', smsCode: '',
+    });
   },
 
   onUnload() {

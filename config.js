@@ -12,8 +12,8 @@ module.exports = {
   get baseUrl() {
     return this.isDeviceRuntime() ? this.deviceBaseUrl : this.devtoolsBaseUrl;
   },
-  /** 后端不可用时的表现：true=自动降级到 mock 数据，保证演示不中断 */
-  fallbackToMock: true,
+  /** 多账号演示必须使用同一本机数据库，禁止静默混入假数据。 */
+  fallbackToMock: false,
   /**
    * 真机无法访问电脑的 127.0.0.1。开启后，手机会直接使用本地演示数据，
    * 不再发起注定失败的网络请求；开发者工具仍连接本机后端。

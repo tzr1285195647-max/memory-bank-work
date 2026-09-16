@@ -4,9 +4,11 @@ const store = require('../../store/index');
 Page({
   data: {
     topics: [],
+    choosing: false,
   },
 
   onShow() {
+    this.setData({ choosing: false });
     this.load();
   },
 
@@ -19,11 +21,17 @@ Page({
   },
 
   onChoose(e) {
+    if (this.data.choosing) return;
     const topicId = e.currentTarget.dataset.id;
+    if (!topicId) return;
+    this.setData({ choosing: true });
     store.set({
       currentTopic: topicId,
       recordEntry: { topicId, resume: false, nonce: Date.now() },
     });
-    wx.switchTab({ url: '/pages/record/index' });
+    wx.switchTab({
+      url: '/pages/record/index',
+      fail: () => this.setData({ choosing: false }),
+    });
   },
 });
