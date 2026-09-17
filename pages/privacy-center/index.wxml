@@ -7,7 +7,7 @@
   </view>
 
   <view class="privacy__rules">
-    <view class="privacy__rule"><text class="privacy__rule-icon">声</text><view class="privacy__rule-main"><text class="privacy__rule-title">原声只为整理故事</text><text class="privacy__rule-text">本机演示不上传公网；放弃草稿或撤回授权时会删除。</text></view></view>
+    <view class="privacy__rule"><text class="privacy__rule-icon">声</text><view class="privacy__rule-main"><text class="privacy__rule-title">原声只为整理故事</text><text class="privacy__rule-text">录音与业务资料保存在本机；启用云端转写或智能整理时，必要内容会发送给对应服务商。放弃草稿或撤回授权时会删除本机内容。</text></view></view>
     <view class="privacy__rule"><text class="privacy__rule-icon">签</text><view class="privacy__rule-main"><text class="privacy__rule-title">AI 整理必须标明</text><text class="privacy__rule-text">没有长辈确认，任何草稿都不会进入故事书。</text></view></view>
     <view class="privacy__rule"><text class="privacy__rule-icon">家</text><view class="privacy__rule-main"><text class="privacy__rule-title">家人建议单独保存</text><text class="privacy__rule-text">家人不能直接改写或发布长辈的故事。</text></view></view>
   </view>

@@ -15,11 +15,11 @@ from typing import Any
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 
-from .graph import build_parent_graph
+from .graph import MIN_STORY_FRAGMENTS, TARGET_STORY_FRAGMENTS, build_parent_graph
 from .mock import MockAgentProvider
 from .provider import AgentProvider
 
-DEFAULT_MAX_ROUNDS = 3
+DEFAULT_MAX_ROUNDS = 10
 
 
 class SessionNotFoundError(LookupError):
@@ -75,7 +75,11 @@ class AgentRuntime:
         consent_version: int = 1,
         max_rounds: int = DEFAULT_MAX_ROUNDS,
         consent_ok: bool = True,
+        context_fragments: list[str] | None = None,
+        context_covered_elements: list[str] | None = None,
+        context_claims: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
+        known = set(context_covered_elements or [])
         initial: dict[str, Any] = {
             "session_id": session_id,
             "family_id": family_id,
@@ -85,19 +89,52 @@ class AgentRuntime:
             "consent_version": consent_version,
             "max_rounds": max_rounds,
             "consent_ok": consent_ok,
+            "entry_mode": "interview",
+            "writing_style": "raw",
+            "revision_count": 0,
             "stage": "interview",
             "round_index": 0,
             "no_new_fact_rounds": 0,
             "turns": [],
-            "claims": [],
-            "claim_ids": [],
-            "missing_fields": list(_seven_elements()),
+            "claims": list(context_claims or []),
+            "claim_ids": [str(item["id"]) for item in (context_claims or [])],
+            "missing_fields": [element for element in _seven_elements() if element not in known],
+            "context_fragments": list(context_fragments or []),
+            "context_claims": list(context_claims or []),
+            "context_covered_elements": sorted(known),
             "asked_questions": [],
             "agent_trace": [],
             "errors": [],
             "audit_findings": [],
             "duration_ms": 0,
             "recording_refs": [],
+        }
+        with self._lock:
+            self.graph.invoke(initial, self._config(session_id))
+            return self.view(session_id)
+
+    def start_selected_story(
+        self, *, session_id: str, family_id: str, actor_id: str,
+        subject_name: str, topic: str, consent_version: int,
+        claims: list[dict[str, Any]], recording_refs: list[dict[str, Any]],
+        style: str,
+    ) -> dict[str, Any]:
+        """勾选碎片也进入同一张可恢复的协作图，从已持久化证据开始。"""
+        if not claims:
+            raise ValueError("没有已确认的事实，不能生成故事")
+        initial: dict[str, Any] = {
+            "session_id": session_id, "family_id": family_id, "actor_id": actor_id,
+            "subject_name": subject_name, "topic": topic,
+            "consent_version": consent_version, "consent_ok": True,
+            "entry_mode": "selected_fragments", "writing_style": style,
+            "revision_count": 0, "round_index": 0, "max_rounds": 0,
+            "turns": [], "claims": claims,
+            "claim_ids": [str(item["id"]) for item in claims],
+            "context_fragments": [], "context_claims": claims,
+            "context_covered_elements": sorted({str(item.get("element")) for item in claims}),
+            "recording_refs": recording_refs, "asked_questions": [],
+            "agent_trace": [], "errors": [], "audit_findings": [],
+            "duration_ms": sum(int(item.get("duration_ms") or 0) for item in recording_refs),
         }
         with self._lock:
             self.graph.invoke(initial, self._config(session_id))
@@ -125,6 +162,7 @@ class AgentRuntime:
                 interrupts.append({"id": item.id, "value": item.value})
         return {
             "session_id": session_id,
+            "provider_name": self.provider_name,
             "stage": self._derive_stage(values, interrupts),
             "round_index": values.get("round_index", 0),
             "max_rounds": values.get("max_rounds", DEFAULT_MAX_ROUNDS),
@@ -134,14 +172,24 @@ class AgentRuntime:
             "turns": values.get("turns", []),
             "claims": values.get("claims", []),
             "missing_fields": values.get("missing_fields", []),
+            "context_fragment_count": len(values.get("context_fragments", [])),
+            "total_fragment_count": len(values.get("context_fragments", [])) + len(values.get("turns", [])),
+            "minimum_story_fragments": MIN_STORY_FRAGMENTS,
+            "target_story_fragments": TARGET_STORY_FRAGMENTS,
+            "context_covered_elements": values.get("context_covered_elements", []),
+            "complete": values.get("next_action") == "no_more_questions" and not snapshot.next,
+            "complete_reason": values.get("complete_reason"),
             "draft_text": values.get("draft_text", ""),
             "draft_sentences": values.get("draft_sentences", []),
             "audit_findings": values.get("audit_findings", []),
             "audit_passed": values.get("audit_passed", True),
+            "revision_count": values.get("revision_count", 0),
+            "entry_mode": values.get("entry_mode", "interview"),
             "conflicts": values.get("conflicts", []),
             "delivery": values.get("delivery"),
             "stop_requested": bool(values.get("stop_requested")),
             "stop_reason": values.get("stop_reason"),
+            "no_new_fact_rounds": values.get("no_new_fact_rounds", 0),
             "stopped": bool(values.get("stop_requested"))
             and not values.get("delivery"),
             "agent_trace": values.get("agent_trace", []),

@@ -25,9 +25,16 @@ assert.ok(recordWxml.includes('bind:tap="onGenerateStory"'));
 assert.ok(!recordWxml.includes('双人访谈'));
 assert.ok(!recordWxml.includes('讲述方式'));
 assert.ok(recordJs.includes("id: 'raw'"));
-assert.ok(recordJs.includes("id: 'natural'"));
+assert.ok(!recordJs.includes("id: 'natural'"), '生成入口不再提供自然整理');
 assert.ok(recordJs.includes("id: 'book'"));
 assert.ok(recordJs.includes('suggestLocalFollowUp'));
 assert.ok(recordJs.includes('timeLabel: fragmentTime'));
+
+const profileWxml = read('../pages/profile/index.wxml');
+const profileJs = read('../pages/profile/index.js');
+assert.ok(profileWxml.includes('我的记录'));
+assert.ok(!profileWxml.includes('profile__environment'), '演示页面不能显示开发用模型状态卡');
+assert.ok(!profileWxml.includes('一键演示自检'));
+assert.ok(!profileJs.includes('getAgentStatus'), '账户页不应额外请求模型配置');
 
 console.log('experience flow test: ok');

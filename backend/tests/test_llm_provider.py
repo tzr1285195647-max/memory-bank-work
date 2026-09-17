@@ -180,6 +180,28 @@ def test_duplicate_question_is_suppressed():
     assert decision["question"] is None, "同一问题不得重复追问"
 
 
+def test_question_prompt_contains_confirmed_fragments_not_only_current_answers():
+    provider = LLMAgentProvider(api_key="test-key")
+    seen: dict[str, str] = {}
+
+    def fake_chat(*, user_prompt: str, max_tokens: int = 2000, schema: dict | None = None):
+        seen["prompt"] = user_prompt
+        return {"question": "当时还有谁在场？", "target_element": "people",
+                "complete": False, "complete_reason": None}
+
+    provider._chat = fake_chat  # type: ignore[method-assign]
+    provider.choose_question(
+        subject_name="林奶奶", topic="上学的日子", round_index=0,
+        asked_questions=[], previous_answers=[], missing_fields=["people"],
+        confirmed_fragments=["我记得1959年秋天第一次去村里的学校。"],
+        confirmed_facts=[{"element": "time", "text": "1959年秋天", "quote": "1959年秋天"}],
+    )
+    assert "1959年秋天" in seen["prompt"]
+    assert "已确认的记忆碎片" in seen["prompt"]
+    assert "缺失的要素：" in seen["prompt"]
+    assert "已经核验过原文出处的历史事实" in seen["prompt"]
+
+
 # --------------------------------------------------------------- 降级策略
 
 

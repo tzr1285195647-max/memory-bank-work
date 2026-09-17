@@ -53,7 +53,7 @@ with httpx.Client(base_url=BASE, timeout=20) as client:
 
     print("\n=== 4. 主题列表 ===")
     topics = client.get("/api/topics", headers=auth).json()
-    check("GET /api/topics 返回 4 个主题", len(topics) == 4, str(len(topics)))
+    check("GET /api/topics 包含 4 个推荐主题", {"hometown", "school", "work", "family"}.issubset({t["id"] for t in topics}), str(len(topics)))
     check("主题含「我的家乡」", any(t["title"] == "我的家乡" for t in topics))
 
     print("\n=== 5. 上传录音 ===")

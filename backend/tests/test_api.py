@@ -70,6 +70,27 @@ def test_topics_seeded_from_design(client, session_data):
     assert [t["glyph"] for t in topics] == ["乡", "校", "业", "家"]
 
 
+def test_custom_topic_can_be_created_and_is_family_scoped(client, session_data):
+    headers = auth_header(session_data)
+    created = client.post("/api/topics", headers=headers, json={"title": "第一次坐火车"})
+    assert created.status_code == 201, created.text
+    topic = created.json()
+    assert topic["id"].startswith("custom-")
+    assert topic["title"] == "第一次坐火车"
+    assert topic in client.get("/api/topics", headers=headers).json()
+    repeated = client.post("/api/topics", headers=headers, json={"title": "第一次坐火车"})
+    assert repeated.json()["id"] == topic["id"]
+    assert client.post("/api/topics", headers=headers, json={"title": " "}).status_code == 422
+
+    other = client.post("/api/auth/register", json={
+        "phone": "13900002222", "password": "abcdef", "displayName": "其他家庭",
+        "role": "elder", "gender": "female", "age": 68,
+    })
+    assert other.status_code == 201, other.text
+    other_headers = auth_header(other.json())
+    assert topic["id"] not in {item["id"] for item in client.get("/api/topics", headers=other_headers).json()}
+
+
 def test_four_demo_accounts_share_one_family_and_liu_is_admin(client):
     sessions = []
     for phone in ("13800008899", "13900007788", "13700006677", "13600005566"):

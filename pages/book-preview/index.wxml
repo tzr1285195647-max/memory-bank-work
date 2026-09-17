@@ -1,45 +1,96 @@
 <nav-bar title="家庭纪念册" theme="brand" showBack="{{true}}" showMore="{{false}}" />
 
 <view class="page book">
+  <view class="book__intro">
+    <text class="book__eyebrow">FAMILY MEMORY BOOK</text>
+    <text class="book__heading">把一家人的故事，慢慢翻阅</text>
+    <text class="book__intro-note">按回忆发生的年份排列；年代未确认的故事放在最后。</text>
+  </view>
+
   <view class="book__tabs">
     <view class="book__tab {{activeView === 'cover' ? 'book__tab--active' : ''}}" data-view="cover" bindtap="onView">封面</view>
     <view class="book__tab {{activeView === 'catalog' ? 'book__tab--active' : ''}}" data-view="catalog" bindtap="onView">目录</view>
     <view class="book__tab {{activeView === 'reading' ? 'book__tab--active' : ''}}" data-view="reading" bindtap="onView">阅读</view>
   </view>
 
-  <view wx:if="{{activeView === 'cover'}}" class="book__cover">
-    <view class="book__spine"></view>
-    <text class="book__ornament">记 · 忆</text>
-    <input wx:if="{{editingTitle}}" class="book__title-input" value="{{bookTitle}}" maxlength="20" focus="true" bindinput="onTitleInput" bindconfirm="onSaveTitle" />
-    <text wx:else class="book__title" bindtap="onEditTitle">{{bookTitle}}</text>
-    <text class="book__subtitle">一本由真实口述与家庭确认共同完成的故事书</text>
-    <view class="book__rule"></view>
-    <text class="book__range">{{yearRange}}</text>
-    <view class="book__seal"><text>家藏</text></view>
-    <text class="book__edit-hint">点击书名可以修改</text>
-  </view>
+  <view wx:if="{{loading}}" class="book__loading">正在装订这个家庭的故事…</view>
 
-  <view wx:if="{{activeView === 'cover'}}" class="book__stats">
-    <view class="book__stat"><text class="book__stat-value">{{storyCount}}</text><text class="book__stat-label">篇故事</text></view>
-    <view class="book__stat"><text class="book__stat-value">{{chapters.length}}</text><text class="book__stat-label">个年代</text></view>
-    <view class="book__stat"><text class="book__stat-value">{{audioMinutes}}</text><text class="book__stat-label">分钟原声</text></view>
-  </view>
+  <view wx:else class="book__stage" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd">
+    <view class="book__page-edge"></view>
+    <view class="book__paper book__paper--{{currentPage.type}} book__paper--{{flipPhase}}">
+      <view wx:if="{{currentPage.type !== 'cover'}}" class="book__running-head">
+        <text>记忆银行 · 家庭纪念册</text>
+        <text>{{currentPage.yearLabel || '家族故事'}}</text>
+      </view>
 
-  <view wx:if="{{activeView === 'catalog'}}" class="book__catalog">
-    <text class="book__page-title">目录</text>
-    <view wx:for="{{chapters}}" wx:key="key" class="book__chapter">
-      <text class="book__chapter-year">{{item.yearLabel}}</text>
-      <view wx:for="{{item.items}}" wx:for-item="story" wx:key="id" class="book__catalog-row" data-id="{{story.id}}" bindtap="onOpenStory"><text class="book__catalog-title">{{story.title}}</text><text class="book__catalog-stage">{{story.lifeStage}} ›</text></view>
+      <scroll-view scroll-y="true" scroll-into-view="{{scrollTarget}}" class="book__paper-scroll">
+        <view id="page-top-{{pageIndex}}"></view>
+        <view wx:if="{{currentPage.type === 'cover'}}" class="book__cover-content">
+          <text class="book__cover-kicker">一本属于家人的故事书</text>
+          <input wx:if="{{editingTitle}}" class="book__title-input" value="{{bookTitle}}" maxlength="20"
+            focus="true" bindinput="onTitleInput" bindconfirm="onSaveTitle" />
+          <text wx:else class="book__cover-title" bindtap="onEditTitle">{{bookTitle}}</text>
+          <text class="book__cover-subtitle">真实口述 · 家庭确认 · 按时光编排</text>
+          <image class="book__cover-art" src="/assets/book/cover-watercolor.png" mode="aspectFit" />
+          <view class="book__cover-bottom"><text>{{yearRange}}</text><text>共 {{storyCount}} 篇 · {{narratorCount}} 位讲述者</text></view>
+          <text class="book__edit-hint">轻点书名可修改（仅保存在本机）</text>
+        </view>
+
+        <view wx:elif="{{currentPage.type === 'catalog'}}" class="book__catalog-content">
+          <view class="book__folio-heading"><text class="book__folio-kicker">CONTENTS</text><text class="book__folio-title">目录</text></view>
+          <image class="book__corner-art" src="/assets/book/ginkgo-vignette.png" mode="aspectFit" />
+          <view wx:if="{{!storyCount}}" class="book__empty">
+            <text>还没有已确认的故事。</text>
+            <text>等家人确认第一篇后，它就会出现在这里。</text>
+          </view>
+          <view wx:for="{{currentPage.entries}}" wx:key="id" class="book__catalog-row" data-page="{{item.pageIndex}}" bindtap="onJumpToPage">
+            <view class="book__catalog-main"><text class="book__catalog-year">{{item.yearLabel}}</text><text class="book__catalog-title">{{item.title}}</text><text class="book__catalog-narrator">{{item.narratorName}} 讲述</text></view>
+            <text class="book__catalog-page">{{item.pageIndex + 1}} ›</text>
+          </view>
+          <text wx:if="{{currentPage.catalogParts > 1}}" class="book__catalog-part">目录 {{currentPage.catalogPart}} / {{currentPage.catalogParts}}</text>
+        </view>
+
+        <view wx:elif="{{currentPage.type === 'chapter'}}" class="book__chapter-content">
+          <text class="book__chapter-kicker">第 {{currentPage.chapterNumber}} 章 · 时光</text>
+          <view class="book__chapter-rule"></view>
+          <text class="book__chapter-year">{{currentPage.yearLabel}}</text>
+          <image class="book__chapter-art" src="/assets/book/ginkgo-vignette.png" mode="aspectFit" />
+          <text class="book__chapter-caption">这一章收录 {{currentPage.storyCount}} 篇故事</text>
+          <text class="book__chapter-narrators">讲述者 · {{currentPage.narratorNames}}</text>
+          <text class="book__art-note">插画为装饰，不代表真实场景</text>
+        </view>
+
+        <view wx:elif="{{currentPage.type === 'story'}}" class="book__story-content">
+          <view class="book__story-meta"><text>{{currentPage.yearLabel}} · {{currentPage.lifeStage}}</text><text>{{currentPage.partIndex}} / {{currentPage.partCount}}</text></view>
+          <text class="book__story-title">{{currentPage.title}}</text>
+          <text class="book__story-narrator">{{currentPage.narratorName}} 讲述 · {{currentPage.mode}}</text>
+          <view class="book__story-rule"></view>
+          <text class="book__story-body">{{currentPage.text}}</text>
+          <image class="book__story-art" src="/assets/book/ginkgo-vignette.png" mode="aspectFit" />
+          <view wx:if="{{currentPage.partIndex === currentPage.partCount}}" class="book__story-end">
+            <text>—— 本篇完 ——</text>
+            <button class="book__source-link" data-id="{{currentPage.storyId}}" bindtap="onOpenStory">查看故事与原声 ›</button>
+          </view>
+          <text class="book__art-note">装饰插画不代表讲述中的真实人物或事件</text>
+        </view>
+      </scroll-view>
+
+      <view wx:if="{{currentPage.type !== 'cover'}}" class="book__page-footer"><text>我们的记忆</text><text>{{currentPage.pageNumber}} / {{pages.length}}</text></view>
     </view>
   </view>
 
-  <view wx:if="{{activeView === 'reading'}}" class="book__reading">
-    <view wx:for="{{chapters}}" wx:key="key" class="book__reading-chapter">
-      <text class="book__reading-year">{{item.yearLabel}}</text>
-      <view wx:for="{{item.items}}" wx:for-item="story" wx:key="id" class="book__story" data-id="{{story.id}}" bindtap="onOpenStory"><text class="book__story-stage">{{story.lifeStage}}</text><text class="book__story-title">{{story.title}}</text><text class="book__story-body">{{story.body}}</text><text class="book__story-source">原声 {{story.durationText}} · {{story.mode}} · 已确认</text></view>
-    </view>
+  <view wx:if="{{!loading}}" class="book__turnbar">
+    <button class="book__turn-button" disabled="{{pageIndex === 0 || flipping}}" bindtap="onPrev">‹ 上一页</button>
+    <text class="book__turn-count">{{pageIndex + 1}} / {{pages.length}}</text>
+    <button class="book__turn-button" disabled="{{pageIndex >= pages.length - 1 || flipping}}" bindtap="onNext">下一页 ›</button>
+  </view>
+  <text wx:if="{{!loading}}" class="book__swipe-hint">左右轻扫书页，也可以翻页</text>
+
+  <view wx:if="{{!loading && storyCount}}" class="book__stats">
+    <view><text class="book__stat-value">{{storyCount}}</text><text class="book__stat-label">篇故事</text></view>
+    <view><text class="book__stat-value">{{chapters.length}}</text><text class="book__stat-label">个年代</text></view>
+    <view><text class="book__stat-value">{{audioMinutes}}</text><text class="book__stat-label">分钟原声</text></view>
   </view>
 
-  <view wx:if="{{!loading && !stories.length}}" class="book__empty"><text>先确认一个故事，再来制作纪念册。</text></view>
   <view class="book__actions"><primary-button text="复制纪念册文字" type="primary" bind:tap="onExportText" /><button class="book__share" open-type="share">分享纪念册入口</button></view>
 </view>

@@ -69,7 +69,7 @@ def main() -> int:
     record("首页有今日叙事", bool(home["today"]["title"]), str(home["today"].get("title")))
     record("首页最近故事 ≥ 2 条（可展示列表）", len(home["recent"]) >= 2, str(len(home["recent"])))
     topics = client.get("/api/topics", headers=headers).json()
-    record("四个主题齐备", len(topics) == 4, str([t["title"] for t in topics]))
+    record("四个推荐主题齐备", {"hometown", "school", "work", "family"}.issubset({t["id"] for t in topics}), str([t["title"] for t in topics]))
 
     # 第 3-5 步：录音上传 → 草稿 → 预览（含原声与 AI 标识）
     if READONLY:

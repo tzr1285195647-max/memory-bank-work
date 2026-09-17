@@ -80,11 +80,27 @@
 
   <view wx:if="{{draft.conflicts.length}}" class="preview__conflicts">
     <text class="preview__conflicts-title">发现 {{draft.conflicts.length}} 组不同讲述</text>
-    <text class="preview__conflicts-hint">系统不会替你判断，以下内容按原话并列保留。</text>
+    <text class="preview__conflicts-hint">发布前请核对原声、修正有误的碎片并重新生成；系统不会替你选择其中一种说法。</text>
     <view wx:for="{{draft.conflicts}}" wx:key="element" class="preview__conflict">
       <text class="preview__conflict-element">{{item.elementLabel}}</text>
       <text class="preview__conflict-quote">第一次：{{item.quote_a}}</text>
       <text class="preview__conflict-quote">另一次：{{item.quote_b}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{draft.workflow.steps.length}}" class="preview__workflow">
+    <text class="preview__workflow-title">多智能体协作记录</text>
+    <text class="preview__workflow-hint">展示本篇故事的处理步骤；模型失败会明确标出规则降级。</text>
+    <view wx:for="{{draft.workflow.steps}}" wx:key="index" class="preview__workflow-step">
+      <text class="preview__workflow-index">{{index + 1}}</text>
+      <text class="preview__workflow-name">{{item.agent}}</text>
+      <text wx:if="{{item.claims !== null && item.claims !== undefined}}" class="preview__workflow-detail">{{item.claims}} 条事实</text>
+      <text wx:if="{{item.findings !== null && item.findings !== undefined}}" class="preview__workflow-detail">{{item.findings}} 处审计发现</text>
+      <text wx:if="{{item.source === 'persisted'}}" class="preview__workflow-detail">此前已保存</text>
+    </view>
+    <view wx:for="{{draft.workflow.calls}}" wx:key="key" class="preview__workflow-call">
+      <text>{{item.agent}} · {{item.providerLabel}}</text>
+      <text wx:if="{{item.duration_ms}}">{{item.duration_ms}} ms</text>
     </view>
   </view>
 
@@ -246,7 +262,7 @@
         type="primary"
         loading="{{saving}}"
         loadingText="正在确认"
-        disabled="{{editing || draft.auditPassed === false || draft.findings.length || pendingNoteCount}}"
+        disabled="{{editing || draft.auditPassed === false || draft.findings.length || draft.conflicts.length || pendingNoteCount}}"
         bind:tap="onConfirm"
       />
     </view>

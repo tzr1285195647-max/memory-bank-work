@@ -149,6 +149,9 @@ class MemoryBankState(TypedDict, total=False):
     topic: str
     consent_version: int
     consent_ok: bool
+    entry_mode: str  # interview | selected_fragments
+    writing_style: str
+    revision_count: int
     stop_requested: bool
     stop_reason: str | None
     duration_ms: int
@@ -167,6 +170,9 @@ class MemoryBankState(TypedDict, total=False):
     # --- 采访导演 ---
     current_question: str
     asked_questions: Annotated[list[str], merge_unique]
+    context_fragments: list[str]  # 同一讲述者、主题下已确认的历史原文；只用于追问上下文
+    context_claims: list[dict[str, Any]]  # 同一范围内已验证 quote 的历史事实
+    context_covered_elements: list[str]  # 从已确认事实和明确时间线索得到的已知要素
 
     # --- 讲述与证据 ---
     # 注意：turns / claims / claim_ids / agent_trace 都必须用**幂等** reducer，

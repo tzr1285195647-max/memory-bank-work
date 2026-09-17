@@ -35,7 +35,8 @@ python backend/run.py
 | GET | `/api/health` | 健康检查 |
 | POST | `/api/auth/login` | 登录（首次自动注册） |
 | GET | `/api/me` | 个人资料与统计 |
-| GET | `/api/topics` | 四个主题（乡/校/业/家） |
+| GET | `/api/topics` | 四个推荐主题及当前家庭创建的自定义主题 |
+| POST | `/api/topics` | 新建 2–30 字的家庭专属主题；同名主题复用已有 ID |
 | GET | `/api/home` | 今日叙事 + 最近的故事 |
 | GET | `/api/family` | 家庭看板（成员、进度、待确认） |
 | POST | `/api/recordings` | 上传录音（multipart） |

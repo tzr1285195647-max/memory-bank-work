@@ -107,6 +107,7 @@ class Topic(Base):
     title: Mapped[str] = mapped_column(String(64))
     subtitle: Mapped[str] = mapped_column(String(128))
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    family_id: Mapped[str | None] = mapped_column(String(36), index=True, default=None)
 
 
 class Recording(Base):
@@ -147,7 +148,7 @@ class Story(Base):
     topic_id: Mapped[str] = mapped_column(String(32), default="")
     title: Mapped[str] = mapped_column(String(128))
     body: Mapped[str] = mapped_column(Text, default="")
-    mode: Mapped[str] = mapped_column(String(32), default="自然整理")
+    mode: Mapped[str] = mapped_column(String(32), default="原味口述")
     status: Mapped[str] = mapped_column(String(24), default="pending_review")  # pending_review | confirmed
     recording_id: Mapped[str | None] = mapped_column(ForeignKey("recordings.id"), default=None)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
@@ -164,6 +165,7 @@ class Story(Base):
     draft_sentences_json: Mapped[str] = mapped_column(Text, default="[]")
     audit_suggestions_json: Mapped[str] = mapped_column(Text, default="[]")
     revision_count: Mapped[int] = mapped_column(Integer, default=0)
+    workflow_json: Mapped[str] = mapped_column(Text, default="{}")
     created_at: Mapped[datetime] = mapped_column(default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(default=utc_now, onupdate=utc_now)
 
@@ -260,6 +262,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 def init_database() -> None:
     Base.metadata.create_all(engine)
+    _ensure_topic_family_column()
     _ensure_user_profile_columns()
     _ensure_membership_columns()
     _ensure_story_timeline_columns()
@@ -270,6 +273,14 @@ def init_database() -> None:
     _ensure_agent_p0_columns()
     seed()
     _repair_story_attributions()
+
+
+def _ensure_topic_family_column() -> None:
+    """旧库的四个推荐主题保持全局可见；新增主题只属于创建者家庭。"""
+    columns = {item["name"] for item in inspect(engine).get_columns("topics")}
+    if "family_id" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE topics ADD COLUMN family_id VARCHAR(36)"))
 
 
 def _ensure_user_profile_columns() -> None:
@@ -390,6 +401,7 @@ def _ensure_agent_p0_columns() -> None:
     story_defs = {
         "draft_sentences_json": "TEXT DEFAULT '[]'", "audit_suggestions_json": "TEXT DEFAULT '[]'",
         "revision_count": "INTEGER DEFAULT 0",
+        "workflow_json": "TEXT DEFAULT '{}'",
     }
     with engine.begin() as connection:
         for name, definition in recording_defs.items():
@@ -499,7 +511,7 @@ def seed() -> None:
                             "我和妹妹每天放学，都要绕路去看一眼。\n"
                             "风一吹，整条巷子都是甜的。"
                         ),
-                        mode="自然整理",
+                        mode="原味口述",
                         status="confirmed",
                         duration_ms=222000,
                         sort_order=1,

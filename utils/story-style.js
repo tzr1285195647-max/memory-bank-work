@@ -1,6 +1,5 @@
 const STYLE_LABELS = {
   raw: '原味口述',
-  natural: '自然整理',
   book: '适合成书',
 };
 
@@ -17,7 +16,7 @@ function ensurePunctuation(value) {
   return /[。！？!?…]$/.test(value) ? value : `${value}。`;
 }
 
-function composeStory(transcripts, style = 'natural') {
+function composeStory(transcripts, style = 'raw') {
   const rawLines = (transcripts || []).map((item) => String(item || '').trim()).filter(Boolean);
   const cleaned = rawLines.map((item) => ensurePunctuation(cleanLine(item))).filter(Boolean);
   let body = '';
@@ -28,14 +27,14 @@ function composeStory(transcripts, style = 'natural') {
     // 只调整口头语、标点和段落，不添加原声中没有的事实。
     body = cleaned.map((line) => line.replace(/。(?=.{16,})/g, '。\n')).join('\n\n');
   } else {
-    body = cleaned.join('\n');
+    body = rawLines.join('\n');
   }
 
   return body.slice(0, 3800);
 }
 
 function styleLabel(style) {
-  return STYLE_LABELS[style] || STYLE_LABELS.natural;
+  return STYLE_LABELS[style] || STYLE_LABELS.raw;
 }
 
 module.exports = { STYLE_LABELS, composeStory, styleLabel };

@@ -16,7 +16,7 @@ const ELEMENT_LABELS = {
 
 Page({
   data: {
-    draft: { title: '', durationMs: 0, mode: '自然整理', claims: [], sentenceEvidence: [], missingFields: [], findings: [], conflicts: [] },
+    draft: { title: '', durationMs: 0, mode: '原味口述', claims: [], sentenceEvidence: [], missingFields: [], findings: [], conflicts: [], workflow: { steps: [], calls: [] } },
     body: '',
     editing: false,
     hasAudio: false,
@@ -81,7 +81,7 @@ Page({
         id: '',
         title: topic ? topic.title : '未命名主题',
         body: '',
-        mode: '自然整理',
+        mode: '原味口述',
         durationMs: 0,
       };
     }
@@ -137,11 +137,18 @@ Page({
       sources: (sentence.claim_ids || []).map((id) => claimsById[id]).filter(Boolean),
       sourceCount: (sentence.claim_ids || []).length,
     }));
+    const workflow = draft.workflow || {};
+    const workflowCalls = (workflow.calls || []).map((item, index) => ({
+      ...item,
+      key: `${item.agent || 'agent'}-${index}`,
+      providerLabel: item.fallback_used ? '规则降级' : (item.model ? `真实模型 · ${item.model}` : '规则流程'),
+    }));
     const canReview = draft.status !== 'confirmed';
     const canEditStory = role === 'elder';
     const canOwnerReview = canReview && canEditStory;
     this.setData({
-      draft: { ...draft, claims, sentenceEvidence, missingFields, findings: draft.findings || [], conflicts },
+      draft: { ...draft, claims, sentenceEvidence, missingFields, findings: draft.findings || [], conflicts,
+        workflow: { ...workflow, steps: workflow.steps || [], calls: workflowCalls } },
       body: draft.body || '',
       originalBody: draft.body || '',
       hasAudio,
@@ -306,7 +313,7 @@ Page({
     }
   },
 
-  /** 确认故事：产品规则要求人工确认后才进入故事书；有智能体会话时走智能体确认 */
+  /** 确认故事：采访先恢复图；勾选碎片由故事复审接口恢复它的图确认点。 */
   async onConfirm() {
     const { draft, body } = this.data;
     if (!this.data.canOwnerReview || this.data.saving) return;
@@ -322,18 +329,18 @@ Page({
       wx.showToast({ title: '内容不能为空', icon: 'none' });
       return;
     }
-    if (draft.auditPassed === false || (draft.findings || []).length) {
+    if (draft.auditPassed === false || (draft.findings || []).length || (draft.conflicts || []).length) {
       wx.showModal({
         title: '暂时不能确认',
-        content: '正文里还有无法追溯到原声的内容，请修改文字或继续补充讲述。',
+        content: '正文还有无依据内容或未澄清的事实冲突。请核对原声、修正碎片后重新生成。',
         showCancel: false,
       });
       return;
     }
     this.setData({ saving: true });
 
-    // 优先走多智能体确认（会按证据重新核对正文）
-    if (draft.sessionId) {
+    // 两类故事都有 LangGraph checkpoint；碎片故事由后端故事复审接口恢复确认点。
+    if (draft.sessionId && !/^fragments-/.test(draft.sessionId)) {
       try {
         const edited = body !== this.data.originalBody;
         await api.reviewInterview({
@@ -388,7 +395,7 @@ Page({
     const { draft } = this.data;
     if (this.data.saving) return;
     if (/^fragments-/.test(draft.sessionId || '')) {
-      // 勾选碎片生成的故事没有可恢复的采访 checkpoint；回到录音页开启新的补充会话。
+      // 碎片故事的 checkpoint 停在确认点；补充录音应另开一场采访。
       store.set({
         currentTopic: draft.topicId || this.topicId,
         recordEntry: { topicId: draft.topicId || this.topicId, resume: false, nonce: Date.now() },

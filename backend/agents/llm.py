@@ -254,6 +254,9 @@ class LLMAgentProvider(MockAgentProvider):
         asked_questions: list[str],
         previous_answers: list[str],
         missing_fields: list[str],
+        confirmed_fragments: list[str] | None = None,
+        confirmed_facts: list[dict[str, Any]] | None = None,
+        minimum_fragments: int = 7,
     ) -> dict[str, Any]:
         joined = " ".join(previous_answers)
         # 停止意愿先由本地规则判定：绝不能让模型误判后继续追问
@@ -268,13 +271,23 @@ class LLMAgentProvider(MockAgentProvider):
                 }
 
         missing_labels = [ELEMENT_LABELS.get(item, item) for item in missing_fields] or ["（要素已齐）"]
+        total_fragments = len(confirmed_fragments or []) + len(previous_answers)
         prompt = (
             f"讲述者：{subject_name}\n主题：{topic}\n当前是第 {round_index + 1} 轮。\n"
+            f"已有确认碎片 {total_fragments} 段；建议至少 {minimum_fragments} 段、通常 7 至 10 段后再判断故事是否详尽。\n"
             f"已经问过的问题：{json.dumps(asked_questions, ensure_ascii=False)}\n"
-            f"已经讲到的内容摘要：{json.dumps([a[:80] for a in previous_answers], ensure_ascii=False)}\n"
+            f"同一讲述者、同一主题下已确认的记忆碎片："
+            f"{json.dumps([text[:600] for text in (confirmed_fragments or [])][-20:], ensure_ascii=False)}\n"
+            f"已经核验过原文出处的历史事实（不是待猜测项）："
+            f"{json.dumps([{'element': item.get('element'), 'text': item.get('text'), 'quote': item.get('quote')} for item in (confirmed_facts or [])][-80:], ensure_ascii=False)}\n"
+            f"本次采访已有回答：{json.dumps([a[:400] for a in previous_answers], ensure_ascii=False)}\n"
             f"仍然缺失的要素：{json.dumps(missing_labels, ensure_ascii=False)}\n\n"
-            "请生成至多一个温和的追问，只针对仍缺失的要素，不要重复已问过的问题，"
-            "不要暗示不存在的事实。若认为已经没有必要继续，把 question 设为 null。\n"
+            "请生成至多一个温和的追问。先补缺失的故事要素；要素齐全但不足 7 段时，"
+            "请从已有原文中寻找尚未讲清的具体场景、行动、转折或人物互动，追问一个新细节。"
+            "不要因七要素齐全就认定故事足够详细。至少 7 段之后，故事链足够详尽时才设 complete=true。"
+            "不要重复已问过的问题，"
+            "已确认碎片里出现过的时间、地点、人物或事件不能再当作未知信息询问。"
+            "不要暗示不存在的事实；不要把已知事实当未知再问。\n"
             '输出格式：{"question":"...","target_element":"time|place|people|event|result|impact|feeling|null","complete":false,"complete_reason":null}'
         )
         data = self._chat(
@@ -423,7 +436,7 @@ class LLMAgentProvider(MockAgentProvider):
         subject_name: str,
         topic: str,
         claims: list[dict[str, Any]],
-        style: str = "natural",
+        style: str = "raw",
     ) -> dict[str, Any]:
         if not claims:
             raise LLMUnavailableError("没有可用证据，不能写作")
@@ -433,9 +446,8 @@ class LLMAgentProvider(MockAgentProvider):
         ]
         style_instruction = {
             "raw": "尽量保留原句、语气和讲述顺序，只修正明显标点，不改变说法。",
-            "natural": "保持讲述顺序，去掉少量重复和口头停顿，使段落自然连贯。",
             "book": "在不新增事实的前提下优化段落、节奏和书面表达，适合收入家庭故事书。",
-        }.get(style, "保持讲述顺序，去掉少量重复和口头停顿，使段落自然连贯。")
+        }.get(style, "尽量保留已确认文字的说法和讲述顺序，不重新加入已删除的语气词。")
         prompt = (
             f"请把下列**已经确认的事实**整理成一段家庭记忆，主题《{topic}》，讲述者：{subject_name}。\n"
             "硬性要求：\n"
@@ -476,28 +488,32 @@ class LLMAgentProvider(MockAgentProvider):
             raise LLMUnavailableError("模型未返回 sentences")
 
         valid_ids = {claim["id"] for claim in claims}
-        sentences: list[dict[str, Any]] = []
+        sentences: list[dict[str, Any]] = [
+            {"text": f"《{topic}》", "claim_ids": [], "must_cite": False},
+            {"text": f"这是{subject_name}亲口讲述的一段家庭记忆。", "claim_ids": [], "must_cite": False},
+        ]
         for index, item in enumerate(raw_sentences):
             if not isinstance(item, dict):
                 continue
             text = str(item.get("text", "")).strip()
             if not text:
                 continue
+            if index < 2 and (text.startswith("《") or text.startswith("这是")):
+                continue
             cited = [str(cid) for cid in (item.get("claim_ids") or [])]
             # 引用必须真实存在（不存在的引用会被审计判为 invalid_citation）
             cited = [cid for cid in cited if cid in valid_ids]
-            is_heading = text.startswith("《") or text.startswith("这是")
             sentences.append(
                 {
                     "text": text,
                     "claim_ids": cited,
-                    "must_cite": False if is_heading else True,
+                    "must_cite": True,
                 }
             )
-        if not sentences:
+        if len(sentences) <= 2:
             raise LLMUnavailableError("模型输出的句子全部不合规")
         validated = DraftResultModel.model_validate(
-            {"title": str(data.get("title") or f"《{topic}》"), "sentences": sentences}
+            {"title": f"《{topic}》", "sentences": sentences}
         )
         return validated.model_dump()
 
@@ -538,11 +554,20 @@ class LLMAgentProvider(MockAgentProvider):
         result = ConflictResultModel.model_validate(data)
         valid_turns = {str(item.get("turn_id")) for item in claims}
         valid_quotes = {str(item.get("quote")) for item in claims}
-        return [
+        model_conflicts = [
             item.model_dump() for item in result.conflicts
             if item.turn_a in valid_turns and item.turn_b in valid_turns
             and item.quote_a in valid_quotes and item.quote_b in valid_quotes
         ]
+        local_conflicts = super().resolve_conflicts(claims=claims)
+        seen: set[tuple[str, str]] = set()
+        merged: list[dict[str, Any]] = []
+        for item in [*local_conflicts, *model_conflicts]:
+            key = tuple(sorted((str(item.get("quote_a")), str(item.get("quote_b")))))
+            if key not in seen:
+                seen.add(key)
+                merged.append(item)
+        return merged
 
 
 class FallbackAgentProvider:
@@ -567,18 +592,23 @@ class FallbackAgentProvider:
         error: str | None = None
         try:
             result = getattr(self.primary, method)(**kwargs)
+            result = self._validate_output(method, result)
         except (LLMUnavailableError, ValidationError, ValueError, TypeError) as exc:
             self.fallback_count += 1
             self.last_error = str(exc)
             fallback_used = True
             error = str(exc)
             LOGGER.warning("模型不可用，回落到确定性实现 method=%s reason=%s", method, exc)
-            result = getattr(self.fallback, method)(**kwargs)
-        result = self._validate_output(method, result)
+            result = self._validate_output(method, getattr(self.fallback, method)(**kwargs))
         self.call_records.append({
             "agent": method,
             "model": self.primary.model,
-            "prompt_version": "p0-v1",
+            "prompt_version": {
+                "choose_question": "interview-v4",
+                "compose_draft": "writing-v2",
+                "audit_draft": "audit-v2",
+                "resolve_conflicts": "conflict-v2",
+            }.get(method, "p0-v1"),
             "duration_ms": int((time.perf_counter() - started) * 1000),
             "retry_count": max(0, int(getattr(self.primary, "last_attempts", 1)) - 1),
             "fallback_used": fallback_used,

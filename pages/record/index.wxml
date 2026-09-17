@@ -20,7 +20,7 @@
 
   <view wx:if="{{question}}" class="record__question">
     <view class="record__question-head">
-      <text class="record__question-label">AI 采访提示</text>
+      <text class="record__question-label">{{questionSource === 'agent' ? 'AI 采访提示' : '录音引导'}}</text>
       <text class="record__round">第 {{roundNumber}} 段</text>
     </view>
     <text class="record__question-text">{{question}}</text>

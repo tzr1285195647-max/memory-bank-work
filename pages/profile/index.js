@@ -1,6 +1,5 @@
 const store = require('../../store/index');
 const api = require('../../utils/api');
-const runtime = require('../../config');
 
 const FALLBACK_PROFILE = {
   displayName: '林阿姨',
@@ -14,12 +13,6 @@ Page({
   data: {
     profile: FALLBACK_PROFILE,
     statsList: [],
-    environment: {
-      title: '本机数据演示',
-      detail: 'LangGraph · 本机数据库 · 云接口按配置调用',
-      online: false,
-    },
-    checking: false,
   },
 
   onShow() {
@@ -30,18 +23,10 @@ Page({
 
   async load() {
     try {
-      const [profile, agent] = await Promise.all([api.getProfile(), api.getAgentStatus()]);
-      const isLocal = !agent.llmEnabled;
+      const profile = await api.getProfile();
       this.setData({
         profile,
         statsList: this.toStats(profile.stats),
-        environment: {
-          title: isLocal ? '本机规则 Agent' : '真实模型 Agent',
-          detail: isLocal
-            ? 'LangGraph · 本机数据库 · 云端转写按配置调用'
-            : `${agent.model || 'LLM'} · 失败自动降级`,
-          online: !isLocal,
-        },
       });
     } catch (err) {
       console.warn('[profile] 加载失败', err && err.message);
@@ -92,52 +77,6 @@ Page({
 
   onPrivacyCenter() {
     wx.navigateTo({ url: '/pages/privacy-center/index' });
-  },
-
-  async onDemoCheck() {
-    if (this.data.checking) return;
-    this.setData({ checking: true });
-    if (!runtime.shouldUseBackend()) {
-      const topics = await api.getTopics();
-      this.setData({ checking: false });
-      wx.showModal({
-        title: '真机演示环境正常',
-        content: [
-          '运行方式：手机纯离线模式',
-          `主题数据：${topics.length} 项`,
-          '录音保存：手机本地',
-          '业务数据：本机保存',
-        ].join('\n'),
-        showCancel: false,
-      });
-      return;
-    }
-    try {
-      const [health, topics, agent] = await Promise.all([
-        api.getHealth(),
-        api.getTopics(),
-        api.getAgentStatus(),
-      ]);
-      const localAgent = !agent.llmEnabled;
-      this.setData({ checking: false });
-      wx.showModal({
-        title: '演示环境正常',
-        content: [
-          `本机后端：${health.status === 'ok' ? '已连接' : '异常'}`,
-          `主题数据：${topics.length} 项`,
-          `采访 Agent：${localAgent ? '本机确定性模式' : agent.model || '外部模型'}`,
-          '业务数据：本机保存；云接口会主动访问厂商',
-        ].join('\n'),
-        showCancel: false,
-      });
-    } catch (err) {
-      this.setData({ checking: false });
-      wx.showModal({
-        title: '本机后端未连接',
-        content: `${err.message || '连接失败'}\n\n请先运行 backend/run.py，再重新自检。`,
-        showCancel: false,
-      });
-    }
   },
 
   /** 产品规则：撤回授权后停止使用并删除内容，审计事件保留 */

@@ -33,15 +33,54 @@
 from __future__ import annotations
 
 import uuid
+import re
 from typing import Any, Literal
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, Send, interrupt
 
-from ..evidence_audit import audit_text
+from ..evidence_audit import audit_text, unresolved_conflict_findings
 from . import state as st
 from .provider import AgentProvider
+
+
+def _question_element(question: str) -> str | None:
+    """识别问题实际询问的要素，防止模型把 target_element 标错后重复追问。"""
+    patterns = (
+        ("time", r"什么时候|哪一年|哪年|什么年代|哪个年代|什么季节|哪个季节|几岁|多大年纪|几月几日"),
+        ("place", r"在哪里|什么地方|哪个地方|哪儿|哪里"),
+        ("people", r"还有谁|哪些人|是什么人|是谁送|谁在场"),
+        ("feeling", r"什么心情|什么感觉|心里.*感受"),
+        ("impact", r"有什么影响|改变了什么|学到了什么"),
+        ("result", r"后来怎么样|最后怎么样|结果怎么样"),
+    )
+    return next((element for element, pattern in patterns if re.search(pattern, question)), None)
+
+
+def _safe_missing_question(missing: list[str], asked: list[str]) -> tuple[str | None, str | None]:
+    """模型问到已知要素时，用仍缺失且未问过的要素安全替代。"""
+    from .mock import FOLLOW_UP_TEMPLATES
+
+    for element in st.ELEMENT_PRIORITY:
+        question = FOLLOW_UP_TEMPLATES.get(element)
+        if element in missing and question and question not in asked:
+            return question, element
+    return None, None
+
+
+MIN_STORY_FRAGMENTS = 7
+TARGET_STORY_FRAGMENTS = 10
+
+
+def _safe_detail_question(fragment_count: int, asked: list[str]) -> str | None:
+    from .mock import DETAIL_FOLLOW_UP_TEMPLATES
+
+    for offset in range(len(DETAIL_FOLLOW_UP_TEMPLATES)):
+        question = DETAIL_FOLLOW_UP_TEMPLATES[(fragment_count + offset) % len(DETAIL_FOLLOW_UP_TEMPLATES)]
+        if question not in asked:
+            return question
+    return None
 
 
 def _trace(node: str, **payload: Any) -> dict[str, Any]:
@@ -63,8 +102,10 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             **_trace("consent_gate", allowed=allowed, consent_version=state.get("consent_version")),
         }
 
-    def route_consent(state: st.MemoryBankState) -> Literal["allowed", "revoked"]:
-        return "revoked" if state.get("next_action") == "revoked" else "allowed"
+    def route_consent(state: st.MemoryBankState) -> Literal["interview", "selected", "revoked"]:
+        if state.get("next_action") == "revoked":
+            return "revoked"
+        return "selected" if state.get("entry_mode") == "selected_fragments" else "interview"
 
     def revoke_and_delete(state: st.MemoryBankState) -> dict[str, Any]:
         return {
@@ -80,6 +121,13 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
     def interview_select_question(state: st.MemoryBankState) -> dict[str, Any]:
         """采访导演智能体：决定下一个问题，或识别停止意愿。"""
         previous = [turn.get("answer", "") for turn in state.get("turns", [])]
+        fragment_count = len(state.get("context_fragments", [])) + len(state.get("turns", []))
+        if fragment_count >= TARGET_STORY_FRAGMENTS:
+            return {
+                "current_question": "", "next_action": "no_more_questions",
+                "complete_reason": "已收集十段记忆碎片，可先整理故事；如有遗漏仍可继续补充",
+                **_trace("interview.select_question", complete=True, fragment_count=fragment_count),
+            }
         decision = provider.choose_question(
             subject_name=state.get("subject_name", "讲述者"),
             topic=state.get("topic", ""),
@@ -87,6 +135,9 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             asked_questions=list(state.get("asked_questions", [])),
             previous_answers=previous,
             missing_fields=list(state.get("missing_fields", [])),
+            confirmed_fragments=list(state.get("context_fragments", [])),
+            confirmed_facts=list(state.get("context_claims", [])),
+            minimum_fragments=MIN_STORY_FRAGMENTS,
         )
 
         if decision.get("should_stop"):
@@ -99,24 +150,45 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
                 **_trace("interview.select_question", should_stop=True, reason=decision.get("stop_reason")),
             }
 
-        if decision.get("complete"):
+        source_length = sum(len(text.strip()) for text in [*state.get("context_fragments", []), *previous])
+        core_covered = not (set(state.get("missing_fields", [])) & {"time", "place", "people", "event", "result", "feeling"})
+        chain_ready = fragment_count >= MIN_STORY_FRAGMENTS and source_length >= 120 and core_covered
+        if decision.get("complete") and chain_ready:
             return {
                 "current_question": "", "next_action": "no_more_questions",
                 "complete_reason": decision.get("complete_reason") or "材料已经足够生成故事",
-                **_trace("interview.select_question", complete=True),
+                **_trace("interview.select_question", complete=True, fragment_count=fragment_count),
             }
 
         question = decision.get("question")
+        target = decision.get("target_element")
+        missing = list(state.get("missing_fields", []))
+        asked = list(state.get("asked_questions", []))
+        inferred = _question_element(str(question or ""))
+        replaced = bool(question) and (
+            (target in st.SEVEN_ELEMENTS and target not in missing)
+            or (inferred in st.SEVEN_ELEMENTS and inferred not in missing)
+            or str(question).strip() in asked
+        )
+        if replaced:
+            question, target = _safe_missing_question(missing, asked)
+        if not question:
+            question, target = _safe_missing_question(missing, asked)
+        if not question and not chain_ready:
+            question, target = _safe_detail_question(fragment_count, asked), None
         return {
             "current_question": question or "",
             "next_action": "ask" if question else "no_more_questions",
             "asked_questions": [question] if question else [],
-            "target_element": decision.get("target_element"),
+            "target_element": target,
             **_trace(
                 "interview.select_question",
                 round=state.get("round_index", 0),
-                target_element=decision.get("target_element"),
+                target_element=target,
                 question=question,
+                corrected_known_question=replaced,
+                fragment_count=fragment_count,
+                story_chain_ready=chain_ready,
             ),
         }
 
@@ -222,7 +294,7 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
     def evidence_merge(state: st.MemoryBankState) -> dict[str, Any]:
         """合并证据 + 冲突检测：缺失要素保持缺失，矛盾讲述并列不裁定。"""
         claims = state.get("claims", [])
-        covered = {str(claim.get("element")) for claim in claims}
+        covered = set(state.get("context_covered_elements", [])) | {str(claim.get("element")) for claim in claims}
         missing = [element for element in st.SEVEN_ELEMENTS if element not in covered]
         conflicts = provider.resolve_conflicts(claims=claims)
         turns = state.get("turns", [])
@@ -248,6 +320,7 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             subject_name=state.get("subject_name", "讲述者"),
             topic=state.get("topic", ""),
             claims=state.get("claims", []),
+            style=state.get("writing_style", "raw"),
         )
         session_id = state.get("session_id", "session")
         sentences = [
@@ -271,6 +344,7 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             sentences=state.get("draft_sentences", []),
             claims=state.get("claims", []),
         )
+        findings = [*findings, *unresolved_conflict_findings(state.get("conflicts", []))]
         return {
             "audit_findings": findings,
             "audit_passed": not findings,
@@ -310,7 +384,10 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         if action == "edit":
             # 审计对象是待审文本，正文暂不替换（被拒的改写不得覆盖可用草稿）
             candidate = state.get("pending_text") or state.get("draft_text", "")
-            findings = audit_text(body=candidate, claims=state.get("claims", []))
+            findings = [
+                *audit_text(body=candidate, claims=state.get("claims", [])),
+                *unresolved_conflict_findings(state.get("conflicts", [])),
+            ]
             patch: dict[str, Any] = {
                 "audit_findings": findings,
                 "audit_passed": not findings,
@@ -324,7 +401,10 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             return patch
 
         # 批准：必须以**当前正文**重新核对，不能沿用早先的审计结论
-        findings = audit_text(body=state.get("draft_text", ""), claims=state.get("claims", []))
+        findings = [
+            *audit_text(body=state.get("draft_text", ""), claims=state.get("claims", [])),
+            *unresolved_conflict_findings(state.get("conflicts", [])),
+        ]
         return {
             "audit_findings": findings,
             "audit_passed": not findings,
@@ -345,7 +425,9 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         if action == "request_more":
             return "select_question"
         # approve / edit：都要以当前审计结论为准
-        return "creative" if state.get("audit_passed", True) else "select_question"
+        if state.get("audit_passed", True):
+            return "creative"
+        return "end" if state.get("entry_mode") == "selected_fragments" else "select_question"
 
     # ------------------------------------------------------------ 交付
 
@@ -383,16 +465,37 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         if action == "finish_without_question":
             return "creative" if not state.get("claims") else "review"
         if action == "no_more_questions":
+            if not state.get("turns"):
+                return "end"
             return "fan_out"
         return "commit_turn"
 
     def route_after_audit(state: st.MemoryBankState) -> str:
+        if state.get("entry_mode") == "selected_fragments":
+            if not state.get("audit_passed") and not state.get("conflicts") and state.get("revision_count", 0) < 1:
+                return "revise"
+            return "review"
         return "review" if state.get("audit_passed", True) else "select_question"
+
+    def selection_prepare(state: st.MemoryBankState) -> dict[str, Any]:
+        claims = state.get("claims", [])
+        covered = {str(item.get("element")) for item in claims}
+        conflicts = provider.resolve_conflicts(claims=claims)
+        return {
+            "missing_fields": [item for item in st.SEVEN_ELEMENTS if item not in covered],
+            "conflicts": conflicts,
+            **_trace("evidence.selection_prepare", claims=len(claims), conflicts=len(conflicts)),
+        }
+
+    def writing_revision(state: st.MemoryBankState) -> dict[str, Any]:
+        return {"revision_count": state.get("revision_count", 0) + 1,
+                **_trace("writing.revision", reason="audit_failed")}
 
     def route_after_merge(state: st.MemoryBankState) -> Literal["interview", "draft"]:
         """采访循环：还没讲完就继续追问，讲完了才成文。
 
-        结束条件：讲述者表示 finish、达到轮次上限、七要素齐全、或问题已问尽。
+        结束条件：讲述者表示 finish、达到轮次/碎片上限、连续两轮无新事实。
+        七要素齐全不等于故事足够详细，仍由采访 Agent 判断是否继续追问。
         这是"一次只讲一个小故事、慢慢追问"的实现位置。
         """
         turns = state.get("turns", [])
@@ -401,11 +504,11 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             return "draft"
         if state.get("round_index", 0) >= state.get("max_rounds", 3):
             return "draft"
+        if len(state.get("context_fragments", [])) + len(turns) >= TARGET_STORY_FRAGMENTS:
+            return "draft"
         if state.get("stop_requested"):
             return "draft"
         if state.get("no_new_fact_rounds", 0) >= 2:
-            return "draft"
-        if not state.get("missing_fields"):
             return "draft"
         if state.get("next_action") == "no_more_questions":
             return "draft"
@@ -422,6 +525,8 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
     builder.add_node("evidence_extract_claims", evidence_extract_claims, input_schema=st.EvidenceTask)
     builder.add_node("evidence_merge", evidence_merge)
     builder.add_node("writing_draft", writing_draft)
+    builder.add_node("selection_prepare", selection_prepare)
+    builder.add_node("writing_revision", writing_revision)
     builder.add_node("writing_audit", writing_audit)
     builder.add_node("review_decide", review_decide)
     builder.add_node("review_apply", review_apply)
@@ -431,8 +536,11 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
     builder.add_edge(START, "load_context")
     builder.add_edge("load_context", "consent_gate")
     builder.add_conditional_edges(
-        "consent_gate", route_consent, {"allowed": "interview_select_question", "revoked": "revoke_and_delete"}
+        "consent_gate", route_consent,
+        {"interview": "interview_select_question", "selected": "selection_prepare", "revoked": "revoke_and_delete"},
     )
+    # 采访与勾选碎片共用同一父图的写作、审计和人工确认节点。
+    builder.add_edge("selection_prepare", "writing_draft")
     builder.add_conditional_edges(
         "interview_select_question",
         route_after_question,
@@ -441,6 +549,7 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
             "fan_out": "evidence_prepare",
             "review": "review_decide",
             "creative": "creative_delivery",
+            "end": END,
         },
     )
     builder.add_edge("interview_commit_turn", "evidence_prepare")
@@ -459,8 +568,9 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
     builder.add_conditional_edges(
         "writing_audit",
         route_after_audit,
-        {"review": "review_decide", "select_question": "interview_select_question"},
+        {"review": "review_decide", "select_question": "interview_select_question", "revise": "writing_revision"},
     )
+    builder.add_edge("writing_revision", "writing_draft")
     builder.add_edge("review_decide", "review_apply")
     builder.add_conditional_edges(
         "review_apply",

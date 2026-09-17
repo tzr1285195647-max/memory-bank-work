@@ -23,8 +23,9 @@ from sqlalchemy.orm import Session
 
 from .agents import AgentRuntime, SessionNotFoundError
 from .agents.state import SEVEN_ELEMENTS
+from .evidence_audit import unresolved_conflict_findings
 from .database import AgentCallLog, FamilyNote, MemoryFact, Recording, Story, StoryRecording, Topic, User, utc_now
-from .service import ConsentError, append_audit, require_consent, story_to_dict
+from .service import ConsentError, append_audit, require_consent, story_to_dict, visible_topic
 
 # 单机演示：运行时进程内单例（checkpoint 落 SQLite，服务重启后仍可恢复）
 _runtime: AgentRuntime | None = None
@@ -47,13 +48,14 @@ def reset_runtime() -> None:
 
 def _flush_agent_calls(
     session: Session, runtime: AgentRuntime, *, family_id: str, input_refs: list[str]
-) -> None:
+) -> list[dict[str, Any]]:
     """把模型元数据落库；不记录转写正文、提示词正文或密钥。"""
     provider = runtime.provider
     consume = getattr(provider, "consume_call_records", None)
     if not callable(consume):
-        return
-    for item in consume():
+        return []
+    records = consume()
+    for item in records:
         session.add(AgentCallLog(
             id=str(uuid.uuid4()), family_id=family_id, agent_name=str(item.get("agent") or "unknown"),
             model=str(item.get("model") or ""), prompt_version=str(item.get("prompt_version") or "p0-v1"),
@@ -63,6 +65,41 @@ def _flush_agent_calls(
             error=str(item.get("error") or "")[:240],
         ))
     session.commit()
+    return records
+
+
+def _workflow_from_view(view: dict[str, Any], calls: list[dict[str, Any]]) -> dict[str, Any]:
+    """演示用脱敏协作记录：不保存 Prompt、正文或密钥。"""
+    labels = {
+        "interview.select_question": "采访提示", "evidence.extract_claims": "证据抽取",
+        "evidence.merge": "证据汇总", "evidence.selection_prepare": "证据汇总",
+        "writing.draft": "故事写作", "writing.revision": "写作修订",
+        "writing.audit": "事实审计", "review.decision": "人工确认",
+        "review.apply": "确认后复审",
+    }
+    steps = []
+    for item in view.get("agent_trace", []):
+        node = str(item.get("node") or "")
+        if node not in labels:
+            continue
+        steps.append({
+            "agent": labels[node], "node": node,
+            "claims": item.get("claims"), "findings": item.get("findings"),
+            "conflicts": item.get("conflicts"),
+            "fragmentCount": item.get("fragment_count"),
+            "correctedKnownQuestion": bool(item.get("corrected_known_question")),
+        })
+    return {
+        "steps": steps,
+        "provider": view.get("provider_name", "unknown"),
+        "calls": [
+             {key: item.get(key) for key in
+             ("agent", "model", "prompt_version", "duration_ms", "retry_count", "fallback_used")}
+            for item in calls
+        ],
+        "auditPassed": bool(view.get("audit_passed")),
+        "revisionCount": int(view.get("revision_count") or 0),
+    }
 
 
 def _record_human_outcome(
@@ -155,14 +192,55 @@ def start_interview_session(
     subject_name: str,
     topic_id: str,
     consent_version: int,
-    max_rounds: int = 3,
+    max_rounds: int = 10,
     recording_id: str | None = None,
 ) -> dict[str, Any]:
-    """开一场采访：图会先由采访导演提出第一个问题并挂起等待回答。"""
+    """开一场采访：先装入同一讲述者、同一主题的已确认碎片。"""
     require_consent(session, family_id, consent_version)
-    topic = session.get(Topic, topic_id)
+    topic = visible_topic(session, family_id, topic_id)
     actor = session.get(User, actor_id)
     narrator_name = actor.display_name if actor else "讲述者"
+    recordings = session.scalars(
+        select(Recording).where(
+            Recording.family_id == family_id,
+            Recording.narrator_user_id == actor_id,
+            Recording.topic_id == topic_id,
+            Recording.fragment_confirmed == 1,
+        ).order_by(Recording.fragment_order, Recording.created_at)
+    ).all()
+    confirmed_by_id = {
+        recording.id: (recording.confirmed_text or recording.transcript or "").strip()
+        for recording in recordings
+    }
+    confirmed_by_id = {key: value for key, value in confirmed_by_id.items() if value}
+    facts = session.scalars(
+        select(MemoryFact).where(
+            MemoryFact.family_id == family_id,
+            MemoryFact.fragment_id.in_(list(confirmed_by_id)),
+        )
+    ).all() if confirmed_by_id else []
+    context_claims = [
+        {
+            "id": fact.id, "element": fact.element, "text": fact.text,
+            "quote": fact.quote, "turn_id": f"fragment-{fact.fragment_id}",
+            "fragment_id": fact.fragment_id, "recording_id": fact.recording_id,
+            "narrator_user_id": fact.narrator_user_id,
+            "confidence": float(fact.confidence), "status": fact.status,
+        }
+        for fact in facts
+        if fact.element in SEVEN_ELEMENTS
+        and fact.quote and fact.quote in confirmed_by_id.get(fact.fragment_id, "")
+    ]
+    covered = {
+        fact.element for fact in facts
+        if fact.element in SEVEN_ELEMENTS
+        and fact.quote and fact.quote in confirmed_by_id.get(fact.fragment_id, "")
+    }
+    # 证据 Agent 偶尔会漏掉时间标签；明确写在确认原文里的年份/季节不能再被问一遍。
+    if any(re.search(r"(?<!\d)(?:18|19|20)\d{2}年|春天|夏天|秋天|冬天", text)
+           for text in confirmed_by_id.values()):
+        covered.add("time")
+    context_fragments = [confirmed_by_id[item.id] for item in recordings if item.id in confirmed_by_id]
     session_id = f"interview-{uuid.uuid4().hex[:12]}"
     view = runtime.start_session(
         session_id=session_id,
@@ -173,10 +251,16 @@ def start_interview_session(
         topic=topic.title if topic else topic_id,
         consent_version=consent_version,
         max_rounds=max_rounds,
+        context_fragments=context_fragments,
+        context_covered_elements=sorted(covered),
+        context_claims=context_claims,
     )
     view["topicId"] = topic_id
     view["recordingId"] = recording_id
-    _flush_agent_calls(session, runtime, family_id=family_id, input_refs=[recording_id] if recording_id else [])
+    _flush_agent_calls(
+        session, runtime, family_id=family_id,
+        input_refs=[*confirmed_by_id, *([recording_id] if recording_id else [])],
+    )
     return view
 
 
@@ -216,7 +300,7 @@ def submit_answer(
         )
     except SessionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="采访会话不存在") from exc
-    _flush_agent_calls(session, runtime, family_id=family_id, input_refs=[recording_id] if recording_id else [])
+    calls = _flush_agent_calls(session, runtime, family_id=family_id, input_refs=[recording_id] if recording_id else [])
 
     view["topicId"] = topic_id
     view["recordingId"] = recording_id
@@ -230,6 +314,7 @@ def submit_answer(
             topic_id=topic_id,
             recording_id=recording_id,
             duration_ms=_duration_from_view(view),
+            calls=calls,
         )
         view["storyId"] = story.id
     return view
@@ -247,10 +332,11 @@ def stop_session(
     """尊重停止意愿：让图收尾并返回可确认的草稿（若有）。"""
     require_consent(session, family_id, consent_version)
     view = runtime.resume(session_id, {"answer": "", "finish": True})
-    _flush_agent_calls(session, runtime, family_id=family_id, input_refs=[])
+    calls = _flush_agent_calls(session, runtime, family_id=family_id, input_refs=[])
     if _has_draft(view):
         story = _upsert_draft(
-            session, family_id=family_id, view=view, topic_id=topic_id, recording_id=None, duration_ms=0
+            session, family_id=family_id, view=view, topic_id=topic_id, recording_id=None, duration_ms=0,
+            calls=calls,
         )
         view["storyId"] = story.id
     return view
@@ -302,9 +388,8 @@ def generate_story_from_fragments(
     narrator = session.get(User, narrator_user_id) if narrator_user_id else None
     narrator_name = narrator.display_name if narrator else "讲述者"
 
-    topic = session.get(Topic, topic_id)
+    topic = visible_topic(session, family_id, topic_id)
     topic_title = topic.title if topic else topic_id or "家庭记忆"
-    provider = runtime.provider
     claims: list[dict[str, Any]] = []
     refs: list[dict[str, Any]] = []
     claim_order = 0
@@ -342,46 +427,28 @@ def generate_story_from_fragments(
     if not claims:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="选中的文字没有可用于生成故事的内容")
 
-    draft = provider.compose_draft(
-        subject_name=narrator_name,
-        topic=topic_title,
-        claims=claims,
-        style=style,
+    graph_session_id = f"fragments-{uuid.uuid4().hex[:12]}"
+    view = runtime.start_selected_story(
+        session_id=graph_session_id, family_id=family_id,
+        actor_id=actor_user_id, subject_name=narrator_name,
+        topic=topic_title, consent_version=consent_version,
+        claims=claims, recording_refs=refs, style=style,
     )
-    draft_sentences = [
-        {
-            "id": f"selection-s{index:02d}",
-            "text": str(item.get("text") or "").strip(),
-            "claim_ids": list(item.get("claim_ids") or []),
-            "fragment_ids": sorted({
-                str(next((claim.get("fragment_id") for claim in claims if claim.get("id") == claim_id), ""))
-                for claim_id in item.get("claim_ids", [])
-            } - {""}),
-            "must_cite": bool(item.get("must_cite", True)),
-        }
-        for index, item in enumerate(draft.get("sentences", []))
-        if str(item.get("text") or "").strip()
-    ]
-    findings = provider.audit_draft(sentences=draft_sentences, claims=claims)
-    revision_count = 0
-    if findings:
-        # 无依据内容不进入可发布状态；先让写作 Agent 基于同一证据自动重写一次。
-        revision_count = 1
-        draft = provider.compose_draft(subject_name=narrator_name, topic=topic_title, claims=claims, style=style)
-        draft_sentences = [
-            {"id": f"selection-r1-s{index:02d}", "text": str(item.get("text") or "").strip(),
-             "claim_ids": list(item.get("claim_ids") or []),
-             "fragment_ids": sorted({str(next((c.get("fragment_id") for c in claims if c.get("id") == cid), "")) for cid in item.get("claim_ids", [])} - {""}),
-             "must_cite": bool(item.get("must_cite", True))}
-            for index, item in enumerate(draft.get("sentences", [])) if str(item.get("text") or "").strip()
-        ]
-        findings = provider.audit_draft(sentences=draft_sentences, claims=claims)
-    covered = {str(claim.get("element")) for claim in claims}
-    missing = [element for element in SEVEN_ELEMENTS if element not in covered]
-    conflicts = provider.resolve_conflicts(claims=claims)
-    mode = {"raw": "原味口述", "natural": "自然整理", "book": "适合成书"}.get(style, "自然整理")
-    title = str(draft.get("title") or f"《{topic_title}》").strip().strip("《》")
-    body = "\n".join(sentence["text"] for sentence in draft_sentences)
+    draft_sentences = []
+    by_claim_id = {str(item["id"]): item for item in claims}
+    for item in view.get("draft_sentences", []):
+        cited = list(item.get("claim_ids") or [])
+        draft_sentences.append({
+            **item,
+            "fragment_ids": sorted({str(by_claim_id[cid].get("fragment_id"))
+                                    for cid in cited if cid in by_claim_id and by_claim_id[cid].get("fragment_id")}),
+        })
+    findings = view.get("audit_findings", [])
+    missing = view.get("missing_fields", [])
+    conflicts = view.get("conflicts", [])
+    mode = {"raw": "原味口述", "book": "适合成书"}.get(style, "原味口述")
+    title = _title_from_draft(view) or topic_title
+    body = str(view.get("draft_text") or "")
     story = Story(
         id=str(uuid.uuid4()),
         family_id=family_id,
@@ -395,14 +462,14 @@ def generate_story_from_fragments(
         duration_ms=sum(recording.duration_ms or 0 for recording in recordings),
         sort_order=99,
         life_stage={"hometown": "童年", "school": "求学", "work": "工作", "family": "家庭"}.get(topic_id, "未分类"),
-        session_id=f"fragments-{uuid.uuid4().hex[:12]}",
+        session_id=graph_session_id,
         claims_json=json.dumps(claims, ensure_ascii=False),
         missing_fields_json=json.dumps(missing, ensure_ascii=False),
         findings_json=json.dumps(findings, ensure_ascii=False),
         conflicts_json=json.dumps(conflicts, ensure_ascii=False),
         audit_passed=0 if findings else 1,
         draft_sentences_json=json.dumps(draft_sentences, ensure_ascii=False),
-        revision_count=revision_count,
+        revision_count=int(view.get("revision_count") or 0),
     )
     session.add(story)
     session.commit()
@@ -417,7 +484,18 @@ def generate_story_from_fragments(
         target_id=story.id,
     )
     session.commit()
-    _flush_agent_calls(session, runtime, family_id=family_id, input_refs=selected_ids)
+    calls = _flush_agent_calls(session, runtime, family_id=family_id, input_refs=selected_ids)
+    workflow = _workflow_from_view(view, calls)
+    earlier_steps = []
+    cleaned_count = sum(1 for item in recordings if item.clean_status == "success")
+    if cleaned_count:
+        earlier_steps.append({"agent": "口述校对", "node": "transcript.cleaned_and_reviewed",
+                              "fragmentCount": cleaned_count, "source": "persisted"})
+    earlier_steps.append({"agent": "证据抽取", "node": "evidence.persisted",
+                          "claims": len(claims), "source": "persisted"})
+    workflow["steps"] = [*earlier_steps, *workflow["steps"]]
+    story.workflow_json = json.dumps(workflow, ensure_ascii=False)
+    session.commit()
     return story_to_dict(session, story)
 
 
@@ -445,7 +523,10 @@ def review_draft(
 
     # 状态校验：改写被拒后流程会退回采访，此时再发确认动作是无效的。
     # 明确报错比静默把动作当成"采访回答"要安全得多。
-    current = runtime.view(session_id)
+    try:
+        current = runtime.view(session_id)
+    except SessionNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="采访会话不存在") from exc
     pending = {item["value"].get("kind") for item in current.get("interrupts", [])}
     if "review" not in pending:
         raise HTTPException(
@@ -520,7 +601,10 @@ def review_story(
 
     claims = json.loads(story.claims_json or "[]")
     if claims:
-        findings = _audit_edited_text(body=body, claims=claims)
+        findings = [
+            *_audit_edited_text(body=body, claims=claims),
+            *unresolved_conflict_findings(json.loads(story.conflicts_json or "[]")),
+        ]
         if not findings:
             sentences = [
                 {"id": f"review-s{index:02d}", "text": line.strip(),
@@ -544,6 +628,27 @@ def review_story(
                     + "；".join(str(f.get("excerpt", "")) for f in findings[:2])
                 ),
             )
+
+    # 新版勾选碎片故事有真正的 LangGraph 人工确认点；旧版草稿仍可沿用
+    # 证据复审，避免迁移时让已保存故事失去确认入口。
+    if story.session_id.startswith("fragments-"):
+        try:
+            graph_view = runtime.view(story.session_id)
+        except SessionNotFoundError:
+            graph_view = None
+        if graph_view is not None:
+            pending = {item["value"].get("kind") for item in graph_view.get("interrupts", [])}
+            if "review" in pending:
+                action = "edit" if body != graph_view.get("draft_text", "") else "approve"
+                graph_view = runtime.resume(
+                    story.session_id,
+                    {"action": action, **({"edited_text": body} if action == "edit" else {})},
+                )
+                _flush_agent_calls(session, runtime, family_id=family_id,
+                                   input_refs=[str(item.get("fragment_id")) for item in claims if item.get("fragment_id")])
+                if not graph_view.get("audit_passed", False):
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                        detail="协作图审计未通过，不能确认故事")
 
     story.body = body
     story.status = "confirmed"
@@ -581,6 +686,7 @@ def _upsert_draft(
     topic_id: str,
     recording_id: str | None,
     duration_ms: int,
+    calls: list[dict[str, Any]] | None = None,
 ) -> Story:
     """把图产出的草稿写成待确认故事（同一 session 只保留一条）。"""
     story = None
@@ -610,7 +716,7 @@ def _upsert_draft(
         }.get(topic_id, "未分类")
     story.title = _title_from_draft(view) or story.title or "未命名主题"
     story.body = view.get("draft_text", "")
-    story.mode = "自然整理"
+    story.mode = "原味口述"
     story.status = "pending_review"
     story.audit_passed = 1 if view.get("audit_passed", True) else 0
     story.claims_json = json.dumps(view.get("claims", []), ensure_ascii=False)
@@ -618,6 +724,7 @@ def _upsert_draft(
     story.findings_json = json.dumps(view.get("audit_findings", []), ensure_ascii=False)
     story.conflicts_json = json.dumps(view.get("conflicts", []), ensure_ascii=False)
     story.draft_sentences_json = json.dumps(view.get("draft_sentences", []), ensure_ascii=False)
+    story.workflow_json = json.dumps(_workflow_from_view(view, calls or []), ensure_ascii=False)
     if recording_id:
         story.recording_id = recording_id
         recording = session.get(Recording, recording_id)

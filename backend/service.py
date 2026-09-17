@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from .config import settings
@@ -288,13 +288,39 @@ def require_consent(session: Session, family_id: str, version: int) -> ConsentGr
 # ------------------------------------------------------------------ 主题与首页
 
 
-def list_topics(session: Session) -> list[dict]:
-    rows = session.scalars(select(Topic).order_by(Topic.sort_order)).all()
+def list_topics(session: Session, family_id: str) -> list[dict]:
+    rows = session.scalars(
+        select(Topic).where(or_(Topic.family_id.is_(None), Topic.family_id == family_id))
+        .order_by(Topic.sort_order, Topic.title)
+    ).all()
     return [{"id": t.id, "glyph": t.glyph, "title": t.title, "subtitle": t.subtitle} for t in rows]
 
 
+def create_custom_topic(session: Session, family_id: str, title: str) -> dict:
+    name = title.strip()
+    if len(name) < 2 or len(name) > 30:
+        raise HTTPException(status_code=422, detail="主题名称需为 2–30 个字")
+    existing = session.scalar(select(Topic).where(
+        Topic.title == name, or_(Topic.family_id.is_(None), Topic.family_id == family_id)
+    ))
+    if existing:
+        return {"id": existing.id, "glyph": existing.glyph, "title": existing.title, "subtitle": existing.subtitle}
+    topic = Topic(id=f"custom-{uuid.uuid4().hex[:24]}", glyph="忆", title=name,
+                  subtitle="自己想讲的故事", sort_order=100, family_id=family_id)
+    session.add(topic)
+    session.commit()
+    return {"id": topic.id, "glyph": topic.glyph, "title": topic.title, "subtitle": topic.subtitle}
+
+
+def visible_topic(session: Session, family_id: str, topic_id: str) -> Topic | None:
+    topic = session.get(Topic, topic_id)
+    if topic is not None and topic.family_id not in (None, family_id):
+        raise HTTPException(status_code=404, detail="主题不存在")
+    return topic
+
+
 def build_home(session: Session, family_id: str) -> dict:
-    topics = list_topics(session)
+    topics = list_topics(session, family_id)
     today = next((t for t in topics if t["id"] == "hometown"), topics[0] if topics else None)
     recent = [
         story_to_dict(session, story, index + 1)
@@ -332,6 +358,7 @@ def save_recording(
     actor_user_id: str | None = None,
 ) -> dict:
     require_consent(session, family_id, consent_version)
+    visible_topic(session, family_id, topic_id)
 
     payload = upload.file.read()
     if not payload:
@@ -531,7 +558,8 @@ def update_memory_fragment(
         recording.fragment_confirmed = 1
         recording.confirmed_by_user_id = actor_user_id
     if topic_id is not None:
-        if session.get(Topic, topic_id) is None:
+        target_topic = visible_topic(session, family_id, topic_id)
+        if target_topic is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="目标主题不存在")
         recording.topic_id = topic_id
     append_audit(
@@ -755,6 +783,7 @@ def story_to_dict(session: Session, story: Story, index: int | None = None) -> d
         "familyNoteCount": family_note_count,
         "memoryYear": story.memory_year,
         "lifeStage": story.life_stage or "未分类",
+        "workflow": json.loads(story.workflow_json or "{}"),
     }
 
 
@@ -923,12 +952,15 @@ def audit_story_text(
     consent_version: int,
 ) -> dict:
     """预确认审计：只检查并记录结果，不改变发布状态。"""
-    from .evidence_audit import audit_text
+    from .evidence_audit import audit_text, unresolved_conflict_findings
 
     require_consent(session, family_id, consent_version)
     story = _get_story(session, family_id, story_id)
     claims = json.loads(story.claims_json or "[]")
-    findings = audit_text(body=body, claims=claims) if claims else []
+    findings = [
+        *(audit_text(body=body, claims=claims) if claims else []),
+        *unresolved_conflict_findings(json.loads(story.conflicts_json or "[]")),
+    ]
     story.findings_json = json.dumps(findings, ensure_ascii=False)
     story.audit_passed = 0 if findings else 1
     story.status = "pending_review"
@@ -1053,6 +1085,20 @@ def confirm_story(
             status_code=status.HTTP_409_CONFLICT,
             detail="还有家人建议未处理，请先采纳或标记暂不采用",
         )
+    # 兼容早期手工故事；已有 Agent 证据的草稿则绝不允许绕过审计接口直发。
+    claims = json.loads(story.claims_json or "[]")
+    if claims:
+        from .evidence_audit import audit_text, unresolved_conflict_findings
+
+        findings = [
+            *audit_text(body=story.body, claims=claims),
+            *unresolved_conflict_findings(json.loads(story.conflicts_json or "[]")),
+        ]
+        if findings or not story.audit_passed:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="故事仍有无依据内容或未解决冲突，请先核对并重新审计",
+            )
     story.status = "confirmed"
     append_audit(
         session, family_id, action="story_confirmed", category="story",
@@ -1079,14 +1125,14 @@ def create_draft(
     避免把非证据内容伪装成讲述原文。
     """
     require_consent(session, family_id, consent_version)
-    topic = session.get(Topic, topic_id)
+    topic = visible_topic(session, family_id, topic_id)
     story = Story(
         id=str(uuid.uuid4()),
         family_id=family_id,
         topic_id=topic_id,
         title=topic.title if topic else "未命名主题",
         body="（这段文字将根据你的讲述生成，当前为演示占位内容。）",
-        mode="自然整理",
+        mode="原味口述",
         status="pending_review",
         recording_id=recording_id,
         duration_ms=duration_ms,

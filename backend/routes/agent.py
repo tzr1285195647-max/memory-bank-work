@@ -35,7 +35,7 @@ class StartRequest(BaseModel):
 
     topicId: str = Field(min_length=1, max_length=32)
     subjectName: str = Field(default="讲述者", max_length=60)
-    maxRounds: int = Field(default=3, ge=1, le=8)
+    maxRounds: int = Field(default=10, ge=1, le=10)
     consentVersion: int = Field(ge=1)
     recordingId: str | None = None
 
@@ -80,10 +80,10 @@ class StoryReviewRequest(BaseModel):
 class FragmentGenerationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    recordingIds: list[str] = Field(min_length=1, max_length=8)
+    recordingIds: list[str] = Field(min_length=1, max_length=10)
     topicId: str = Field(min_length=1, max_length=32)
     subjectName: str = Field(default="讲述者", max_length=60)
-    style: str = Field(default="natural", pattern=r"^(raw|natural|book)$")
+    style: str = Field(default="raw", pattern=r"^(raw|book)$")
     consentVersion: int = Field(ge=1)
 
 
@@ -127,7 +127,7 @@ def start(payload: StartRequest, session: SessionDep, auth: AuthDep) -> dict[str
 
 @router.post("/interviews/answers")
 def answer(payload: AnswerRequest, session: SessionDep, auth: AuthDep) -> dict[str, Any]:
-    """提交一轮讲述。finish=true 或要素齐全时进入写作与审计，产出待确认草稿。"""
+    """提交一轮讲述。主动结束或故事链充分时进入写作与审计。"""
     return submit_answer(
         session,
         _runtime(),

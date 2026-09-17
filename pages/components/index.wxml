@@ -73,7 +73,7 @@
   <view class="demo__section">
     <text class="t-section">列表项 list-item</text>
     <view class="demo__stack">
-      <list-item variant="story" index="01" title="外婆的桂花树" subtitle="03:42 · 自然整理" arrow="›" />
+      <list-item variant="story" index="01" title="外婆的桂花树" subtitle="03:42 · 原味口述" arrow="›" />
     </view>
     <view class="demo__stack">
       <list-item variant="topic" glyph="乡" title="我的家乡" subtitle="老街、河流、赶集与邻里" arrow="→" />
@@ -88,7 +88,7 @@
     <view class="demo__row">
       <ai-badge class="demo__row-item" />
       <ai-badge class="demo__row-item" size="small" text="AI 整理" />
-      <evidence-tag class="demo__row-item" durationMs="{{222000}}" mode="自然整理" />
+      <evidence-tag class="demo__row-item" durationMs="{{222000}}" mode="原味口述" />
     </view>
     <text class="t-caption mt-8">「AI 整理 · 待确认」是产品规则要求的显式标注；来源标识同时给出原声时长与整理方式。</text>
   </view>

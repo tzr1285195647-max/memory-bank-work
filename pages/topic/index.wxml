@@ -3,7 +3,7 @@
 <view class="page topic">
   <view class="topic__head">
     <text class="t-title">今天，想讲哪一段？</text>
-    <text class="topic__sub">选一个最容易想起的入口。</text>
+    <text class="topic__sub">选一个推荐主题，或写下自己想讲的故事。</text>
   </view>
 
   <!-- 设计稿：四个 342×82 白卡，圆角 18，间距 23 -->
@@ -19,5 +19,11 @@
       data-id="{{item.id}}"
       bind:tap="onChoose"
     />
+  </view>
+  <view class="topic__custom">
+    <text class="topic__custom-label">自定义主题</text>
+    <input class="topic__custom-input" value="{{customTitle}}" maxlength="30"
+      placeholder="例如：第一次坐火车" bindinput="onCustomInput" />
+    <button class="topic__custom-button" bindtap="onCreateCustom" loading="{{creating}}" disabled="{{creating || choosing}}">用这个主题开始讲述</button>
   </view>
 </view>

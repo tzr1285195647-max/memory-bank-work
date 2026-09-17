@@ -63,6 +63,21 @@ FOLLOW_UP_TEMPLATES = {
     "feeling": "那时候你心里是什么感觉？",
 }
 
+# 七要素齐全并不代表故事已经讲细。用于模型不可用或模型过早结束时的安全追问；
+# 问句只邀请补充新细节，不预设已经发生过的事情。
+DETAIL_FOLLOW_UP_TEMPLATES = (
+    "这段经历里，还有哪个没讲到的小片段最值得留下？",
+    "你刚讲的那段经历中，有没有一句当时听到的话还记得？",
+    "那天的情景里，有没有一个动作或画面你至今记得？",
+    "从这件事开始到结束，中间还有哪一步没有讲到？",
+    "关于当时在场的人，还有什么具体互动想补充？",
+    "这段经历中，有没有一个转折或意外值得再讲讲？",
+    "回想这件事，还有什么细节是你希望家人记住的？",
+    "刚才提到的经历，哪一小段你还想讲得更具体些？",
+    "这段往事后来还有什么你没有提过的变化吗？",
+    "关于这段经历，你还愿意补充一个真实的小细节吗？",
+)
+
 
 def _split_sentences(text: str) -> list[str]:
     """按中文标点与换行切句，保留句子原文（quote 必须是原样子串）。"""
@@ -108,6 +123,9 @@ class MockAgentProvider:
         asked_questions: list[str],
         previous_answers: list[str],
         missing_fields: list[str],
+        confirmed_fragments: list[str] | None = None,
+        confirmed_facts: list[dict[str, Any]] | None = None,
+        minimum_fragments: int = 7,
     ) -> dict[str, Any]:
         joined = " ".join(previous_answers)
         for pattern in STOP_PATTERNS:
@@ -120,7 +138,7 @@ class MockAgentProvider:
                     "closing": "好，今天就到这儿。你想讲的时候，随时回来。",
                 }
 
-        if round_index == 0:
+        if round_index == 0 and not confirmed_fragments:
             question = TOPIC_OPENERS.get(topic) or f"关于「{topic}」，你最想先留住的是哪个具体时刻？"
             return {
                 "should_stop": False,
@@ -138,6 +156,12 @@ class MockAgentProvider:
                 if candidate not in asked_questions:
                     target = element
                     break
+        if target is None and len(confirmed_fragments or []) + len(previous_answers) < minimum_fragments:
+            for offset in range(len(DETAIL_FOLLOW_UP_TEMPLATES)):
+                candidate = DETAIL_FOLLOW_UP_TEMPLATES[(len(confirmed_fragments or []) + offset) % len(DETAIL_FOLLOW_UP_TEMPLATES)]
+                if candidate not in asked_questions:
+                    return {"should_stop": False, "question": candidate, "target_element": None,
+                            "complete": False, "closing": None}
         if target is None:
             return {
                 "should_stop": False,
@@ -188,13 +212,12 @@ class MockAgentProvider:
         subject_name: str,
         topic: str,
         claims: list[dict[str, Any]],
-        style: str = "natural",
+        style: str = "raw",
     ) -> dict[str, Any]:
         source_text = {
             "raw": f"这是{subject_name}确认过的口述原文。",
-            "natural": f"这是{subject_name}亲口讲述并等待确认的一段家庭记忆。",
             "book": f"这是根据{subject_name}亲口讲述整理、等待确认的一段家庭记忆。",
-        }.get(style, f"这是{subject_name}亲口讲述并等待确认的一段家庭记忆。")
+        }.get(style, f"这是{subject_name}确认过的口述原文。")
         sentences: list[dict[str, Any]] = [
             {
                 "text": f"《{topic}》",
@@ -208,7 +231,7 @@ class MockAgentProvider:
             },
         ]
 
-        # 原味口述和自然整理保持碎片顺序；适合成书才按叙事要素轻度重排。
+        # 原味口述保持已确认碎片顺序；适合成书才按叙事要素轻度重排。
         if style == "book":
             ordered = sorted(
                 claims,
@@ -241,6 +264,8 @@ class MockAgentProvider:
         sentences: list[dict[str, Any]],
         claims: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
+        from ..evidence_audit import audit_text
+
         by_id = {claim["id"]: claim for claim in claims}
         findings: list[dict[str, Any]] = []
         for sentence in sentences:
@@ -282,34 +307,49 @@ class MockAgentProvider:
                             "excerpt": excerpt,
                         }
                     )
+            # 引用存在并不代表整句话都有依据；只用本句引用的事实逐个分句复核。
+            if sentence.get("must_cite") and cited and all(cid in by_id for cid in cited):
+                local = audit_text(
+                    body=str(sentence.get("text", "")),
+                    claims=[by_id[cid] for cid in cited],
+                )
+                findings.extend({**item, "sentence_id": sentence.get("id", "")} for item in local)
         return findings
 
     # ------------------------------------------------------------- 冲突处理
 
     def resolve_conflicts(self, *, claims: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """同一要素出现多轮不同表述时并列展示，由人判断，不由 AI 裁定。"""
+        """只报告可确定的年份冲突；不同细节不等于互相矛盾。"""
+        from difflib import SequenceMatcher
+
         by_element: dict[str, list[dict[str, Any]]] = {}
         for claim in claims:
             by_element.setdefault(str(claim.get("element")), []).append(claim)
 
         groups: list[dict[str, Any]] = []
         for element, items in by_element.items():
-            distinct_turns = {item.get("turn_id") for item in items}
-            if len(distinct_turns) < 2:
+            if element != "time":
                 continue
-            texts = {str(item.get("text", "")).strip() for item in items}
-            if len(texts) < 2:
-                continue
-            first, second = items[0], items[1]
-            groups.append(
-                {
-                    "element": element,
-                    "elementLabel": ELEMENT_LABELS.get(element, element),
-                    "quote_a": first.get("quote", ""),
-                    "turn_a": first.get("turn_id", ""),
-                    "quote_b": second.get("quote", ""),
-                    "turn_b": second.get("turn_id", ""),
-                    "note": "两次讲述的表述不同，按产品规则并列保留，等待家人确认。",
-                }
-            )
+            for index, first in enumerate(items):
+                for second in items[index + 1:]:
+                    if first.get("turn_id") == second.get("turn_id"):
+                        continue
+                    first_quote, second_quote = str(first.get("quote") or ""), str(second.get("quote") or "")
+                    years_a = set(re.findall(r"(?<!\d)(?:18|19|20)\d{2}年", first_quote))
+                    years_b = set(re.findall(r"(?<!\d)(?:18|19|20)\d{2}年", second_quote))
+                    if not years_a or not years_b or years_a == years_b:
+                        continue
+                    a_context = re.sub(r"(?<!\d)(?:18|19|20)\d{2}年", "", first_quote)
+                    b_context = re.sub(r"(?<!\d)(?:18|19|20)\d{2}年", "", second_quote)
+                    if min(len(a_context.strip("，。  ")), len(b_context.strip("，。  "))) < 5:
+                        continue
+                    if SequenceMatcher(None, a_context, b_context).ratio() < 0.55:
+                        continue
+                    groups.append({
+                        "element": element,
+                        "elementLabel": ELEMENT_LABELS.get(element, element),
+                        "quote_a": first_quote, "turn_a": first.get("turn_id", ""),
+                        "quote_b": second_quote, "turn_b": second.get("turn_id", ""),
+                        "note": "同一段经历出现不同年份，等待讲述者核对。",
+                    })
         return groups

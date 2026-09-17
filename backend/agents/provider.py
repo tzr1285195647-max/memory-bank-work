@@ -75,6 +75,9 @@ class AgentProvider(Protocol):
         asked_questions: list[str],
         previous_answers: list[str],
         missing_fields: list[str],
+        confirmed_fragments: list[str] | None = None,
+        confirmed_facts: list[dict[str, Any]] | None = None,
+        minimum_fragments: int = 7,
     ) -> QuestionDecision:
         """采访导演：返回至多一个问题；老人明确表示停止时必须 should_stop。"""
         ...
@@ -89,7 +92,7 @@ class AgentProvider(Protocol):
         subject_name: str,
         topic: str,
         claims: list[dict[str, Any]],
-        style: str = "natural",
+        style: str = "raw",
     ) -> DraftResult:
         """写作：只能用给定 claims 里的事实，每条事实句必须引用 claim id。"""
         ...

@@ -8,8 +8,8 @@ Component({
   properties: {
     /** 原声时长（毫秒） */
     durationMs: { type: Number, value: 0 },
-    /** 整理方式：自然整理 / 原味口述 / 适合成书 */
-    mode: { type: String, value: '自然整理' },
+    /** 新故事仅提供原味口述 / 适合成书；旧故事仍可显示历史标签。 */
+    mode: { type: String, value: '原味口述' },
     playable: { type: Boolean, value: false },
   },
 

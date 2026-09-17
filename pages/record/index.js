@@ -4,17 +4,6 @@ const { VoiceRecorder, formatDuration } = require('../../utils/recorder');
 const { composeStory, styleLabel } = require('../../utils/story-style');
 const { inferLifeStage, inferMemoryYear } = require('../../utils/timeline');
 
-const STARTER_QUESTIONS = {
-  hometown: '要不先讲讲小时候住的地方？门前是什么样，附近有哪些熟悉的人？',
-  school: '要不今天讲一讲第一次去上学的事情？那天是谁送你去的？',
-  work: '还记得第一天参加工作吗？当时去了哪里，见到了哪些人？',
-  family: '要不从家里一件印象最深的小事讲起？当时大家都在做什么？',
-};
-
-function starterQuestion(topicId) {
-  return STARTER_QUESTIONS[topicId] || '要不从一个印象最深的具体时刻开始讲起？';
-}
-
 function suggestLocalFollowUp(rounds, topicId) {
   const text = (rounds || []).map((item) => item.transcript || '').join('');
   if (!/(\d{2,4}年|小时候|年轻时|那年|那天|早上|中午|下午|晚上|春天|夏天|秋天|冬天)/.test(text)) {
@@ -61,6 +50,7 @@ Page({
     operationText: '请稍候',
     preparingInterview: false,
     question: '',
+    questionSource: 'local',
     sessionId: '',
     transcriptDraft: '',
     asrRawText: '',
@@ -75,7 +65,7 @@ Page({
     transcribing: false,
     roundFinalized: false,
     roundNumber: 1,
-    maxRounds: 6,
+    maxRounds: 10,
     completedRounds: [],
     memoryFragments: [],
     selectedFragmentCount: 0,
@@ -83,12 +73,11 @@ Page({
     editingFragmentText: '',
     baseDraftBody: '',
     interviewComplete: false,
-    writingStyle: 'natural',
-    writingStyleText: '自然整理',
+    writingStyle: 'raw',
+    writingStyleText: '原味口述',
     writingStyles: [
-      { id: 'raw', label: '原味口述', detail: '尽量保留你的表达' },
-      { id: 'natural', label: '自然整理', detail: '去掉少量口头停顿' },
-      { id: 'book', label: '适合成书', detail: '优化标点与段落' },
+      { id: 'raw', label: '原味口述', detail: '保留确认后的说法与顺序' },
+      { id: 'book', label: '适合成书', detail: '在事实不变的前提下优化表达' },
     ],
     generating: false,
     generationStep: 0,
@@ -155,11 +144,12 @@ Page({
       topicId,
       fromTab: true,
       sessionId: resumeDraft ? resumeDraft.sessionId || '' : '',
-      question: resumeDraft ? resumeDraft.resumeQuestion || starterQuestion(topicId) : starterQuestion(topicId),
+      question: resumeDraft ? resumeDraft.resumeQuestion || '' : '',
+      questionSource: resumeDraft && resumeDraft.resumeQuestion ? 'agent' : 'local',
       roundNumber: resumeDraft
         ? resumeDraft.resumeRoundNumber || previousRecordings.length + 1
         : 1,
-      maxRounds: resumeDraft ? resumeDraft.maxRounds || 6 : 6,
+      maxRounds: resumeDraft ? Math.max(resumeDraft.maxRounds || 10, 10) : 10,
       completedRounds,
       memoryFragments: completedRounds,
       selectedFragmentCount: completedRounds.length,
@@ -176,8 +166,8 @@ Page({
       fragmentReady: false,
       transcribing: false,
       roundFinalized: false,
-      writingStyle: resumeDraft ? resumeDraft.writingStyle || 'natural' : 'natural',
-      writingStyleText: styleLabel(resumeDraft ? resumeDraft.writingStyle || 'natural' : 'natural'),
+      writingStyle: resumeDraft && resumeDraft.writingStyle === 'book' ? 'book' : 'raw',
+      writingStyleText: styleLabel(resumeDraft && resumeDraft.writingStyle === 'book' ? 'book' : 'raw'),
       interviewComplete: false,
       recordBusy: false,
       uploading: false,
@@ -266,6 +256,7 @@ Page({
         editingFragmentId: '', editingFragmentText: '',
       });
       wx.showToast({ title: '碎片已更新', icon: 'success' });
+      await this.refreshInterviewAfterFragmentChange();
     } catch (err) {
       wx.showToast({ title: err.message || '修改失败', icon: 'none' });
     }
@@ -288,6 +279,7 @@ Page({
         selectedFragmentCount: completedRounds.filter((fragment) => fragment.selected !== false).length,
       });
       wx.showToast({ title: '文字已确认', icon: 'success' });
+      await this.refreshInterviewAfterFragmentChange();
     } catch (err) {
       wx.showToast({ title: err.message || '确认失败', icon: 'none' });
     }
@@ -312,14 +304,21 @@ Page({
   onFragmentUp(e) { this.moveFragmentOrder(e.currentTarget.dataset.id, -1); },
   onFragmentDown(e) { this.moveFragmentOrder(e.currentTarget.dataset.id, 1); },
 
-  onMoveFragment(e) {
+  async onMoveFragment(e) {
     const recordingId = e.currentTarget.dataset.id;
-    const topics = [
-      { id: 'hometown', label: '我的家乡' }, { id: 'school', label: '上学的日子' },
-      { id: 'work', label: '工作与手艺' }, { id: 'family', label: '爱情与家庭' },
-    ].filter((item) => item.id !== this.data.topicId);
+    let topics;
+    try {
+      topics = (await api.getTopics()).filter((item) => item.id !== this.data.topicId);
+    } catch (err) {
+      wx.showToast({ title: '主题加载失败', icon: 'none' });
+      return;
+    }
+    if (!topics.length) {
+      wx.showToast({ title: '暂无其他主题', icon: 'none' });
+      return;
+    }
     wx.showActionSheet({
-      itemList: topics.map((item) => item.label),
+      itemList: topics.map((item) => item.title),
       success: async ({ tapIndex }) => {
         try {
           await api.updateMemoryFragment(recordingId, { topicId: topics[tapIndex].id });
@@ -329,6 +328,7 @@ Page({
             selectedFragmentCount: completedRounds.filter((item) => item.selected !== false).length,
           });
           wx.showToast({ title: '碎片已移动', icon: 'success' });
+          await this.refreshInterviewAfterFragmentChange();
         } catch (err) {
           wx.showToast({ title: err.message || '移动失败', icon: 'none' });
         }
@@ -351,6 +351,7 @@ Page({
             selectedFragmentCount: completedRounds.filter((item) => item.selected !== false).length,
           });
           wx.showToast({ title: '碎片已删除', icon: 'success' });
+          await this.refreshInterviewAfterFragmentChange();
         } catch (err) {
           wx.showToast({ title: err.message || '删除失败', icon: 'none' });
         }
@@ -450,20 +451,69 @@ Page({
         subjectName: (user && user.displayName) || '讲述者',
         maxRounds: this.data.maxRounds,
       });
+      if (!Number.isInteger(view.context_fragment_count)) {
+        throw new Error('电脑后端仍在运行旧版采访服务，请重启后端后重新进入讲述页。');
+      }
+      if (view.minimum_story_fragments !== 7 || view.target_story_fragments !== 10) {
+        throw new Error('电脑后端仍在运行旧版采访规则，请重启后端后重新进入讲述页。');
+      }
+      const ownConfirmed = (this.data.completedRounds || []).filter((item) => (
+        user && user.id && item.narratorUserId === user.id
+        && item.recordingId && !String(item.recordingId).startsWith('local-')
+        && !item.pending
+      ));
+      const expectedCount = new Set(ownConfirmed.map((item) => item.recordingId)).size;
+      const localHasTime = ownConfirmed.some((item) => (
+        /(?:18|19|20)\d{2}年|春天|夏天|秋天|冬天/.test(item.transcript || '')
+      ));
+      if (view.context_fragment_count < expectedCount
+        || (localHasTime && (view.missing_fields || []).includes('time'))) {
+        throw new Error('采访服务没有读到已确认的记忆碎片，请检查后端和手机是否连接同一份数据，再重新进入讲述页。');
+      }
+      const complete = Boolean(view.complete && !view.question);
+      if (complete && view.total_fragment_count < view.minimum_story_fragments) {
+        throw new Error('采访服务过早判定故事完整，请重启后端后重新进入讲述页。');
+      }
       this.setData({
-        sessionId: view.session_id || '',
-        question: view.question || starterQuestion(this.data.topicId),
-        roundNumber: (view.round_index || 0) + 1,
-        maxRounds: view.max_rounds || 3,
+        sessionId: complete ? '' : view.session_id || '',
+        question: complete
+          ? (view.complete_reason || '故事链已经较完整，可以勾选碎片生成。')
+          : view.question || '',
+        questionSource: 'agent',
+        interviewComplete: complete,
+        roundNumber: (this.data.completedRounds || []).length + 1,
+        maxRounds: view.max_rounds || 10,
       });
     } catch (err) {
       console.warn('[record] 采访会话准备失败', err && err.message);
       this.setData({
-        question: starterQuestion(this.data.topicId),
+        sessionId: '',
+        question: '',
+        questionSource: 'local',
+        statusText: '采访提示暂不可用，已保存的碎片不会丢失',
       });
+      if (err && /旧版采访|没有读到已确认的记忆碎片|过早判定/.test(err.message || '')) {
+        wx.showModal({ title: '采访提示需要更新', content: err.message, showCancel: false });
+      }
     } finally {
       this.setData({ preparingInterview: false });
+      if (this.interviewNeedsRefresh) {
+        this.interviewNeedsRefresh = false;
+        await this.refreshInterviewAfterFragmentChange();
+      }
     }
+  },
+
+  async refreshInterviewAfterFragmentChange() {
+    // 编辑、确认、移动或删除碎片后，旧 checkpoint 的提问依据已经过时。
+    // 已保存的内容仍在业务库；新会话会重新读取同一讲述者的确认碎片。
+    if (!this.pageAlive || this.data.recording || this.data.seconds > 0 || this.data.uploading) return;
+    this.setData({ sessionId: '', question: '', interviewComplete: false });
+    if (this.data.preparingInterview) {
+      this.interviewNeedsRefresh = true;
+      return;
+    }
+    await this.prepareInterview();
   },
 
   onUnload() {
@@ -665,6 +715,7 @@ Page({
   onWritingStyleChange(e) {
     if (this.data.uploading) return;
     const writingStyle = e.currentTarget.dataset.id;
+    if (writingStyle !== 'raw' && writingStyle !== 'book') return;
     this.setData({ writingStyle, writingStyleText: styleLabel(writingStyle) });
   },
 
@@ -795,6 +846,7 @@ Page({
       memoryFragments: this.data.completedRounds || [],
       selectedFragmentCount: (this.data.completedRounds || []).filter((item) => item.selected !== false).length,
       question: view.question || suggestLocalFollowUp(this.data.completedRounds, this.data.topicId),
+      questionSource: view.questionSource || (view.question ? 'agent' : 'local'),
       roundNumber: (view.round_index || this.data.completedRounds.length) + 1,
       uploading: false,
     });
@@ -1069,13 +1121,15 @@ Page({
       }
       if (!finish) {
         this.pendingAgentView = view;
-        if (completedRounds.length < this.data.maxRounds) {
+        if (completedRounds.length < this.data.maxRounds && !view.stop_requested
+          && (view.no_new_fact_rounds || 0) < 2 && !view.complete_reason) {
           // 单次采访图可能因要素齐全提前结束，但记忆碎片库仍允许继续收集。
           // 新开一轮采访会话，最终生成时只使用用户主动勾选的碎片。
           this.setData({ sessionId: '' });
           this.resetForNextRound({
             round_index: completedRounds.length,
             question: suggestLocalFollowUp(completedRounds, this.data.topicId),
+            questionSource: 'local',
           });
           await this.prepareInterview();
           this.setData({ roundNumber: completedRounds.length + 1 });
@@ -1090,7 +1144,11 @@ Page({
             seconds: 0,
             timerText: '00:00',
             transcriptDraft: '',
-            question: '记忆碎片已经保存，可以勾选需要的内容生成故事。',
+            question: view.stop_requested
+              ? '已按你的意愿停止追问。已保存的碎片可以随时继续补充或生成故事。'
+              : (view.no_new_fact_rounds || 0) >= 2
+                ? '连续两轮没有新增事实，先休息一下；已保存的碎片仍可继续补充。'
+                : view.complete_reason || '记忆碎片已经保存，可以勾选需要的内容生成故事。',
             statusText: '记忆片段已保存',
           });
         }
@@ -1130,6 +1188,7 @@ Page({
           this.resetForNextRound({
             round_index: completedRounds.length,
             question: suggestLocalFollowUp(completedRounds, this.data.topicId),
+            questionSource: 'local',
           });
           wx.showToast({ title: '片段已保存，已准备下一问', icon: 'none' });
         } else {

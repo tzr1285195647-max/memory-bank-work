@@ -5,6 +5,8 @@ Page({
   data: {
     topics: [],
     choosing: false,
+    creating: false,
+    customTitle: '',
   },
 
   onShow() {
@@ -33,5 +35,29 @@ Page({
       url: '/pages/record/index',
       fail: () => this.setData({ choosing: false }),
     });
+  },
+
+  onCustomInput(e) {
+    this.setData({ customTitle: e.detail.value });
+  },
+
+  async onCreateCustom() {
+    if (this.data.creating || this.data.choosing) return;
+    const title = (this.data.customTitle || '').trim();
+    if (title.length < 2 || title.length > 30) {
+      wx.showToast({ title: '请输入 2–30 个字的主题', icon: 'none' });
+      return;
+    }
+    this.setData({ creating: true });
+    try {
+      const topic = await api.createTopic(title);
+      if (!topic || !topic.id) throw new Error('主题创建失败');
+      this.setData({ customTitle: '', topics: [...this.data.topics.filter((item) => item.id !== topic.id), topic] });
+      this.onChoose({ currentTarget: { dataset: { id: topic.id } } });
+    } catch (err) {
+      wx.showToast({ title: (err && err.message) || '主题创建失败', icon: 'none' });
+    } finally {
+      this.setData({ creating: false });
+    }
   },
 });

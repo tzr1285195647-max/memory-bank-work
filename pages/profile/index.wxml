@@ -17,18 +17,6 @@
     </view>
   </view>
 
-  <view class="profile__environment">
-    <view class="profile__environment-head">
-      <text class="profile__environment-dot {{environment.online ? 'profile__environment-dot--online' : ''}}">●</text>
-      <text class="profile__environment-title">{{environment.title}}</text>
-    </view>
-    <text class="profile__environment-detail">{{environment.detail}}</text>
-    <text class="profile__environment-note">业务库留在电脑；腾讯转写和真实模型启用后会把必要内容发给对应厂商。</text>
-    <view class="profile__environment-check" bindtap="onDemoCheck">
-      <text>{{checking ? '正在检查…' : '一键演示自检'}}</text>
-    </view>
-  </view>
-
   <text class="t-section profile__section">我的记录</text>
 
   <!-- 设计稿：三个 100×82 小卡，圆角 16 -->

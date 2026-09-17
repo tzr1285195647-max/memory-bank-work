@@ -104,6 +104,15 @@ def test_interview_starts_with_one_question(client, auth):
     assert view["interrupts"][0]["value"]["question"]
 
 
+def test_new_story_generation_rejects_removed_natural_style(client, auth):
+    response = client.post(
+        "/api/agent/fragments/generate", headers=auth["headers"],
+        json={"recordingIds": ["placeholder"], "topicId": "school",
+              "style": "natural", "consentVersion": auth["consent"]},
+    )
+    assert response.status_code == 422
+
+
 def test_answer_produces_evidence_with_traceable_quotes(client, auth):
     view = start_session(client, auth, topic="school")
     view = answer(client, auth, view["session_id"], "那年秋天，院子里的桂花开得很早。", finish=True, topic="school")
@@ -111,6 +120,61 @@ def test_answer_produces_evidence_with_traceable_quotes(client, auth):
     turns = {turn["id"]: turn["answer"] for turn in view["turns"]}
     for claim in view["claims"]:
         assert claim["quote"] in turns[claim["turn_id"]]
+
+
+def test_new_interview_uses_confirmed_fragments_before_first_question(client):
+    grandma = client.post(
+        "/api/auth/login", json={"phone": "13800008899", "password": "123456"}
+    ).json()
+    grandpa = client.post(
+        "/api/auth/login", json={"phone": "13900007788", "password": "123456"}
+    ).json()
+    grandma_auth = {"headers": {"Authorization": f"Bearer {grandma['token']}"},
+                    "consent": grandma["consentVersion"]}
+    grandpa_auth = {"headers": {"Authorization": f"Bearer {grandpa['token']}"},
+                   "consent": grandpa["consentVersion"]}
+    topic = "school-context-regression"
+    recording = upload_recording(client, grandma_auth, topic, 6000, "known-year.mp3")
+    confirmed = client.put(
+        f"/api/recordings/{recording['assetId']}/fragment",
+        headers=grandma_auth["headers"],
+        json={"transcript": "我记得1959年秋天第一次去村里的学校，是母亲送我到门口的。",
+              "consentVersion": grandma_auth["consent"]},
+    )
+    assert confirmed.status_code == 200, confirmed.text
+    upload_recording(client, grandma_auth, topic, 4000, "not-confirmed.mp3")
+
+    grandma_view = start_session(client, grandma_auth, topic=topic, rounds=3)
+    assert grandma_view["context_fragment_count"] == 1
+    assert any("1959年秋天" in fact["quote"] for fact in grandma_view["claims"])
+    assert "time" not in grandma_view["missing_fields"]
+    assert "什么时候" not in grandma_view["question"]
+    assert "哪一年" not in grandma_view["question"]
+
+    # 同一家庭的另一位讲述者，以及另一主题，都不能读到林奶奶的碎片。
+    grandpa_view = start_session(client, grandpa_auth, topic=topic, rounds=3)
+    assert grandpa_view["context_fragment_count"] == 0
+    assert "time" in grandpa_view["missing_fields"]
+    other_topic_view = start_session(client, grandma_auth, topic="work-context-regression", rounds=3)
+    assert other_topic_view["context_fragment_count"] == 0
+    assert "time" in other_topic_view["missing_fields"]
+
+    # 再回答一轮也不能把历史已知的时间重新标成缺失。
+    continued = answer(client, grandma_auth, grandma_view["session_id"],
+                       "我走到教室门口，心里有点紧张。", topic=topic)
+    assert "time" not in continued["missing_fields"]
+    if continued["stage"] == "interview":
+        assert "什么时候" not in continued["question"]
+
+    edited = client.patch(
+        f"/api/fragments/{recording['assetId']}", headers=grandma_auth["headers"],
+        json={"transcript": "我第一次去村里的学校，是母亲送我到门口的。",
+              "consentVersion": grandma_auth["consent"]},
+    )
+    assert edited.status_code == 200, edited.text
+    refreshed = start_session(client, grandma_auth, topic=topic, rounds=3)
+    assert refreshed["context_fragment_count"] == 1, "未确认录音不能进入采访上下文"
+    assert "time" in refreshed["missing_fields"], "编辑确认文字后必须重新计算已知要素"
 
 
 def test_story_detail_keeps_evidence_and_recording_duration(client, auth):
@@ -223,6 +287,95 @@ def test_selected_memory_fragments_generate_one_story(client, auth):
     )
 
 
+def test_selected_fragment_story_can_be_confirmed_without_interview_checkpoint(client, auth):
+    recording = upload_recording(client, auth, "school", 5000, "confirm-fragment.mp3")
+    confirmed = client.put(
+        f"/api/recordings/{recording['assetId']}/fragment",
+        headers=auth["headers"],
+        json={"transcript": "小时候我在村里的学校念书。", "consentVersion": auth["consent"]},
+    )
+    assert confirmed.status_code == 200, confirmed.text
+
+    generated = client.post(
+        "/api/agent/fragments/generate",
+        headers=auth["headers"],
+        json={"recordingIds": [recording["assetId"]], "topicId": "school",
+              "style": "raw", "consentVersion": auth["consent"]},
+    )
+    assert generated.status_code == 201, generated.text
+    story = generated.json()
+    assert story["sessionId"].startswith("fragments-")
+    assert story["auditPassed"] is True
+    assert any(step["node"] == "writing.audit" for step in story["workflow"]["steps"])
+    assert any(step["node"] == "evidence.persisted" for step in story["workflow"]["steps"])
+    from backend.agent_service import get_runtime, reset_runtime
+    from backend.config import settings
+    reset_runtime()  # 模拟后端进程重启后重新打开 SQLite checkpoint
+    checkpoint = get_runtime(settings.data_dir / "checkpoints.sqlite3").view(story["sessionId"])
+    assert checkpoint["stage"] == "review"
+
+    invented = client.post(
+        f"/api/agent/stories/{story['id']}/review",
+        headers=auth["headers"],
+        json={"body": story["body"] + "\n后来我去了北京。", "consentVersion": auth["consent"]},
+    )
+    assert invented.status_code == 409, invented.text
+    still_pending = client.get(f"/api/stories/{story['id']}", headers=auth["headers"])
+    assert still_pending.json()["status"] == "pending_review"
+
+    reviewed = client.post(
+        f"/api/agent/stories/{story['id']}/review",
+        headers=auth["headers"],
+        json={"body": story["body"], "consentVersion": auth["consent"]},
+    )
+    assert reviewed.status_code == 200, reviewed.text
+    assert reviewed.json()["status"] == "confirmed"
+
+
+def test_conflicting_confirmed_years_block_publication(client, auth):
+    topic_response = client.post(
+        "/api/topics", headers=auth["headers"],
+        json={"title": "年份冲突隔离测试"},
+    )
+    assert topic_response.status_code == 201, topic_response.text
+    topic_id = topic_response.json()["id"]
+    ids = []
+    for year in ("1959", "1960"):
+        recording = upload_recording(client, auth, topic_id, 5000, f"conflict-{year}.mp3")
+        response = client.put(
+            f"/api/recordings/{recording['assetId']}/fragment",
+            headers=auth["headers"],
+            json={"transcript": f"{year}年秋天，我第一次去村里的学校。", "consentVersion": auth["consent"]},
+        )
+        assert response.status_code == 200, response.text
+        ids.append(recording["assetId"])
+    response = client.post(
+        "/api/agent/fragments/generate", headers=auth["headers"],
+        json={"recordingIds": ids, "topicId": topic_id, "style": "raw", "consentVersion": auth["consent"]},
+    )
+    assert response.status_code == 201, response.text
+    story = response.json()
+    assert story["conflicts"]
+    assert story["auditPassed"] is False
+    assert any(item["kind"] == "unresolved_conflict" for item in story["findings"])
+    review = client.post(
+        f"/api/agent/stories/{story['id']}/review", headers=auth["headers"],
+        json={"body": story["body"], "consentVersion": auth["consent"]},
+    )
+    assert review.status_code == 409
+
+
+def test_review_unknown_interview_session_returns_404(client, auth):
+    response = client.post(
+        "/api/agent/interviews/review",
+        headers=auth["headers"],
+        json={"sessionId": "fragments-no-checkpoint", "action": "approve",
+              "consentVersion": auth["consent"]},
+    )
+    assert response.status_code == 404, response.text
+    assert response.json()["detail"] == "采访会话不存在"
+
+
 def test_family_reviewer_cannot_replace_original_narrator(client):
     """小刘代为确认和生成时，故事署名仍必须来自林奶奶的录音归属。"""
 
@@ -287,7 +440,7 @@ def test_fragments_from_two_narrators_cannot_generate_single_person_story(client
     mixed = client.post(
         "/api/agent/fragments/generate", headers=auth_a["headers"],
         json={"recordingIds": [first["assetId"], second["assetId"]], "topicId": "school",
-              "style": "natural", "consentVersion": auth_a["consent"]},
+              "style": "raw", "consentVersion": auth_a["consent"]},
     )
     assert mixed.status_code == 422
     assert "同一位讲述人" in mixed.json()["detail"]

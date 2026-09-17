@@ -193,6 +193,10 @@ module.exports = {
     );
   },
 
+  createTopic(title) {
+    return request({ path: '/api/topics', method: 'POST', data: { title } });
+  },
+
   getHome() {
     return withFallback(
       () => request({ path: '/api/home' }).then((data) => ({
@@ -419,7 +423,7 @@ module.exports = {
   // 采访导演 → 证据抽取（并行）→ 写作 → 审计 → 人工确认
 
   /** 开启采访会话：返回采访导演提出的第一个问题 */
-  startInterview({ topicId, subjectName = '讲述者', maxRounds = 3, recordingId = '' }) {
+  startInterview({ topicId, subjectName = '讲述者', maxRounds = 10, recordingId = '' }) {
     return request({
       path: '/api/agent/interviews',
       method: 'POST',
@@ -461,7 +465,7 @@ module.exports = {
   },
 
   /** 只用用户勾选的多段记忆碎片生成故事。 */
-  generateStoryFromFragments({ recordingIds, topicId, style = 'natural' }) {
+  generateStoryFromFragments({ recordingIds, topicId, style = 'raw' }) {
     return request({
       path: '/api/agent/fragments/generate',
       method: 'POST',

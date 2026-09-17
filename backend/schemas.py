@@ -50,6 +50,10 @@ class TopicOut(BaseModel):
     subtitle: str
 
 
+class TopicCreateRequest(RequestModel):
+    title: str = Field(min_length=2, max_length=30)
+
+
 class HomeOut(BaseModel):
     today: dict
     recent: list[dict]
@@ -100,6 +104,7 @@ class StoryOut(BaseModel):
     familyNoteCount: int = 0
     memoryYear: int | None = None
     lifeStage: str = "未分类"
+    workflow: dict = Field(default_factory=dict)
 
 
 class StoryListOut(BaseModel):
@@ -110,7 +115,7 @@ class StoryListOut(BaseModel):
 class StoryPatchRequest(RequestModel):
     body: str = Field(min_length=1, max_length=4000)
     mode: str | None = Field(
-        default=None, pattern=r"^(原味口述|自然整理|适合成书)$"
+        default=None, pattern=r"^(原味口述|适合成书)$"
     )
     consentVersion: int = Field(ge=1)
     memoryYear: int | None = Field(default=None, ge=1900, le=2100)

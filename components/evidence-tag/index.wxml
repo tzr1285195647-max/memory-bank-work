@@ -1,4 +1,4 @@
-<!-- 来源标识：设计稿 07 屏「原声 03:42　自然整理」
+<!-- 来源标识：原声时长与当前故事整理方式
      原声时长与整理方式同时可见，是「证据可追溯」的界面表达 -->
 <view class="evidence" bindtap="onPlay">
   <text class="evidence__label">原声</text>

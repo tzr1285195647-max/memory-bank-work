@@ -15,6 +15,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from backend.agents import AgentRuntime  # noqa: E402
 from backend.agents.mock import MockAgentProvider  # noqa: E402
 from backend.agents.state import SEVEN_ELEMENTS  # noqa: E402
+from backend.evidence_audit import audit_text  # noqa: E402
+
+
+def test_audit_rejects_invented_tail_after_true_clause():
+    claims = [{"quote": "母亲把我送到学校门口", "text": "母亲把我送到学校门口"}]
+    findings = audit_text(body="母亲把我送到学校门口，老师热情地迎接我。", claims=claims)
+    assert any("老师热情地迎接我" in item["excerpt"] for item in findings)
+
+
+def test_audit_rejects_specific_year_not_in_evidence():
+    claims = [{"quote": "那年秋天，我第一次上学", "text": "秋天第一次上学"}]
+    findings = audit_text(body="1959年秋天，我第一次上学。", claims=claims)
+    assert any("1959年" in item["excerpt"] for item in findings)
+
+
+def test_source_note_cannot_hide_invented_clause():
+    claims = [{"quote": "我第一次上学", "text": "我第一次上学"}]
+    findings = audit_text(
+        body="这是林奶奶亲口讲述的一段家庭记忆，后来我去了北京。", claims=claims,
+    )
+    assert any("北京" in item["excerpt"] for item in findings)
+
+
+def test_standard_source_notes_stay_exempt_from_fact_audit():
+    from backend.agents.mock import MockAgentProvider
+
+    provider = MockAgentProvider()
+    claims = [{"id": "c1", "element": "event", "text": "我第一次上学", "quote": "我第一次上学", "turn_id": "t1"}]
+    for style in ("raw", "book"):
+        draft = provider.compose_draft(subject_name="林奶奶", topic="上学", claims=claims, style=style)
+        body = "\n".join(item["text"] for item in draft["sentences"])
+        assert audit_text(body=body, claims=claims) == []
 
 
 @pytest.fixture()
@@ -80,6 +112,66 @@ def test_interview_does_not_repeat_same_follow_up(runtime):
         view = runtime.resume("dup-1", {"answer": "那年秋天，院子里的桂花开得很早。"})
     # 同一缺失要素的追问模板不应重复
     assert len(asked) == len(set(asked)), f"追问重复：{asked}"
+
+
+def test_question_guard_replaces_known_time_even_when_model_mislabels_target(tmp_path):
+    class WrongQuestionProvider(MockAgentProvider):
+        def choose_question(self, **kwargs):
+            return {"question": "您上学的日子大概是什么时候的事呀？",
+                    "target_element": "place", "complete": False}
+
+    rt = AgentRuntime(tmp_path / "guard.sqlite3", provider=WrongQuestionProvider())
+    try:
+        view = rt.start_session(
+            session_id="known-time", family_id="family-1", subject_name="林奶奶",
+            topic="上学的日子", max_rounds=3,
+            context_fragments=["我记得1959年秋天第一次去学校。"],
+            context_covered_elements=["time"],
+        )
+        assert "time" not in view["missing_fields"]
+        assert "什么时候" not in view["question"]
+        assert view["question"]
+        assert any(item.get("corrected_known_question") for item in view["agent_trace"])
+    finally:
+        rt.close()
+
+
+def test_three_fragments_with_all_elements_still_ask_for_story_detail(runtime):
+    view = start(
+        runtime, "already-complete", context_fragments=[
+            "1959年秋天，母亲送我去村里学校。",
+            "我走到教室门口，心里很紧张。",
+            "老师迎我进去，我慢慢不怕了。",
+        ],
+        context_covered_elements=list(SEVEN_ELEMENTS),
+    )
+    assert view["complete"] is False
+    assert view["question"]
+    assert "什么时候" not in view["question"]
+    assert view["context_fragment_count"] == 3
+    assert view["draft_text"] == ""
+
+
+def test_model_cannot_finish_before_seven_detailed_fragments(tmp_path):
+    class PrematureComplete(MockAgentProvider):
+        def choose_question(self, **kwargs):
+            return {"complete": True, "question": None, "complete_reason": "已经足够"}
+
+    rt = AgentRuntime(tmp_path / "minimum.sqlite3", provider=PrematureComplete())
+    try:
+        fragments = ["1959年秋天，母亲送我走到村里的学校门口，我心里很紧张。"] * 6
+        view = start(rt, "six-fragments", context_fragments=fragments,
+                     context_covered_elements=list(SEVEN_ELEMENTS), max_rounds=10)
+        assert view["complete"] is False
+        assert view["question"]
+        assert view["total_fragment_count"] == 6
+
+        view = start(rt, "seven-fragments", context_fragments=[*fragments, fragments[0]],
+                     context_covered_elements=list(SEVEN_ELEMENTS), max_rounds=10)
+        assert view["complete"] is True
+        assert view["question"] == ""
+    finally:
+        rt.close()
 
 
 # --------------------------------------------------------------- 证据抽取

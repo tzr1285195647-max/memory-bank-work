@@ -43,6 +43,7 @@ from .schemas import (
     StoryOut,
     StoryPatchRequest,
     TopicOut,
+    TopicCreateRequest,
 )
 from .security import decode_access_token
 
@@ -108,7 +109,12 @@ def patch_me(payload: ProfilePatchRequest, session: SessionDep, auth: AuthDep) -
 
 @router.get("/topics", response_model=list[TopicOut])
 def topics(session: SessionDep, auth: AuthDep) -> list[dict]:
-    return service.list_topics(session)
+    return service.list_topics(session, auth.family_id)
+
+
+@router.post("/topics", response_model=TopicOut, status_code=status.HTTP_201_CREATED)
+def create_topic(payload: TopicCreateRequest, session: SessionDep, auth: AuthDep) -> dict:
+    return service.create_custom_topic(session, auth.family_id, payload.title)
 
 
 @router.get("/home", response_model=HomeOut)

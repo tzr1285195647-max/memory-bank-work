@@ -43,6 +43,42 @@
         "type": "folder"
       },
       {
+        "value": "assets/fonts",
+        "type": "folder"
+      },
+      {
+        "value": "backend",
+        "type": "folder"
+      },
+      {
+        "value": "tests",
+        "type": "folder"
+      },
+      {
+        "value": ".venv",
+        "type": "folder"
+      },
+      {
+        "value": "node_modules",
+        "type": "folder"
+      },
+      {
+        "value": "objects",
+        "type": "folder"
+      },
+      {
+        "value": ".env",
+        "type": "file"
+      },
+      {
+        "value": "app.db",
+        "type": "file"
+      },
+      {
+        "value": "checkpoints.sqlite3",
+        "type": "file"
+      },
+      {
         "value": ".git",
         "type": "folder"
       },

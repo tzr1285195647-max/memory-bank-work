@@ -615,3 +615,18 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+.preview__workflow {
+  margin: 20px 0;
+  padding: 20px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.preview__workflow-title { display: block; color: var(--brand); font-size: 18px; font-weight: 700; }
+.preview__workflow-hint { display: block; margin: 6px 0 14px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.preview__workflow-step { display: flex; align-items: center; min-height: 36px; border-top: 1px solid #edf0e8; }
+.preview__workflow-index { width: 26px; color: var(--accent); font-size: 12px; }
+.preview__workflow-name { flex: 1; color: var(--text-primary); font-size: 14px; }
+.preview__workflow-detail { color: var(--text-muted); font-size: 12px; }
+.preview__workflow-call { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 11px; line-height: 1.5; }
