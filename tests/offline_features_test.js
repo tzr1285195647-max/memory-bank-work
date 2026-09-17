@@ -8,7 +8,8 @@ assert.ok(app.pages.includes('pages/family-manage/index'));
 const book = fs.readFileSync(new URL('../pages/book-preview/index.js', import.meta.url), 'utf8');
 assert.ok(book.includes('onExportText'));
 assert.ok(book.includes("lines.join('\\n')"));
-assert.ok(book.includes('onShareAppMessage'));
+assert.ok(book.includes('onExportPdf'));
+assert.ok(!book.includes('onShareAppMessage'));
 
 const record = fs.readFileSync(new URL('../pages/record/index.js', import.meta.url), 'utf8');
 assert.ok(record.includes('ensureCaptureConsent'));

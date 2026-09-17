@@ -144,8 +144,11 @@ Page({
       providerLabel: item.fallback_used ? '规则降级' : (item.model ? `真实模型 · ${item.model}` : '规则流程'),
     }));
     const canReview = draft.status !== 'confirmed';
-    const canEditStory = role === 'elder';
+    const canEditStory = Boolean(snapshot.token);
     const canOwnerReview = canReview && canEditStory;
+    const isNarrator = Boolean(snapshot.user && draft.narratorUserId
+      && snapshot.user.id === draft.narratorUserId);
+    const maxRounds = Math.max(7, Math.min(10, Number(draft.maxRounds) || 10));
     this.setData({
       draft: { ...draft, claims, sentenceEvidence, missingFields, findings: draft.findings || [], conflicts,
         workflow: { ...workflow, steps: workflow.steps || [], calls: workflowCalls } },
@@ -157,11 +160,12 @@ Page({
       activeRecordingId: firstRecording ? firstRecording.recordingId : '',
       canReview,
       canOwnerReview,
-      canEditCoordinate: role === 'elder',
+      canEditCoordinate: canEditStory,
       canEditStory,
       role,
       isFamily: role === 'family',
-      canContinue: canOwnerReview && Boolean(draft.sessionId) && recordings.length < 6,
+      canContinue: canOwnerReview && isNarrator && Boolean(draft.sessionId)
+        && recordings.length < maxRounds,
       memoryYearInput: draft.memoryYear ? String(draft.memoryYear) : '',
       lifeStage: draft.lifeStage || inferLifeStage(draft.topicId || this.topicId),
     });
@@ -394,6 +398,10 @@ Page({
   async onContinue() {
     const { draft } = this.data;
     if (this.data.saving) return;
+    if (!this.data.canContinue) {
+      wx.showToast({ title: '只有原讲述者可继续录音，最多十段', icon: 'none' });
+      return;
+    }
     if (/^fragments-/.test(draft.sessionId || '')) {
       // 碎片故事的 checkpoint 停在确认点；补充录音应另开一场采访。
       store.set({
@@ -405,10 +413,6 @@ Page({
     }
     if (!draft.sessionId) {
       wx.showToast({ title: '本地草稿暂不支持继续追问', icon: 'none' });
-      return;
-    }
-    if (!this.data.canContinue) {
-      wx.showToast({ title: '本次采访已达到三轮', icon: 'none' });
       return;
     }
     this.setData({ saving: true });
@@ -423,7 +427,7 @@ Page({
           body: this.data.body,
           resumeQuestion: view.question || '还有什么细节想补充？',
           resumeRoundNumber: (view.round_index || this.data.recordings.length) + 1,
-          maxRounds: view.max_rounds || 3,
+          maxRounds: view.max_rounds || 10,
         },
         currentTopic: draft.topicId || this.topicId,
         recordEntry: {
@@ -542,7 +546,7 @@ Page({
         noteDraft: '',
         noteSubmitting: false,
       });
-      wx.showToast({ title: '建议已交给长辈', icon: 'success' });
+      wx.showToast({ title: '建议已交给家人审核', icon: 'success' });
     } catch (err) {
       this.setData({ noteSubmitting: false });
       wx.showToast({ title: err.message || '提交失败', icon: 'none' });

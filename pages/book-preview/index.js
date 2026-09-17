@@ -20,6 +20,7 @@ Page({
     audioMinutes: 0,
     yearRange: '年代待补充',
     loading: true,
+    exportingPdf: false,
   },
 
   onLoad() {
@@ -156,7 +157,35 @@ Page({
     });
   },
 
-  onShareAppMessage() {
-    return { title: `${this.data.bookTitle} · 家庭记忆册`, path: '/pages/book-preview/index' };
+  async onExportPdf() {
+    if (this.data.exportingPdf) return;
+    if (!this.data.storyCount) {
+      wx.showToast({ title: '请先确认至少一篇故事', icon: 'none' });
+      return;
+    }
+    this.setData({ exportingPdf: true });
+    try {
+      const tempFilePath = await api.downloadFamilyBook(this.data.bookTitle);
+      const savedFilePath = await new Promise((resolve, reject) => {
+        wx.saveFile({
+          tempFilePath,
+          success: (result) => resolve(result.savedFilePath),
+          fail: (err) => reject(new Error((err && err.errMsg) || 'PDF 保存失败')),
+        });
+      });
+      await new Promise((resolve, reject) => {
+        wx.openDocument({
+          filePath: savedFilePath,
+          fileType: 'pdf',
+          showMenu: true,
+          success: resolve,
+          fail: (err) => reject(new Error((err && err.errMsg) || 'PDF 打开失败')),
+        });
+      });
+    } catch (err) {
+      wx.showModal({ title: '暂时无法导出 PDF', content: err.message || '请稍后重试', showCancel: false });
+    } finally {
+      this.setData({ exportingPdf: false });
+    }
   },
 });

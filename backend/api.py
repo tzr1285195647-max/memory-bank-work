@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, Header, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from . import service
@@ -125,6 +125,31 @@ def home(session: SessionDep, auth: AuthDep) -> dict:
 @router.get("/family", response_model=FamilyOut)
 def family(session: SessionDep, auth: AuthDep) -> dict:
     return service.family_board(session, auth.family_id)
+
+
+@router.get("/family/book.pdf")
+def export_family_book(
+    session: SessionDep,
+    auth: AuthDep,
+    title: str = Query(default="我们的家庭纪念册", max_length=30),
+) -> Response:
+    """按时间线导出本家庭已确认故事，草稿和录音不进入 PDF。"""
+    from .book_pdf import render_family_book
+
+    service.require_family_member(session, auth.family_id, auth.user_id)
+    stories = service.list_stories(session, auth.family_id, only_status="confirmed")["items"]
+    try:
+        content = render_family_book(stories, title)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'attachment; filename="memory-bank-family-book.pdf"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.get("/family/members", response_model=FamilyMembersOut)

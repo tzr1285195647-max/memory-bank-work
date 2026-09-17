@@ -343,9 +343,6 @@ module.exports = {
   },
 
   resolveFamilyNote(storyId, noteId, { action, consentVersion }) {
-    if (store.snapshot().role !== 'elder') {
-      return Promise.reject(new Error('只有长辈账号可以处理建议'));
-    }
     return withFallback(
       () => request({
         path: `/api/stories/${storyId}/family-notes/${noteId}/resolve`,
@@ -388,6 +385,24 @@ module.exports = {
       () => request({ path: '/api/agent/status' }),
       () => ({ provider: 'local-demo', configuredMode: 'mock', llmEnabled: false })
     );
+  },
+
+  downloadFamilyBook(title) {
+    const token = store.snapshot().token;
+    if (!token) return Promise.reject(new Error('请先登录后再导出'));
+    return new Promise((resolve, reject) => {
+      wx.downloadFile({
+        url: absoluteUrl(`/api/family/book.pdf?title=${encodeURIComponent(title || '我们的家庭纪念册')}`),
+        header: { Authorization: `Bearer ${token}` },
+        timeout: 60000,
+        success: (result) => {
+          if (result.statusCode === 200 && result.tempFilePath) resolve(result.tempFilePath);
+          else reject(new Error(result.statusCode === 409
+            ? '请先确认至少一篇故事' : `PDF 导出失败（${result.statusCode || '未知'}）`));
+        },
+        fail: (err) => reject(new Error((err && err.errMsg) || 'PDF 下载失败，请检查后端连接')),
+      });
+    });
   },
 
   revokeConsent() {
@@ -495,9 +510,6 @@ module.exports = {
 
   /** 故事书里的确认：会先按证据核对正文 */
   reviewStory({ storyId, body }) {
-    if (store.snapshot().role !== 'elder') {
-      return Promise.reject(new Error('只有长辈账号可以确认故事'));
-    }
     return withFallback(
       () => request({
         path: `/api/agent/stories/${storyId}/review`,

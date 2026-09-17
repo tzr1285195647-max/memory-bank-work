@@ -341,6 +341,56 @@ def test_edit_resets_status_and_confirm_sets_it(client, session_data):
     assert enriched.json()["memoryYear"] == 1987
 
 
+def test_family_book_pdf_exports_only_confirmed_family_stories(client, session_data):
+    headers = auth_header(session_data)
+    pending = client.post(
+        "/api/stories/draft", headers=headers,
+        data={"topicId": "school", "durationMs": "1000",
+              "consentVersion": str(session_data["consentVersion"])},
+    )
+    assert pending.status_code == 201, pending.text
+    empty = client.get("/api/family/book.pdf", headers=headers)
+    # 此测试模块可能已有已确认故事；无论如何不能把新草稿放进 PDF。
+    assert empty.status_code in {200, 409}
+
+    draft = client.post(
+        "/api/stories/draft", headers=headers,
+        data={"topicId": "school", "durationMs": "1000",
+              "consentVersion": str(session_data["consentVersion"])},
+    ).json()
+    patched = client.patch(
+        f"/api/stories/{draft['id']}", headers=headers,
+        json={"body": "一九五九年秋天，我走进村里的学校。", "memoryYear": 1959,
+              "consentVersion": session_data["consentVersion"]},
+    )
+    assert patched.status_code == 200, patched.text
+    confirmed = client.post(
+        f"/api/stories/{draft['id']}/confirm", headers=headers,
+        json={"consentVersion": session_data["consentVersion"]},
+    )
+    assert confirmed.status_code == 200, confirmed.text
+
+    pdf = client.get("/api/family/book.pdf", headers=headers, params={"title": "我们的时光"})
+    assert pdf.status_code == 200, pdf.text[:200] if pdf.status_code != 200 else ""
+    assert pdf.headers["content-type"] == "application/pdf"
+    assert "attachment" in pdf.headers["content-disposition"]
+    assert pdf.headers["cache-control"] == "no-store"
+    assert pdf.content.startswith(b"%PDF-") and len(pdf.content) > 5000
+    assert client.get("/api/family/book.pdf").status_code == 401
+
+
+def test_family_book_pdf_rejects_empty_family(client):
+    other = client.post(
+        "/api/auth/register", json={
+            "phone": "13900006666", "password": "abcdef", "displayName": "新家庭",
+            "role": "elder", "gender": "female", "age": 66,
+        },
+    )
+    assert other.status_code == 201, other.text
+    response = client.get("/api/family/book.pdf", headers=auth_header(other.json()))
+    assert response.status_code == 409
+
+
 def test_cross_family_story_is_not_visible(client, session_data):
     other = client.post(
         "/api/auth/login",
@@ -387,7 +437,7 @@ def test_audit_events_are_scoped_and_do_not_expose_story_body(client, session_da
     assert other_events["items"][0]["action"] == "consent_granted"
 
 
-def test_family_suggestions_preserve_elder_confirmation_boundary(client):
+def test_family_suggestions_require_resolution_before_any_member_confirms(client):
     phone = "13600003333"
     elder = client.post(
         "/api/auth/login",
@@ -435,12 +485,12 @@ def test_family_suggestions_preserve_elder_confirmation_boundary(client):
     note = created.json()
     assert note["status"] == "pending"
 
-    family_cannot_confirm = client.post(
+    unresolved_family_cannot_confirm = client.post(
         f"/api/stories/{story_id}/confirm",
         headers=family_headers,
         json={"consentVersion": family["consentVersion"]},
     )
-    assert family_cannot_confirm.status_code == 403
+    assert unresolved_family_cannot_confirm.status_code == 409
 
     unresolved_cannot_confirm = client.post(
         f"/api/stories/{story_id}/confirm",
@@ -449,12 +499,13 @@ def test_family_suggestions_preserve_elder_confirmation_boundary(client):
     )
     assert unresolved_cannot_confirm.status_code == 409
 
-    family_cannot_resolve = client.post(
+    family_resolved = client.post(
         f"/api/stories/{story_id}/family-notes/{note['id']}/resolve",
         headers=family_headers,
         json={"action": "accept", "consentVersion": family["consentVersion"]},
     )
-    assert family_cannot_resolve.status_code == 403
+    assert family_resolved.status_code == 200
+    assert family_resolved.json()["status"] == "accepted"
 
     listed = client.get(
         f"/api/stories/{story_id}/family-notes", headers=elder_headers
@@ -465,18 +516,10 @@ def test_family_suggestions_preserve_elder_confirmation_boundary(client):
         "familyNoteCount"
     ] == 1
 
-    resolved = client.post(
-        f"/api/stories/{story_id}/family-notes/{note['id']}/resolve",
-        headers=elder_headers,
-        json={"action": "accept", "consentVersion": elder["consentVersion"]},
-    )
-    assert resolved.status_code == 200, resolved.text
-    assert resolved.json()["status"] == "accepted"
-
     confirmed = client.post(
         f"/api/stories/{story_id}/confirm",
-        headers=elder_headers,
-        json={"consentVersion": elder["consentVersion"]},
+        headers=family_headers,
+        json={"consentVersion": family["consentVersion"]},
     )
     assert confirmed.status_code == 200
 

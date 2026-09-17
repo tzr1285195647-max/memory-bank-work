@@ -75,7 +75,7 @@
 .book__stat-value { color: #4a6855; font-size: 21px; font-weight: 700; }
 .book__stat-label { color: #838b7f; font-size: 10px; }
 .book__actions { margin-top: 23px; }
-.book__share { height: 48px; margin-top: 12px; border: 1px solid rgba(78, 102, 87, .22); border-radius: 12px; background: transparent; color: #4a6855; font-size: 14px; line-height: 46px; }
+.book__copy { height: 48px; margin-top: 12px; border: 1px solid rgba(78, 102, 87, .22); border-radius: 12px; background: transparent; color: #4a6855; font-size: 14px; line-height: 46px; }
 
 @media (max-height: 700px) {
   .book__paper { height: 505px; }

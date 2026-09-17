@@ -92,5 +92,8 @@
     <view><text class="book__stat-value">{{audioMinutes}}</text><text class="book__stat-label">分钟原声</text></view>
   </view>
 
-  <view class="book__actions"><primary-button text="复制纪念册文字" type="primary" bind:tap="onExportText" /><button class="book__share" open-type="share">分享纪念册入口</button></view>
+  <view class="book__actions">
+    <primary-button text="导出 PDF 纪念册" type="primary" loading="{{exportingPdf}}" loadingText="正在排版" bind:tap="onExportPdf" />
+    <button class="book__copy" bindtap="onExportText">复制纪念册文字</button>
+  </view>
 </view>

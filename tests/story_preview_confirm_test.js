@@ -5,7 +5,11 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../pages/story-preview/index.js', import.meta.url), 'utf8');
 const calls = [];
 let definition;
+let storyToLoad = null;
+let currentSession = { consentVersion: 1 };
 const api = {
+  getStory: async () => storyToLoad,
+  getFamilyNotes: async () => [],
   reviewInterview: async (payload) => {
     calls.push(['interview', payload]);
     return {};
@@ -16,7 +20,7 @@ const api = {
   },
 };
 const store = {
-  snapshot: () => ({ consentVersion: 1 }),
+  snapshot: () => currentSession,
   set: (payload) => calls.push(['store', payload]),
 };
 const wx = {
@@ -79,4 +83,33 @@ await definition.onConfirm.call(context('fragments-conflict', {
 assert.strictEqual(calls.filter(([kind]) => kind === 'story' || kind === 'interview').length, 0,
   '未澄清的碎片冲突不能从前端发布');
 
+function previewContext(recordingCount, currentUserId) {
+  storyToLoad = {
+    id: 'story-continuation', status: 'pending_review', sessionId: 'interview-abc',
+    narratorUserId: 'grandma', narratorName: '林奶奶', body: '已确认内容',
+    recordings: Array.from({ length: recordingCount }, (_, index) => ({
+      recordingId: `r-${index}`, transcript: `第${index + 1}段`, durationMs: 1000,
+    })),
+  };
+  currentSession = { token: 'family-token', role: 'family', user: { id: currentUserId }, consentVersion: 1 };
+  return {
+    ...definition, storyId: 'story-continuation', topicId: 'school',
+    data: { ...definition.data },
+    setData(patch) { Object.assign(this.data, patch); },
+  };
+}
+
+const sixRounds = previewContext(6, 'grandma');
+await sixRounds.loadDraft();
+assert.strictEqual(sixRounds.data.canOwnerReview, true, '家庭成员可审核确认');
+assert.strictEqual(sixRounds.data.canContinue, true, '第六段之后仍可继续追问到七至十段');
+
+const otherReviewer = previewContext(6, 'relative');
+await otherReviewer.loadDraft();
+assert.strictEqual(otherReviewer.data.canOwnerReview, true);
+assert.strictEqual(otherReviewer.data.canContinue, false, '审核人不能冒充原讲述者继续录音');
+
+const tenRounds = previewContext(10, 'grandma');
+await tenRounds.loadDraft();
+assert.strictEqual(tenRounds.data.canContinue, false, '十段后停止继续追问');
 console.log('story preview confirm test: ok');

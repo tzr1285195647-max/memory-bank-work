@@ -180,8 +180,6 @@ def review(payload: ReviewRequest, session: SessionDep, auth: AuthDep) -> dict[s
 
     改写后若仍有无证据句子，返回 403 并说明原因——AI 与人都不允许新增事实。
     """
-    if auth.role != "elder":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有长辈账号可以处理故事草稿")
     return review_draft(
         session,
         _runtime(),
@@ -190,6 +188,7 @@ def review(payload: ReviewRequest, session: SessionDep, auth: AuthDep) -> dict[s
         action=payload.action,
         consent_version=payload.consentVersion,
         edited_text=payload.editedText,
+        actor_user_id=auth.user_id,
     )
 
 
@@ -198,8 +197,6 @@ def review_existing(
     story_id: str, payload: StoryReviewRequest, session: SessionDep, auth: AuthDep
 ) -> dict[str, Any]:
     """故事书里的确认：先按证据核对改写后的正文，通过才允许发布。"""
-    if auth.role != "elder":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有长辈账号可以确认故事")
     result = review_story(
         session,
         _runtime(),

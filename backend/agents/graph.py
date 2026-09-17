@@ -502,7 +502,7 @@ def build_parent_graph(provider: AgentProvider, checkpointer: SqliteSaver):
         last = turns[-1] if turns else {}
         if last.get("finish_requested"):
             return "draft"
-        if state.get("round_index", 0) >= state.get("max_rounds", 3):
+        if state.get("round_index", 0) >= state.get("max_rounds", 10):
             return "draft"
         if len(state.get("context_fragments", [])) + len(turns) >= TARGET_STORY_FRAGMENTS:
             return "draft"

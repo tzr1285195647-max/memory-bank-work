@@ -79,32 +79,6 @@ Page({
     wx.navigateTo({ url: '/pages/privacy-center/index' });
   },
 
-  /** 产品规则：撤回授权后停止使用并删除内容，审计事件保留 */
-  onRevoke() {
-    wx.showModal({
-      title: '撤回授权并删除？',
-      content: '撤回后我们将删除你的录音、转写与故事内容，审计记录会保留。此操作不可撤销。',
-      confirmText: '确认撤回',
-      confirmColor: '#C98362',
-      success: async ({ confirm }) => {
-        if (!confirm) return;
-        try {
-          const result = await api.revokeConsent();
-          api.clearLocalDemo();
-          store.clearSession();
-          wx.showToast({ title: result.message || '已撤回授权', icon: 'none' });
-        } catch (err) {
-          // 后端未连接时仍执行本地撤回，保证规则可演示
-          api.clearLocalDemo();
-          store.clearSession();
-          wx.showToast({ title: '已本地撤回授权', icon: 'none' });
-        }
-        api.recordLocalRevocation('撤回授权并删除了本机故事与原声');
-        setTimeout(() => wx.reLaunch({ url: '/pages/welcome/index' }), 1000);
-      },
-    });
-  },
-
   onLogout() {
     wx.showModal({
       title: '退出登录',

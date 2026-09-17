@@ -3,7 +3,7 @@
 <view class="page preview">
   <view class="preview__intro">
     <text class="t-title">故事预览</text>
-    <text class="preview__sub">{{isFamily ? '你可以补充记忆或提出修改建议，故事仍由长辈确认。' : '确认后，这段故事会保存到你的故事书。'}}</text>
+    <text class="preview__sub">家人可一起校对和确认；讲述者始终保留为原录音者。</text>
   </view>
 
   <!-- 设计稿：342×310 白卡，圆角 20，内边距 24 -->
@@ -176,7 +176,7 @@
       <text class="preview__collaboration-title">家庭协作</text>
       <text class="preview__collaboration-count">{{familyNotes.length}} 条建议</text>
     </view>
-    <text class="preview__collaboration-rule">家人的内容单独保存，不会直接改写长辈的故事。</text>
+    <text class="preview__collaboration-rule">家人的建议单独保存；修改正文后仍须重新通过证据审计。</text>
 
     <view wx:if="{{isFamily && canReview}}" class="preview__note-form">
       <view class="preview__note-kinds">
@@ -200,7 +200,7 @@
         bindinput="onNoteInput"
       />
       <primary-button
-        text="提交给长辈"
+        text="提交给家人审核"
         type="secondary"
         loading="{{noteSubmitting}}"
         loadingText="正在提交"
@@ -230,7 +230,7 @@
   </view>
 
   <view class="preview__hint">
-    <text>{{isFamily ? '家人可以协助回忆，但不能替长辈发布故事。' : (!canReview ? '这段故事已经过人工确认。' : (editing ? '改好后保存，系统会重新核对原声证据。' : '这段文字来自你的讲述，你可以修改、补充或确认。'))}}</text>
+      <text>{{!canReview ? '这段故事已经过家庭成员人工确认。' : (editing ? '改好后保存，系统会重新核对原声证据。' : '家庭成员可以校对并确认；只有原讲述者能继续录音。')}}</text>
   </view>
 
   <view wx:if="{{canEditStory}}" class="preview__actions">

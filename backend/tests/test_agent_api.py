@@ -419,6 +419,14 @@ def test_family_reviewer_cannot_replace_original_narrator(client):
     assert story["narratorName"] == "林奶奶"
     assert "林奶奶亲口讲述" in story["body"]
     assert "小刘亲口讲述" not in story["body"]
+    reviewed = client.post(
+        f"/api/agent/stories/{story['id']}/review",
+        headers={"Authorization": f"Bearer {family_login['token']}"},
+        json={"body": story["body"], "consentVersion": family_login["consentVersion"]},
+    )
+    assert reviewed.status_code == 200, reviewed.text
+    assert reviewed.json()["status"] == "confirmed"
+    assert reviewed.json()["narratorName"] == "林奶奶"
 
 
 def test_fragments_from_two_narrators_cannot_generate_single_person_story(client):

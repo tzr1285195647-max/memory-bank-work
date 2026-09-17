@@ -25,7 +25,7 @@ from .agents import AgentRuntime, SessionNotFoundError
 from .agents.state import SEVEN_ELEMENTS
 from .evidence_audit import unresolved_conflict_findings
 from .database import AgentCallLog, FamilyNote, MemoryFact, Recording, Story, StoryRecording, Topic, User, utc_now
-from .service import ConsentError, append_audit, require_consent, story_to_dict, visible_topic
+from .service import ConsentError, append_audit, require_consent, require_family_member, story_to_dict, visible_topic
 
 # 单机演示：运行时进程内单例（checkpoint 落 SQLite，服务重启后仍可恢复）
 _runtime: AgentRuntime | None = None
@@ -511,9 +511,12 @@ def review_draft(
     action: str,
     consent_version: int,
     edited_text: str | None = None,
+    actor_user_id: str | None = None,
 ) -> dict[str, Any]:
     """人工确认点：批准 / 改写重审 / 要求补充 / 拒绝。"""
     require_consent(session, family_id, consent_version)
+    if actor_user_id:
+        require_family_member(session, family_id, actor_user_id)
     if action not in {"approve", "edit", "request_more", "reject"}:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="未知的确认动作")
 
@@ -527,6 +530,8 @@ def review_draft(
         current = runtime.view(session_id)
     except SessionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="采访会话不存在") from exc
+    if current.get("family_id") != family_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="采访会话不存在")
     pending = {item["value"].get("kind") for item in current.get("interrupts", [])}
     if "review" not in pending:
         raise HTTPException(
@@ -585,6 +590,8 @@ def review_story(
 ) -> dict[str, Any]:
     """故事书里的直接确认：先按证据重审，通过才允许发布。"""
     require_consent(session, family_id, consent_version)
+    if actor_user_id:
+        require_family_member(session, family_id, actor_user_id)
     story = session.scalar(select(Story).filter_by(id=story_id, family_id=family_id))
     if story is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="故事不存在")

@@ -133,6 +133,17 @@ def _require_admin(session: Session, family_id: str, user_id: str) -> Membership
     return membership
 
 
+def require_family_member(session: Session, family_id: str, user_id: str) -> Membership:
+    """核对实时家庭成员关系，不能只相信尚未过期的旧令牌。"""
+    membership = session.scalar(
+        select(Membership).filter_by(family_id=family_id, user_id=user_id)
+    )
+    user = session.get(User, user_id)
+    if membership is None or user is None or not user.active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="当前账号已不属于这个家庭")
+    return membership
+
+
 def _login_response(session: Session, user: User, membership: Membership) -> dict:
     consent = active_consent(session, membership.family_id)
     token, expires_at = create_access_token(
@@ -865,8 +876,8 @@ def resolve_family_note(
     actor_user_id: str | None = None,
 ) -> dict:
     require_consent(session, family_id, consent_version)
-    if role != "elder":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有长辈账号可以处理建议")
+    if actor_user_id:
+        require_family_member(session, family_id, actor_user_id)
     story = _get_story(session, family_id, story_id)
     note = session.scalar(
         select(FamilyNote).filter_by(id=note_id, story_id=story_id, family_id=family_id)
@@ -1072,8 +1083,8 @@ def confirm_story(
     actor_user_id: str | None = None,
 ) -> dict:
     require_consent(session, family_id, consent_version)
-    if role != "elder":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有长辈账号可以确认故事")
+    if actor_user_id:
+        require_family_member(session, family_id, actor_user_id)
     story = _get_story(session, family_id, story_id)
     pending_note = session.scalar(
         select(FamilyNote).filter_by(
