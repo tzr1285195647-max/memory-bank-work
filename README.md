@@ -53,7 +53,7 @@ FastAPI（backend/api.py、backend/routes/agent.py）
 
 ## 在队友电脑上运行（Windows / PowerShell）
 
-1. 克隆仓库，在仓库根目录创建环境文件和 Python 虚拟环境：
+1. 克隆仓库，在仓库根目录创建环境文件和 Python 虚拟环境（后端使用 `datetime.UTC`，**需要 Python 3.11 或更高**；若本机默认是 3.9/3.10，把下面的 `python` 换成 `py -3.11` 或 `py -3.12`）：
 
    ```powershell
    git clone https://github.com/tzr1285195647-max/memory-bank-work.git

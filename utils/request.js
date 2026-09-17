@@ -27,6 +27,19 @@ function backendCoolingDown() {
   return backendUnavailableUntil > Date.now();
 }
 
+/**
+ * 超时只说明这一次请求慢（通常是服务端在同步等大模型），后端本身仍可用；
+ * 只有连接被拒、域名解析失败这类错误才能进入冷却，否则一次慢请求会让随后
+ * 6 秒内的所有请求被本地直接拒绝，界面表现为连环报错。
+ */
+function isTimeoutError(err) {
+  return /timeout|timed out/i.test(String((err && err.errMsg) || ''));
+}
+
+function markUnavailableUnlessTimeout(err) {
+  if (!isTimeoutError(err)) markBackendUnavailable();
+}
+
 function endpoint(path) {
   if (/^https?:\/\//.test(path)) return path;
   return `${runtime.baseUrl}${path}`;
@@ -86,8 +99,10 @@ function request({
         reject(new Error(typeof detail === 'string' ? detail : JSON.stringify(detail)));
       },
       fail: (err) => {
-        markBackendUnavailable();
-        reject(new Error(err.errMsg || '网络异常，请确认后端已启动'));
+        markUnavailableUnlessTimeout(err);
+        reject(new Error(isTimeoutError(err)
+          ? '后端处理时间较长，请稍后刷新查看结果'
+          : (err.errMsg || '网络异常，请确认后端已启动')));
       },
     });
   });
@@ -129,7 +144,7 @@ function uploadRecording({ filePath, topicId, durationMs }) {
         }
       },
       fail: (err) => {
-        markBackendUnavailable();
+        markUnavailableUnlessTimeout(err);
         reject(new Error(err.errMsg || '上传失败'));
       },
     });

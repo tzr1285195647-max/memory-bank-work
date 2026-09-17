@@ -17,6 +17,11 @@ const runtime = require('../config');
 const mock = require('../mock/index');
 const store = require('../store/index');
 
+// 以下接口在后端返回前会同步等待大模型（真实模式下单次调用可达 60s，失败还会重试）。
+// 超时必须覆盖后端最坏耗时：前端一旦先超时，后端其实已经落库成功，界面却会误报失败。
+const AGENT_TIMEOUT = 120000; // 单个 Agent 调用：口述校对 / 证据抽取 / 采访提示 / 事实审计
+const STORY_GENERATION_TIMEOUT = 300000; // 冲突检测 + 写作 + 审计，审计不过还会修订重写
+
 function withFallback(remote, fallback) {
   if (!runtime.fallbackToMock) return remote();
   return new Promise((resolve, reject) => {
@@ -104,13 +109,15 @@ module.exports = {
   },
 
   getTranscription(recordingId) {
+    // ASR 成功后的首次轮询会在服务端同步跑口述校对 Agent。
     return request({
       path: `/api/recordings/${recordingId}/transcription`,
-      timeout: 35000,
+      timeout: AGENT_TIMEOUT,
     });
   },
 
   confirmMemoryFragment(recordingId, transcript) {
+    // 服务端先保存碎片，再同步抽取证据后才返回。
     return request({
       path: `/api/recordings/${recordingId}/fragment`,
       method: 'PUT',
@@ -118,6 +125,7 @@ module.exports = {
         transcript,
         consentVersion: store.snapshot().consentVersion || 1,
       },
+      timeout: AGENT_TIMEOUT,
     });
   },
 
@@ -168,9 +176,11 @@ module.exports = {
   },
 
   updateMemoryFragment(recordingId, patch) {
+    // 修改文字时服务端会重新抽取证据；只移动主题则很快返回。
     return request({
       path: `/api/fragments/${recordingId}`, method: 'PATCH',
       data: { ...patch, consentVersion: store.snapshot().consentVersion || 1 },
+      timeout: patch && patch.transcript !== undefined ? AGENT_TIMEOUT : undefined,
     });
   },
 
@@ -449,6 +459,7 @@ module.exports = {
         recordingId: recordingId || null,
         consentVersion: store.snapshot().consentVersion || 1,
       },
+      timeout: AGENT_TIMEOUT,
     });
   },
 
@@ -467,6 +478,7 @@ module.exports = {
         speakerLabel,
         consentVersion: store.snapshot().consentVersion || 1,
       },
+      timeout: STORY_GENERATION_TIMEOUT,
     });
   },
 
@@ -476,6 +488,7 @@ module.exports = {
       path: '/api/agent/interviews/stop',
       method: 'POST',
       data: { sessionId, topicId, consentVersion: store.snapshot().consentVersion || 1 },
+      timeout: STORY_GENERATION_TIMEOUT,
     });
   },
 
@@ -490,7 +503,7 @@ module.exports = {
         style,
         consentVersion: store.snapshot().consentVersion || 1,
       },
-      timeout: 65000,
+      timeout: STORY_GENERATION_TIMEOUT,
     }).then(normalizeStory);
   },
 
@@ -505,6 +518,7 @@ module.exports = {
         editedText: editedText === undefined ? null : editedText,
         consentVersion: store.snapshot().consentVersion || 1,
       },
+      timeout: AGENT_TIMEOUT,
     });
   },
 
@@ -515,6 +529,7 @@ module.exports = {
         path: `/api/agent/stories/${storyId}/review`,
         method: 'POST',
         data: { body, consentVersion: store.snapshot().consentVersion || 1 },
+        timeout: AGENT_TIMEOUT,
       }).then(normalizeStory),
       () => normalizeStory(mock.confirmLocalStory(storyId, body))
     );
