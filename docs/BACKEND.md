@@ -59,6 +59,8 @@ python backend/run.py
 
 ### 多智能体接口（`/api/agent`）
 
+新客户端通过 `POST /api/agent/tasks` 提交白名单内的耗时操作，返回 202 与 `taskId`，再用 `GET /api/agent/tasks/{taskId}` 短轮询。任务状态为 `queued/running/succeeded/failed/interrupted`。请求携带唯一 `requestKey`，重试相同请求返回原任务；不能用同一个编号更换内容。鉴权、家庭关系和原接口的 Pydantic 校验均保留；任务只能由仍在原家庭的提交账号读取。业务库通过新增 `agent_tasks` 表兼容，原数据不重置。单进程内一个工作线程按顺序处理模型任务，不阻塞普通页面查询。以下同步接口继续保留兼容。
+
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | `/api/agent/interviews` | 开启采访，返回采访导演的第一个问题 |

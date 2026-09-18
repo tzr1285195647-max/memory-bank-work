@@ -14,6 +14,89 @@ const runtime = require('../config');
 const TIMEOUT = 5000;
 const BACKEND_COOLDOWN_MS = 6000;
 let backendUnavailableUntil = 0;
+const pendingAgentTasks = new Map();
+const TASK_HTTP_TIMEOUT = 15000;
+const TASK_POLL_INTERVAL = 1500;
+
+function waitForPoll(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+/** Short submissions/polls never hold a connection while the model is working. */
+function requestAgentTask({ path, method = 'GET', data = {} }) {
+  const snapshot = store.snapshot();
+  const identity = snapshot.token;
+  const signature = JSON.stringify([identity, method, path, data]);
+  let entry = pendingAgentTasks.get(signature);
+  if (entry && entry.promise) return entry.promise;
+  if (!entry) {
+    entry = { requestKey: `task-${Date.now()}-${Math.random().toString(36).slice(2)}`, taskId: null };
+    pendingAgentTasks.set(signature, entry);
+  }
+  entry.promise = (async () => {
+    let failures = 0;
+    while (true) {
+      if (store.snapshot().token !== identity) {
+        pendingAgentTasks.delete(signature);
+        throw new Error('登录账号已切换，请在原账号下查看处理结果');
+      }
+      let task;
+      try {
+        task = await request(entry.taskId ? {
+          path: `/api/agent/tasks/${entry.taskId}`, timeout: TASK_HTTP_TIMEOUT,
+        } : {
+          path: '/api/agent/tasks', method: 'POST', timeout: TASK_HTTP_TIMEOUT,
+          data: { requestKey: entry.requestKey, method, path, payload: data },
+        });
+      } catch (err) {
+        if (err.code === 'OFFLINE_DEVICE') {
+          pendingAgentTasks.delete(signature);
+          throw err;
+        }
+        if (err.statusCode && err.statusCode < 500 && err.statusCode !== 429) {
+          pendingAgentTasks.delete(signature);
+          if (err.statusCode === 404 && !entry.taskId) {
+            throw new Error('后端版本过旧，请重启更新后的后端再试');
+          }
+          throw err;
+        }
+        // The submit response may have been lost after the server accepted it.
+        // Keep the same request key, including when the user retries after an error.
+        failures += 1;
+        if (failures >= 4) {
+          const pending = new Error('暂时无法查询处理进度，已提交的内容可能仍在处理中。网络恢复后重试会继续查询，请勿重复录音。');
+          pending.taskId = entry.taskId;
+          pending.code = 'AGENT_TASK_PENDING';
+          throw pending;
+        }
+        await waitForPoll(BACKEND_COOLDOWN_MS);
+        continue;
+      }
+      if (store.snapshot().token !== identity) {
+        pendingAgentTasks.delete(signature);
+        throw new Error('登录账号已切换，请在原账号下查看处理结果');
+      }
+      if (!task || !task.taskId || !['queued', 'running', 'succeeded', 'failed', 'interrupted'].includes(task.status)) {
+        throw new Error('处理进度返回异常，请稍后重试');
+      }
+      failures = 0;
+      entry.taskId = task.taskId;
+      if (task.status === 'succeeded') {
+        pendingAgentTasks.delete(signature);
+        return task.result;
+      }
+      if (task.status === 'failed' || task.status === 'interrupted') {
+        pendingAgentTasks.delete(signature);
+        const error = new Error(task.error || '处理未完成，已保存的录音和碎片仍在');
+        error.statusCode = task.errorStatus || 500;
+        throw error;
+      }
+      // No five-minute business deadline: queued/running is not a failure.
+      await waitForPoll(TASK_POLL_INTERVAL);
+    }
+  })().finally(() => { entry.promise = null; });
+  return entry.promise;
+}
 
 function markBackendUnavailable() {
   backendUnavailableUntil = Date.now() + BACKEND_COOLDOWN_MS;
@@ -61,8 +144,10 @@ function request({
   data = {},
   auth = true,
   timeout = TIMEOUT,
+  background = false,
   header: customHeader = {},
 }) {
+  if (background) return requestAgentTask({ path, method, data });
   if (!runtime.shouldUseBackend()) {
     const error = new Error('真机本地演示模式：已跳过电脑后端');
     error.code = 'OFFLINE_DEVICE';
@@ -93,10 +178,14 @@ function request({
         if (statusCode === 401) {
           store.clearSession();
           wx.reLaunch({ url: '/pages/welcome/index' });
-          return reject(new Error('登录已过期，请重新登录'));
+          const error = new Error('登录已过期，请重新登录');
+          error.statusCode = 401;
+          return reject(error);
         }
         const detail = (body && (body.detail || body.message)) || `请求失败（${statusCode}）`;
-        reject(new Error(typeof detail === 'string' ? detail : JSON.stringify(detail)));
+        const error = new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+        error.statusCode = statusCode;
+        reject(error);
       },
       fail: (err) => {
         markUnavailableUnlessTimeout(err);

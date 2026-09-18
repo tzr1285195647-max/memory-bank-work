@@ -6,20 +6,19 @@ import vm from 'node:vm';
 // 这里守住两条规则：
 // 1. request.js：请求超时不能触发“后端不可用”冷却，否则一次慢请求会让随后 6 秒内的
 //    所有请求被本地直接拒绝，界面表现为连环报错；
-// 2. api.js：所有会同步等待 Agent 的接口必须设置足够长的 timeout，
-//    否则前端先超时报错，而后端其实已经落库成功。
+// 2. api.js：耗时 Agent 接口进入后台任务；短轮询不限制整条链路的耗时。
 
 const requestSource = fs.readFileSync(new URL('../utils/request.js', import.meta.url), 'utf8');
 const apiSource = fs.readFileSync(new URL('../utils/api.js', import.meta.url), 'utf8');
 
-function loadRequest(wx) {
+function loadRequest(wx, options = {}) {
   const module = { exports: {} };
   vm.runInNewContext(requestSource, {
     module,
     exports: module.exports,
     require(id) {
       if (id === '../store/index') {
-        return { snapshot: () => ({ token: 'demo-token', consentVersion: 1 }), clearSession() {} };
+        return { snapshot: options.snapshot || (() => ({ token: 'demo-token', consentVersion: 1 })), clearSession() {} };
       }
       if (id === '../config') {
         return { baseUrl: 'http://127.0.0.1:8787', fallbackToMock: false, shouldUseBackend: () => true };
@@ -29,7 +28,8 @@ function loadRequest(wx) {
     wx,
     Promise,
     Error,
-    Date,
+    Date: options.Date || Date,
+    setTimeout: options.setTimeout || setTimeout,
   });
   return module.exports;
 }
@@ -79,7 +79,7 @@ function loadRequest(wx) {
   assert.strictEqual(net.backendCoolingDown(), false, '上传超时不应进入冷却');
 }
 
-// ---- 4. 同步等待 Agent 的接口必须带足够长的 timeout ----
+// ---- 4. 所有耗时入口必须启用后台任务，不遗漏确认、校对或复审 ----
 function loadApi() {
   const captured = [];
   const module = { exports: {} };
@@ -119,8 +119,6 @@ function loadApi() {
 }
 
 {
-  // 后端单次模型调用上限 60s，失败还会重试一次；90s 是能覆盖“一次成功”的最低要求。
-  const MIN_AGENT_TIMEOUT = 90000;
   const { api, captured } = loadApi();
   const cases = [
     ['getTranscription', () => api.getTranscription('r1')],
@@ -137,17 +135,66 @@ function loadApi() {
     captured.length = 0;
     await run();
     assert.strictEqual(captured.length, 1, `${name} 应发起且只发起一次请求`);
-    const timeout = Number(captured[0].timeout);
-    assert.ok(
-      timeout >= MIN_AGENT_TIMEOUT,
-      `${name} 会同步等待大模型，timeout 至少 ${MIN_AGENT_TIMEOUT}ms，实际 ${captured[0].timeout}`,
-    );
+    assert.strictEqual(captured[0].background, true, `${name} 应使用后台任务`);
   }
 
   // 只移动主题不触发证据抽取，应沿用默认短超时，页面切换不能变慢。
   captured.length = 0;
   await api.updateMemoryFragment('r1', { topicId: 'work' });
   assert.strictEqual(captured[0].timeout, undefined, '仅移动主题时应沿用默认超时');
+  assert.strictEqual(captured[0].background, false, '仅移动主题不应进入耗时任务队列');
+}
+
+// ---- 5. 真实轮询协议：超过五分钟仍取回结果；提交响应丢失复用同一个 key ----
+{
+  const calls = [];
+  let elapsed = 0;
+  let submissions = 0;
+  let polls = 0;
+  const net = loadRequest({ request(options) {
+    calls.push(options);
+    if (options.method === 'POST') {
+      submissions++;
+      if (submissions === 1) return options.fail({ errMsg: 'request:fail timeout' });
+      return options.success({ statusCode: 202, data: { taskId: 'job-1', status: 'queued' } });
+    }
+    polls++;
+    elapsed += 65000;
+    if (polls === 1) return options.success({ statusCode: 503, data: { detail: 'temporary unavailable' } });
+    options.success({ statusCode: 200, data: polls < 6
+      ? { taskId: 'job-1', status: 'running' }
+      : { taskId: 'job-1', status: 'succeeded', result: { id: 'real-result' } } });
+  } }, {
+    Date: class extends Date { static now() { return 1800000000000 + elapsed; } },
+    setTimeout: (callback, ms) => { elapsed += ms; callback(); },
+  });
+  const result = await net.request({ path: '/api/agent/fragments/generate', method: 'POST', data: {}, background: true });
+  assert.strictEqual(result.id, 'real-result');
+  assert.ok(elapsed > 325000, '模拟完整链路超过旧的五分钟截止时间');
+  assert.strictEqual(submissions, 2);
+  assert.strictEqual(calls[0].data.requestKey, calls[1].data.requestKey, '提交响应丢失不能创建第二个任务');
+  assert.ok(calls.every((call) => call.timeout <= 15000), '每个 HTTP 请求都是短请求');
+}
+
+// ---- 6. 终止错误不能伪装为成功，也不能不停重复提交 ----
+{
+  let calls = 0;
+  const net = loadRequest({ request(options) {
+    calls++;
+    options.success({ statusCode: 202, data: { taskId: 'job-failed', status: 'failed', errorStatus: 409, error: '证据不足' } });
+  } });
+  await assert.rejects(net.request({ path: '/api/agent/fragments/generate', method: 'POST', background: true }), /证据不足/);
+  assert.strictEqual(calls, 1);
+}
+
+// ---- 7. 账号切换后不能将原账号的故事回填到新账号页面 ----
+{
+  let token = 'original-user';
+  const net = loadRequest({ request(options) {
+    token = 'different-user';
+    options.success({ statusCode: 202, data: { taskId: 'job-1', status: 'succeeded', result: { private: true } } });
+  } }, { snapshot: () => ({ token }) });
+  await assert.rejects(net.request({ path: '/api/agent/interviews', method: 'POST', background: true }), /账号已切换/);
 }
 
 console.log('request timeout test: ok');

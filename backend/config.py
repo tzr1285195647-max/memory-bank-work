@@ -40,7 +40,7 @@ class Settings:
     llm_base_url: str = "https://api.deepseek.com"
     llm_model: str = "deepseek-chat"
     llm_timeout_seconds: float = 60.0
-    # 失败重试 1 次：每个调用最坏 2×timeout。重试更多会让前端长时间等待后误报超时。
+    # 失败后重试 1 次，格式探测另计；前端通过后台任务查询结果。
     llm_max_retries: int = 1
     # --- 腾讯云语音转文字（仅密钥完整时启用）---
     asr_provider: str = "tencent"

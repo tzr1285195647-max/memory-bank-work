@@ -164,7 +164,9 @@ class LLMAgentProvider(MockAgentProvider):
         last_error: Exception | None = None
         self.last_http_status: int | None = None
         self.last_error_detail: str = ""
-        for attempt in range(settings.llm_max_retries + 1):
+        attempt = 0
+        self.last_schema_probes = 0
+        while attempt <= max(0, settings.llm_max_retries):
             self.last_attempts = attempt + 1
             # 每轮重新决定 response_format：上一轮可能刚探测出服务端不支持严格 schema
             strict = bool(schema) and self._strict_schema_supported is not False
@@ -196,7 +198,7 @@ class LLMAgentProvider(MockAgentProvider):
                     self.last_error_detail = f"HTTP {response.status_code}: {detail}"
                     # 服务端不支持严格 schema 时，标记并立即用 json_object 重试。
                     # 这属于能力探测，不算一次降级（不计入 fallbackCount）。
-                    if response.status_code == 400 and "response_format" in detail and schema:
+                    if response.status_code == 400 and "response_format" in detail and strict:
                         self._strict_schema_supported = False
                         LOGGER.info("服务端不支持 json_schema，改用 json_object 模式")
                         raise SchemaModeProbe()
@@ -208,6 +210,8 @@ class LLMAgentProvider(MockAgentProvider):
                 # 探测结果已记录（_strict_schema_supported=False），下一轮直接用
                 # json_object；这不算降级，也不记录错误详情
                 LOGGER.info("已切换到 json_object 模式，继续重试")
+                self.last_schema_probes += 1
+                self.last_error_detail = ""
                 continue
             except (httpx.HTTPError, KeyError, IndexError, TypeError, LLMUnavailableError) as exc:
                 last_error = exc
@@ -222,6 +226,7 @@ class LLMAgentProvider(MockAgentProvider):
                     type(exc).__name__,
                     self.last_error_detail[:160],
                 )
+                attempt += 1
         raise LLMUnavailableError(f"模型调用失败：{type(last_error).__name__}（{self.last_error_detail[:120]}）")
 
     # ------------------------------------------------------------ 口述校对
@@ -611,6 +616,7 @@ class FallbackAgentProvider:
             }.get(method, "p0-v1"),
             "duration_ms": int((time.perf_counter() - started) * 1000),
             "retry_count": max(0, int(getattr(self.primary, "last_attempts", 1)) - 1),
+            "schema_probe_count": int(getattr(self.primary, "last_schema_probes", 0)),
             "fallback_used": fallback_used,
             "error": error,
         })

@@ -163,6 +163,7 @@ class AgentRuntime:
         return {
             "session_id": session_id,
             "family_id": values.get("family_id", ""),
+            "actor_id": values.get("actor_id", ""),
             "provider_name": self.provider_name,
             "stage": self._derive_stage(values, interrupts),
             "round_index": values.get("round_index", 0),
