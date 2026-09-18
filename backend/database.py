@@ -256,6 +256,25 @@ class AgentCallLog(Base):
     created_at: Mapped[datetime] = mapped_column(default=utc_now)
 
 
+class AgentTask(Base):
+    """本机耗时任务；请求去重和结果持久化，不存访问令牌或模型密钥。"""
+
+    __tablename__ = "agent_tasks"
+    __table_args__ = (UniqueConstraint("family_id", "user_id", "request_key", name="uq_agent_task_request"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    family_id: Mapped[str] = mapped_column(String(36), index=True)
+    user_id: Mapped[str] = mapped_column(String(36), index=True)
+    request_key: Mapped[str] = mapped_column(String(64))
+    method: Mapped[str] = mapped_column(String(8))
+    path: Mapped[str] = mapped_column(String(160))
+    payload_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
+    result_json: Mapped[str | None] = mapped_column(Text, default=None)
+    error_status: Mapped[int | None] = mapped_column(Integer, default=None)
+    error_detail: Mapped[str | None] = mapped_column(Text, default=None)
+    created_at: Mapped[datetime] = mapped_column(default=utc_now)
+
+
 engine = create_engine(settings.database_url, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
 

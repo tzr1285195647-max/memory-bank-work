@@ -40,7 +40,8 @@ class Settings:
     llm_base_url: str = "https://api.deepseek.com"
     llm_model: str = "deepseek-chat"
     llm_timeout_seconds: float = 60.0
-    llm_max_retries: int = 2
+    # 失败后重试 1 次，格式探测另计；前端通过后台任务查询结果。
+    llm_max_retries: int = 1
     # --- 腾讯云语音转文字（仅密钥完整时启用）---
     asr_provider: str = "tencent"
     tencentcloud_secret_id: str = ""
@@ -89,7 +90,7 @@ def load_settings() -> Settings:
         llm_base_url=os.getenv("LLM_BASE_URL", "https://api.deepseek.com").rstrip("/"),
         llm_model=os.getenv("LLM_MODEL", "deepseek-chat"),
         llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "60")),
-        llm_max_retries=int(os.getenv("LLM_MAX_RETRIES", "2")),
+        llm_max_retries=int(os.getenv("LLM_MAX_RETRIES", "1")),
         asr_provider=os.getenv("ASR_PROVIDER", "tencent").strip().lower(),
         tencentcloud_secret_id=os.getenv("TENCENTCLOUD_SECRET_ID", ""),
         tencentcloud_secret_key=os.getenv("TENCENTCLOUD_SECRET_KEY", ""),

@@ -95,7 +95,9 @@ curl http://127.0.0.1:8787/api/agent/status -H "Authorization: Bearer <token>"
                            └── 失败/输出不合规 → 回落 Mock，并累计 fallbackCount
 ```
 
-调用失败会重试 `LLM_MAX_RETRIES` 次（指数无关，固定间隔），仍失败则回落。
+调用失败会额外重试 `LLM_MAX_RETRIES` 次（默认 1 次，无等待间隔），仍失败则回落。不支持严格 JSON Schema 时的格式能力探测最多切换一次，不消耗失败重试次数；`LLM_MAX_RETRIES=0` 仍允许这次格式切换。
+
+`LLM_TIMEOUT_SECONDS` 是底层 HTTPX 网络超时配置，不是整条 Agent 流程的总时长上限。客户端耗时操作现在通过 `/api/agent/tasks` 提交并查询结果，每次 HTTP 请求最多等待 15 秒；任务处理中会继续轮询，不用固定 120/300 秒截断整条流程。增加模型重试次数无需同步修改客户端等待常量。旧同步接口保留兼容，但新客户端必须连接更新并重启后的后端。
 
 **日志安全**：只记录长度、条数、错误类别；**不打印讲述正文、不打印密钥**。
 模型返回的原始响应体也不写日志（可能含敏感内容）。
@@ -108,6 +110,10 @@ python -m pytest backend/tests -q
 
 # 端到端（需要后端在跑）
 python backend/agent_http_check.py
+
+# 新后台任务协议：临时数据库，不写入自己的故事/录音库
+python backend/task_http_check.py
+python backend/task_http_check.py --llm  # 使用自己的配置调用一次真实采访提示
 
 # 显式验证"模型输出不合规会被丢弃"：见 backend/tests/test_llm_provider.py
 python -m pytest backend/tests/test_llm_provider.py -q

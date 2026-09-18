@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 
 import pytest
+import httpx
+from dataclasses import replace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -21,6 +23,45 @@ from backend.agents.mock import MockAgentProvider  # noqa: E402
 from backend.agents.state import SEVEN_ELEMENTS  # noqa: E402
 
 TRANSCRIPT = "那年秋天，院子里的桂花开得很早。我和妹妹每天放学都绕路去看一眼。"
+
+
+@pytest.mark.parametrize("retries", [0, 1, 2])
+def test_schema_probe_does_not_consume_failure_retries(monkeypatch, retries):
+    from backend.agents import llm
+    monkeypatch.setattr(llm, "settings", replace(llm.settings, llm_max_retries=retries))
+    calls = []
+
+    def post(*args, **kwargs):
+        calls.append(kwargs["json"]["response_format"]["type"])
+        if len(calls) == 1:
+            return httpx.Response(400, json={"error": {"message": "response_format unavailable"}})
+        if len(calls) <= retries + 1:
+            raise httpx.ReadTimeout("synthetic timeout")
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"ok": true}'}}]})
+
+    monkeypatch.setattr(llm.httpx, "post", post)
+    provider = LLMAgentProvider(api_key="test-key")
+    assert provider._chat(user_prompt="synthetic", schema={"type": "object"}) == {"ok": True}
+    assert calls == ["json_schema"] + ["json_object"] * (retries + 1)
+    assert provider.last_attempts == retries + 1
+    assert provider.last_schema_probes == 1
+
+
+def test_rejected_json_object_cannot_restart_schema_probe_forever(monkeypatch):
+    from backend.agents import llm
+    monkeypatch.setattr(llm, "settings", replace(llm.settings, llm_max_retries=1))
+    calls = []
+
+    def post(*args, **kwargs):
+        calls.append(kwargs["json"]["response_format"]["type"])
+        return httpx.Response(400, json={"error": {"message": "response_format unavailable"}})
+
+    monkeypatch.setattr(llm.httpx, "post", post)
+    provider = LLMAgentProvider(api_key="test-key")
+    with pytest.raises(LLMUnavailableError):
+        provider._chat(user_prompt="synthetic", schema={"type": "object"})
+    assert calls == ["json_schema", "json_object", "json_object"]
+    assert provider.last_attempts == 2
 
 
 def provider_with(responses: list) -> LLMAgentProvider:

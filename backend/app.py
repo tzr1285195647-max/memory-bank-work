@@ -12,12 +12,19 @@ from .api import router
 from .config import settings
 from .database import init_database
 from .routes import agent as agent_routes
+from . import agent_tasks
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_database()
-    yield
+    runner = agent_tasks.TaskRunner()
+    _app.state.agent_tasks = runner
+    runner.recover()
+    try:
+        yield
+    finally:
+        runner.close()
 
 
 def create_app() -> FastAPI:
@@ -38,6 +45,7 @@ def create_app() -> FastAPI:
 
     app.include_router(router)
     app.include_router(agent_routes.router)
+    app.include_router(agent_tasks.router)
 
     # 录音文件访问：演示用静态目录，生产应改为带签名的短期 URL
     app.mount("/media", StaticFiles(directory=settings.objects_dir), name="media")
