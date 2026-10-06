@@ -109,13 +109,7 @@ flowchart LR
     A["录音"] --> B["ASR 转写"] --> C["口述校对<br/>三份文本分离"] --> D["人工确认碎片"] --> E["证据抽取<br/>七要素 + quote"] --> F["勾选碎片成文<br/>句级证据绑定"] --> G["事实审计<br/>无依据 → 拦截"] --> H["家庭确认<br/>interrupt"] --> I["纪念册 / PDF"]
 ```
 
-**设计蓝图**（LangGraph 目标态，部分治理层为规划项：当前 Checkpointer 为 SQLite 而非 Postgres，RAG 与音视频产出尚未实现）：
-
-| 全景架构 | 父图状态机 |
-| --- | --- |
-| ![全景架构](assets/architecture/blueprint-overview.png) | ![父图](assets/architecture/blueprint-parent-graph.png) |
-
-完整图解见 [docs/记忆银行_LangGraph完整架构图解.docx](docs/记忆银行_LangGraph完整架构图解.docx)，Agent 协同设计详见 [docs/AGENTS_ARCHITECTURE.md](docs/AGENTS_ARCHITECTURE.md)。
+> Agent 协同设计与 LangGraph 完整图解（含规划中的目标态架构）见 [docs/AGENTS_ARCHITECTURE.md](docs/AGENTS_ARCHITECTURE.md) 与 [docs/记忆银行_LangGraph完整架构图解.docx](docs/记忆银行_LangGraph完整架构图解.docx)。
 
 ## 快速开始
 
