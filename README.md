@@ -6,9 +6,7 @@
 
 **记忆银行**是一个面向家庭口述记忆的可信 AI Agent 应用（微信小程序 + 本机 FastAPI 后端）：长辈对着手机讲往事，腾讯云 ASR 转写后，五个各司其职的 Agent 协助校对、提取证据、温和追问、写作成篇和事实审计——**AI 写下的每一句话都能追溯回老人的原声，故事的发布权始终在人和家属手里**。
 
-<!-- TODO(参赛前必补): 项目封面图（纪念册翻页瞬间或讲述页），建议 1280×640，放 assets/cover.png 后取消注释
-<p align="center"><img src="assets/cover.png" alt="记忆银行封面" width="720"></p>
--->
+<p align="center"><img src="docs/images/cover.png" alt="记忆银行：让口述成为有依据的家庭记忆" width="720"></p>
 
 ## 为什么做这个
 
@@ -18,7 +16,7 @@
 
 ## 演示
 
-- 🎬 **演示视频**：<!-- TODO(参赛前必补): 替换为 B 站链接 -->[待补充：2 分钟演示视频（B 站）]
+- 🎬 **演示视频**：[assets/demo/memory-bank-demo.mp4](assets/demo/memory-bank-demo.mp4)（10 分钟 · 42 页产品讲解，覆盖录音 → 转写校对 → 证据抽取 → 采访追问 → 双风格写作 → **审计拦截** → 家人确认 → 纪念册与 PDF 导出的完整主线）
 - 💻 **零密钥体验**：`.env` 保持 `AGENT_MODE=mock` 即可启动完整流程（本地规则引擎驱动全部五个 Agent，不调用外部模型），克隆后 5 分钟可跑通，见[快速开始](#快速开始)。
 
 <details>
@@ -35,15 +33,15 @@
 
 </details>
 
-<!-- TODO(参赛前必补): 6 张界面截图，从开发者工具模拟器截取，放 docs/images/ 后取消注释并核对文件名
-| 讲述页 | 校对页（原始转写 / Agent 建议 / 人工确认 三份分离） |
+| 讲述页：按下录音，慢慢讲 | 校对页：三份文字，各司其职 |
 | --- | --- |
 | ![讲述页](docs/images/record.png) | ![校对页](docs/images/proofread.png) |
-| **证据卡（七要素 + 原文引用）** | **故事预览（逐句证据 + 审计发现）** |
-| ![证据卡](docs/images/evidence.png) | ![故事预览](docs/images/story.png) |
-| **审计拦截（冲突原话并列展示）** | **家庭纪念册（翻页 + PDF 导出）** |
-| ![审计拦截](docs/images/audit.png) | ![纪念册](docs/images/book.png) |
--->
+| **证据锁：39 条事实，每个都有出处** | **事实审计：无原声依据 → 拦截确认** |
+| ![证据锁](docs/images/evidence.png) | ![审计拦截](docs/images/audit.png) |
+| **家庭纪念册：按时间翻阅的一本书** | **PDF 导出：可以留下来的载体** |
+| ![纪念册](docs/images/book.png) | ![PDF导出](docs/images/pdf.png) |
+
+> 更多界面：采访追问（[interview](docs/images/interview.png)）、碎片确认（[confirm](docs/images/confirm.png)）、正文逐句依据（[sentence](docs/images/sentence.png)）、拦截后确认按钮置灰（[audit-block](docs/images/audit-block.png)）、双风格对照（[styles](docs/images/styles.png)）、ASR 转写（[asr](docs/images/asr.png)）。
 
 ## 核心特性
 
