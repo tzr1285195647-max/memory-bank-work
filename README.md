@@ -130,6 +130,10 @@ python -m venv .venv
 npm ci
 ```
 
+> ⚠️ 后端要求 **Python 3.11 – 3.13**（`datetime.UTC` 等特性；3.9/3.10 会装不上依赖）。若 pip 报
+> `fastapi ... versions: none`，几乎一定是解释器版本不在区间内：用 `py -0` 查看已装版本，
+> 以 `py -3.11 -m venv .venv`（或 3.12）重建虚拟环境即可。
+
 **② 启动后端（零密钥即可）**
 
 `.env` 保持 `AGENT_MODE=mock`——这不是静态假页面，而是由本地规则引擎完整驱动的五个 Agent + 真实录音接口。启动：

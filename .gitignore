@@ -59,3 +59,5 @@ backend/.data/
 
 # 提交消息临时文件
 commit-msg.tmp
+.venv*/
+.venv/
