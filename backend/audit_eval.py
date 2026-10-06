@@ -34,15 +34,15 @@ NARRATOR_LINES = [
 ]
 
 CLAIMS = [
-    {"id": "c1", "element": "time",   "text": "1965年的秋天",           "quote": NARRATOR_LINES[0]},
-    {"id": "c2", "element": "place",  "text": "村口的晒谷场",           "quote": NARRATOR_LINES[1]},
-    {"id": "c3", "element": "people", "text": "我、母亲",               "quote": NARRATOR_LINES[1]},
-    {"id": "c4", "element": "event",  "text": "家里收了稻谷",           "quote": NARRATOR_LINES[1]},
-    {"id": "c5", "element": "event",  "text": "天暗下来，眼看着要下雨",   "quote": NARRATOR_LINES[2]},
-    {"id": "c6", "element": "event",  "text": "母亲拿起木耙把谷子往一块拢", "quote": NARRATOR_LINES[3]},
-    {"id": "c7", "element": "feeling", "text": "第一次觉得大人的活计这么累", "quote": NARRATOR_LINES[4]},
-    {"id": "c8", "element": "event",  "text": "晒好的谷子装进了麻袋",    "quote": NARRATOR_LINES[5]},
-    {"id": "c9", "element": "impact", "text": "今年能换两担新米",        "quote": NARRATOR_LINES[5]},
+    {"id": "c1", "element": "time",    "text": "1965年的秋天",             "quote": NARRATOR_LINES[0], "turn_id": "turn-01", "fragment_id": "frag-01"},
+    {"id": "c2", "element": "place",   "text": "村口的晒谷场",             "quote": NARRATOR_LINES[1], "turn_id": "turn-02", "fragment_id": "frag-02"},
+    {"id": "c3", "element": "people",  "text": "我、母亲",                 "quote": NARRATOR_LINES[1], "turn_id": "turn-02", "fragment_id": "frag-02"},
+    {"id": "c4", "element": "event",   "text": "家里收了稻谷",             "quote": NARRATOR_LINES[1], "turn_id": "turn-02", "fragment_id": "frag-02"},
+    {"id": "c5", "element": "event",   "text": "天暗下来，眼看着要下雨",     "quote": NARRATOR_LINES[2], "turn_id": "turn-03", "fragment_id": "frag-03"},
+    {"id": "c6", "element": "event",   "text": "母亲拿起木耙把谷子往一块拢",  "quote": NARRATOR_LINES[3], "turn_id": "turn-04", "fragment_id": "frag-04"},
+    {"id": "c7", "element": "feeling", "text": "第一次觉得大人的活计这么累",  "quote": NARRATOR_LINES[4], "turn_id": "turn-05", "fragment_id": "frag-05"},
+    {"id": "c8", "element": "event",   "text": "晒好的谷子装进了麻袋",      "quote": NARRATOR_LINES[5], "turn_id": "turn-06", "fragment_id": "frag-06"},
+    {"id": "c9", "element": "impact",  "text": "今年能换两担新米",          "quote": NARRATOR_LINES[5], "turn_id": "turn-06", "fragment_id": "frag-06"},
 ]
 
 TITLE = "《晒谷的秋天》"
@@ -290,7 +290,7 @@ def prepare_db() -> None:
     import uuid
 
     from backend.database import DEMO_PHONE, SessionLocal, init_database
-    from backend.models import Membership, Story, User
+    from backend.database import Membership, Story, User
 
     init_database()
     with SessionLocal() as session:
@@ -323,7 +323,7 @@ def run_llm(base_url: str) -> list[dict]:
     import httpx
 
     from backend.database import DEMO_PHONE, DEMO_PASSWORD, SessionLocal
-    from backend.models import Story
+    from backend.database import Story
 
     with SessionLocal() as session:
         story = session.query(Story).filter_by(title="晒谷的秋天").one_or_none()
@@ -392,13 +392,13 @@ def summarize(results: list[dict], mode: str) -> str:
         lines += ["", "## 未拦截的篡改（漏报）", ""]
         for r in misses:
             lines.append("- **%s** %s：%s" % (r["id"], r["note"],
-                                              "、".join("「%s」" % e for e in r["excerpts"][:2]) or "整句与证据重合度过低未被触发"))
+                                              "、".join("「%s」" % e for e in r.get("excerpts", [])[:2]) or "整句与证据重合度过低未被触发"))
     false_positives = [r for r in benign if r["blocked"]]
     if false_positives:
         lines += ["", "## 被误拦的润色（误报）", ""]
         for r in false_positives:
             lines.append("- **%s** %s：%s" % (r["id"], r["note"],
-                                              "、".join("「%s」" % e for e in r["excerpts"][:2])))
+                                              "、".join("「%s」" % e for e in r.get("excerpts", [])[:2])))
     return "\n".join(lines) + "\n"
 
 

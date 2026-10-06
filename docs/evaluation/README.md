@@ -48,7 +48,8 @@ python backend/audit_eval.py llm          # 逐条走 /stories/{id}/review 双�
 
 这正是产品采用**双层门**的原因：规则层零成本拦下绝大多数编造，漏报的高重合度篡改
 交给写作审计 Agent（真实模型）复核，最后仍需家人人工确认才能发布。
-真实模型层的评测结果将在 `audit-benchmark-llm.md` 中更新。
+真实模型层的实测结果（deepseek-flash 与 deepseek-chat 对照）见
+[audit-benchmark-llm.md](audit-benchmark-llm.md)。
 
 ## 诚实声明
 
